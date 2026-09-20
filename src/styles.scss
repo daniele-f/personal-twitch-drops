@@ -1,0 +1,15 @@
+/* You can add global styles to this file, and also import other style files */
+:root {
+  color-scheme: dark;
+  --color-background: #0e0e10;
+  --color-text: #efeff1;
+  --color-accent: #9147ff;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: var(--color-background);
+  color: var(--color-text);
+}
