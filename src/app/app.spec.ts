@@ -14,10 +14,10 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('renders the project foundation heading', async () => {
+  it('renders the active drops heading', async () => {
     const fixture = TestBed.createComponent(App);
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Personal Twitch Drops');
+    expect(compiled.querySelector('h1')?.textContent).toContain('Active Drops');
   });
 });
