@@ -8,6 +8,7 @@ Read the relevant files in `docs/` before implementing a feature.
 - Branch each independently testable feature or fix from the latest `main` using `feature/...`, `fix/...`, or `refactor/...`.
 - Keep unrelated changes out of feature branches. Prefer squash merges into `main`.
 - Never merge into `main` without explicit user approval.
+- Delete merged, no-longer-needed `feature/`, `fix/`, and `refactor/` branches locally and remotely. Never delete `main` or an active branch.
 
 ## Definition of Done
 
