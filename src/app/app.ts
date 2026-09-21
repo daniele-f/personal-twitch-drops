@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { ActiveDrop } from './drops/active-drop';
 import { DropListComponent } from './drop-list/drop-list';
-import { SHELL_SECTIONS } from './shell-data';
 
 @Component({
   imports: [DropListComponent, RouterOutlet],
@@ -10,5 +10,6 @@ import { SHELL_SECTIONS } from './shell-data';
   templateUrl: './app.html',
 })
 export class App {
-  protected readonly sections = SHELL_SECTIONS;
+  protected readonly drops: readonly ActiveDrop[] = [];
+  protected readonly loading = false;
 }
