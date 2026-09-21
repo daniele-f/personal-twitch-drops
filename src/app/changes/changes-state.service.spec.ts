@@ -22,4 +22,13 @@ describe('ChangesStateService', () => {
 
     expect(service.changes()).toEqual([{ type: 'updated', drop: second, addedRewards: ['Nebula'], removedRewards: ['Atlas'] }]);
   });
+
+  it('seeds a comparison for developer scenarios', () => {
+    const service = TestBed.inject(ChangesStateService);
+
+    service.seed([first], [second]);
+
+    expect(service.drops()).toEqual([second]);
+    expect(service.changes()).toEqual([{ type: 'updated', drop: second, addedRewards: ['Nebula'], removedRewards: ['Atlas'] }]);
+  });
 });

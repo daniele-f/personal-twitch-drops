@@ -6,6 +6,7 @@ import { routes } from './app.routes';
 import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
+import { ChangesStateService } from './changes/changes-state.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -27,6 +28,16 @@ describe('App', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('Changes · 2');
+  });
+
+  it('shows Changes only after a real comparison is available', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    changes.updateDrops([]);
+    changes.updateDrops([{ id: '/game/arc-raiders', gameName: 'Arc Raiders', rewardCount: 1, rewards: ['Raider pack'], endsAt: '2026-09-24T00:00:00.000Z' }]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Changes · 1');
   });
 
   it('shows every favorite-blacklist conflict and removes them one at a time', () => {

@@ -25,6 +25,13 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
   });
 
+  it('marks a newly active game with a New pill', () => {
+    fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
+    render();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"]')?.textContent).toContain('New');
+  });
+
   it('renders Favorites before Active Drops without duplicating rows', () => {
     render([sea], [valorant]);
     const headings = [...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent?.trim());

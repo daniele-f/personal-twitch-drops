@@ -11,6 +11,7 @@ export class DropListComponent {
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
+  readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly favoriteRequested = output<string>();
   readonly unfavoriteRequested = output<string>();
   readonly blacklistRequested = output<ActiveDrop>();
