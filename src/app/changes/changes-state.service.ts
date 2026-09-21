@@ -14,9 +14,10 @@ export class ChangesStateService {
     this.drops.set(current);
   }
 
-  seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): void {
+  seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly DropChange[] {
     this.previous = previous;
     this.updateDrops(current);
+    return this.changes();
   }
 
   clear(): void { this.previous = null; this.drops.set([]); this.changes.set([]); }

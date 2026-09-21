@@ -30,6 +30,6 @@ export class App {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
-  private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): void { this.changesState.seed(previous, current); this.changesOpen.set(true); }
+  private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly unknown[] { const changes = this.changesState.seed(previous, current); this.changesOpen.set(true); return changes; }
   private drop(gameName: string, rewards: readonly string[]): ActiveDrop { return { id: `/game/${gameName.toLowerCase().replaceAll(' ', '-')}`, gameName, rewardCount: rewards.length, rewards, endsAt: '2026-09-30T00:00:00.000Z' }; }
 }
