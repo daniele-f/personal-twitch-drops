@@ -31,8 +31,22 @@ describe('DropListComponent', () => {
   });
 
   it('renders representative campaign content and a new indicator', () => {
-    const content = fixture.nativeElement.textContent;
-    expect(content).toContain('The Elder Scrolls Online');
-    expect(content).toContain('New');
+    expect(fixture.nativeElement.textContent).toContain('The Elder Scrolls Online');
+    expect(fixture.nativeElement.querySelector('.indicator.new')?.textContent?.trim()).toBe('New');
+  });
+
+  it('connects every section to a valid heading ID', () => {
+    const sections = [...fixture.nativeElement.querySelectorAll('section')];
+    for (const section of sections) {
+      const headingId = section.getAttribute('aria-labelledby');
+      expect(headingId).toBeTruthy();
+      expect(fixture.nativeElement.querySelector(`#${headingId}`)?.textContent).toBeTruthy();
+    }
+  });
+
+  it('shows an empty message for sections without campaigns', () => {
+    fixture.componentRef.setInput('sections', [{ title: 'Favorites', countLabel: '0 active', items: [] }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.empty-state')?.textContent).toContain('No favorites right now');
   });
 });

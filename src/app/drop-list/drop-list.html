@@ -1,7 +1,7 @@
-@for (section of sections(); track section.title) {
-  <section class="drop-section" [attr.aria-labelledby]="section.title">
+@for (section of sections(); track section.title; let index = $index) {
+  <section class="drop-section" [attr.aria-labelledby]="'section-' + index">
     <header class="section-heading">
-      <h2 [id]="section.title">{{ section.title }}</h2>
+      <h2 [id]="'section-' + index">{{ section.title }}</h2>
       <span class="section-count">{{ section.countLabel }}</span>
     </header>
     @if (section.items.length) {

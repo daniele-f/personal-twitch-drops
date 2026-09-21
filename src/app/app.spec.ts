@@ -20,4 +20,10 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Active Drops');
   });
+
+  it('keeps the wordmark within the deployed application base path', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.wordmark')?.getAttribute('href')).toBe('./');
+  });
 });
