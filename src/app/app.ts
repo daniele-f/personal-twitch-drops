@@ -22,7 +22,7 @@ export class App {
   });
   constructor() {
     if (isDevMode()) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { changes: {
-      showAll: () => ({ newGame: 'Show one new game.', rewardSwap: 'Show a same-count reward swap.', endedGame: 'Show an ended game.', multipleGames: 'Show three new games.', newAndUpdated: 'Show a new and an updated game.', clear: 'Reset the scenario.' }),
+      showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
       newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     } };
   }
