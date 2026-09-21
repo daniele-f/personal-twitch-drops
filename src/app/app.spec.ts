@@ -22,6 +22,13 @@ describe('App', () => {
     expect(link?.getAttribute('href')).toContain('/preferences');
   });
 
+  it('does not render a placeholder Changes control', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).not.toContain('Changes · 2');
+  });
+
   it('shows every favorite-blacklist conflict and removes them one at a time', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addFavorite('/game/sea-of-thieves');
