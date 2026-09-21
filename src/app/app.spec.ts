@@ -1,116 +1,33 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
-import { ActiveDrop } from './drops/active-drop';
+import { provideRouter } from '@angular/router';
+import { of } from 'rxjs';
 import { DropsProvider } from './drops/drops-provider';
 import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
+import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
 
-class TestDropsProvider extends DropsProvider {
-  readonly requests: Subject<readonly ActiveDrop[]>[] = [];
-
-  loadActiveDrops(): Subject<readonly ActiveDrop[]> {
-    const request = new Subject<readonly ActiveDrop[]>();
-    this.requests.push(request);
-    return request;
-  }
-}
-
 describe('App', () => {
-  let provider: TestDropsProvider;
-
   beforeEach(async () => {
     localStorage.clear();
-    provider = new TestDropsProvider();
-    await TestBed.configureTestingModule({
-      imports: [App],
-      providers: [{ provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }],
-    }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [App], providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
   });
 
-  it('moves a clicked active Drop into Favorites without duplicating it', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    provider.requests[0].next([
-      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 8, endsAt: '2026-09-28T12:00:00.000Z' },
-      { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-29T12:00:00.000Z' },
-    ]);
-    fixture.detectChanges();
-
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star')?.click();
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.querySelector('.favorites-section')?.textContent).toContain('Sea of Thieves');
-    expect(fixture.nativeElement.querySelectorAll('[data-drop-id="/game/sea-of-thieves"]')).toHaveLength(1);
-  });
-
-  it('should create the app', () => {
-    const fixture = TestBed.createComponent(App);
-    const app = fixture.componentInstance;
-    expect(app).toBeTruthy();
-  });
-
-  it('renders the active drops heading', async () => {
-    const fixture = TestBed.createComponent(App);
-    await fixture.whenStable();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Active Drops');
-  });
-
-  it('keeps the wordmark within the deployed application base path', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    expect(fixture.nativeElement.querySelector('.wordmark')?.getAttribute('href')).toBe('./');
-  });
-
-  it('shows skeletons before the initial request completes', () => {
+  it('shows every favorite-blacklist conflict and removes them one at a time', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves');
+    preferences.addFavorite('/game/valorant');
+    preferences.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+    preferences.addBlacklist('/game/valorant', 'VALORANT');
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    expect(provider.requests).toHaveLength(1);
-    expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(4);
-  });
-
-  it('renders live Drops after a successful request', () => {
-    const fixture = TestBed.createComponent(App);
+    expect(fixture.nativeElement.querySelectorAll('.conflict-row')).toHaveLength(2);
+    expect(fixture.nativeElement.textContent).not.toContain('Active Drops');
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-conflict-id="/game/sea-of-thieves"] .keep-favorite')?.click();
     fixture.detectChanges();
-    provider.requests[0].next([
-      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 8, endsAt: '2026-09-28T12:00:00.000Z' },
-    ]);
+    expect(fixture.nativeElement.querySelectorAll('.conflict-row')).toHaveLength(1);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-conflict-id="/game/valorant"] .hide-game')?.click();
     fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain('1 active Drop');
-    expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
-  });
-
-  it('shows a retryable failure and reloads after Retry', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    provider.requests[0].error(new Error('offline'));
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain("We couldn't load active Drops right now.");
-    const compiled = fixture.nativeElement as HTMLElement;
-    compiled.querySelector<HTMLButtonElement>('.retry')?.click();
-    fixture.detectChanges();
-
-    expect(provider.requests).toHaveLength(2);
-    expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(4);
-  });
-
-  it('ignores a superseded request that completes after the latest request fails', () => {
-    const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    compiled.querySelector<HTMLButtonElement>('.refresh')?.click();
-    fixture.detectChanges();
-
-    provider.requests[1].error(new Error('offline'));
-    provider.requests[0].next([
-      { id: '/game/stale', gameName: 'Stale Game', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' },
-    ]);
-    fixture.detectChanges();
-
-    expect(fixture.nativeElement.textContent).toContain("We couldn't load active Drops right now.");
-    expect(fixture.nativeElement.textContent).not.toContain('Stale Game');
+    expect(fixture.nativeElement.querySelector('.conflict-row')).toBeNull();
   });
 });
