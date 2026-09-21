@@ -1,5 +1,5 @@
-.app-shell {
-  max-width: 48rem;
-  margin: 0 auto;
-  padding: 4rem 1.5rem;
-}
+.app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:4rem; padding:0 1.5rem; border-bottom:1px solid #303036; background:#18181b; }
+.wordmark { color:var(--color-text); font-weight:800; text-decoration:none; }.wordmark span { color:var(--color-accent); }
+nav { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:.5rem; } button { border:1px solid #3c3c45; border-radius:.45rem; padding:.45rem .7rem; background:#242429; color:var(--color-text); font:inherit; font-size:.8rem; font-weight:650; } button.refresh { border-color:var(--color-accent); background:var(--color-accent); color:#fff; }
+.app-shell { max-width:60rem; margin:0 auto; padding:2rem 1.5rem 4rem; }.page-heading { display:flex; justify-content:space-between; align-items:end; gap:1rem; }.page-heading h1,.page-heading p { margin:0; }.page-heading h1 { font-size:1.7rem; }.page-heading p { color:#aeafb8; font-size:.85rem; }
+@media (max-width: 520px) { .app-header { align-items:flex-start; flex-direction:column; padding:.8rem 1rem; }.app-shell { padding:1.5rem 1rem 3rem; }.page-heading { align-items:flex-start; flex-direction:column; } }
