@@ -1,5 +1,5 @@
 export const ACTIVE_DROPS_FIXTURE = `
-  <main>
+  <main class="games-grid">
     <a class="game-card" href="/game/sea-of-thieves" data-game="sea of thieves" data-drops="8" data-end="2026-09-28T12:00:00.000Z">
       <img src="https://cdn.example.test/sea.png" alt="Sea of Thieves">
     </a>

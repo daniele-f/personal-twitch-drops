@@ -17,23 +17,27 @@ export class App {
   protected readonly loading = signal(true);
   protected readonly updatedAt = signal<Date | null>(null);
   protected readonly loadFailed = signal(false);
+  private requestVersion = 0;
 
   constructor() {
     this.loadDrops();
   }
 
   protected loadDrops(): void {
+    const requestVersion = ++this.requestVersion;
     this.loading.set(true);
     this.loadFailed.set(false);
     this.drops.set([]);
 
     this.dropsProvider.loadActiveDrops().subscribe({
       next: (drops) => {
+        if (requestVersion !== this.requestVersion) return;
         this.drops.set(drops);
         this.updatedAt.set(new Date());
         this.loading.set(false);
       },
       error: () => {
+        if (requestVersion !== this.requestVersion) return;
         this.loadFailed.set(true);
         this.loading.set(false);
       },

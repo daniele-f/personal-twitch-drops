@@ -78,4 +78,21 @@ describe('App', () => {
     expect(provider.requests).toHaveLength(2);
     expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(4);
   });
+
+  it('ignores a superseded request that completes after the latest request fails', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    compiled.querySelector<HTMLButtonElement>('.refresh')?.click();
+    fixture.detectChanges();
+
+    provider.requests[1].error(new Error('offline'));
+    provider.requests[0].next([
+      { id: '/game/stale', gameName: 'Stale Game', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' },
+    ]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain("We couldn't load active Drops right now.");
+    expect(fixture.nativeElement.textContent).not.toContain('Stale Game');
+  });
 });

@@ -50,4 +50,13 @@ describe('TwitchDropsAppProvider', () => {
 
     expect(receivedError).toBeTruthy();
   });
+
+  it('rejects an unexpected source document instead of treating it as empty Drops', () => {
+    let receivedError: unknown;
+
+    provider.loadActiveDrops().subscribe({ error: (error: unknown) => (receivedError = error) });
+    httpTesting.expectOne('https://twitchdrops.app/').flush('<main><p>Maintenance</p></main>');
+
+    expect(receivedError).toBeTruthy();
+  });
 });

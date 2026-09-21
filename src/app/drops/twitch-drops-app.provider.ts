@@ -17,6 +17,10 @@ export class TwitchDropsAppProvider extends DropsProvider {
   private parseActiveDrops(html: string): readonly ActiveDrop[] {
     const document = new DOMParser().parseFromString(html, 'text/html');
 
+    if (!document.querySelector('.games-grid')) {
+      throw new Error('The Twitch Drops source document has an unexpected structure.');
+    }
+
     return [...document.querySelectorAll<HTMLAnchorElement>('.game-card[data-game][data-drops][data-end]')]
       .map((card) => this.normalizeCard(card))
       .filter((drop): drop is ActiveDrop => drop !== null);
