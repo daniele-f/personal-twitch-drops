@@ -19,6 +19,7 @@
 * Never merge feature or fix code into `main` without the user's explicit approval.
 * Documentation-only or workflow-rule changes may be committed directly to `main` when the user asks.
 * Before merging a feature or fix, confirm CI passes, the PR targets `main`, and there are no merge conflicts. After merging, update local `main` and run a production build.
+* After a feature or fix is merged and pushed, rename the current conversation to a concise summary prefixed with its type, such as `feat: ...`, `fix: ...`, or `refactor: ...`.
 
 ## Testing and handoff
 
