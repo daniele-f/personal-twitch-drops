@@ -9,6 +9,6 @@
   @if (loadFailed()) {
     <section class="load-error" aria-live="polite"><p>We couldn't load active Drops right now.</p><button class="retry" type="button" (click)="loadDrops()">Retry</button></section>
   }
-  <app-drop-list [drops]="drops()" [loading]="loading()" />
+  <app-drop-list [favoriteDrops]="[]" [activeDrops]="drops()" [loading]="loading()" />
   <router-outlet />
 </main>

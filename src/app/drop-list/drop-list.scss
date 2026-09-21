@@ -1,11 +1,13 @@
 .loading-message { margin: 2rem 0 .7rem; color: #aeafb8; font-size: .85rem; }
 .drop-list { display: grid; gap: .6rem; margin: 2rem 0 0; padding: 0; list-style: none; }
 .loading-message + .drop-list { margin-top: 0; }
-.drop-row { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr); align-items: center; gap: .8rem; padding: .75rem; border: 1px solid #303036; border-radius: .7rem; background: #18181b; }
+.favorites-section,.active-section { margin-top: 2rem; }.favorites-section h2,.active-section h2 { margin: 0 0 .7rem; font-size: 1rem; }.drop-list { margin-top: 0; }
+.drop-row { display: grid; grid-template-columns: 3.5rem minmax(0, 1fr) auto; align-items: center; gap: .8rem; padding: .75rem; border: 1px solid #303036; border-radius: .7rem; background: #18181b; }
 .cover-image,.cover-placeholder,.skeleton-cover { width: 3.5rem; height: 3.5rem; border-radius: .45rem; object-fit: cover; }
 .cover-placeholder { background: linear-gradient(135deg, #9147ff, #251846); }
-.drop-copy { min-width: 0; overflow-wrap: anywhere; }.drop-copy h2,.drop-copy p { margin: 0; }.drop-copy h2 { font-size: 1rem; }.drop-copy p { margin-top: .2rem; color: #aeafb8; font-size: .85rem; }
+.drop-copy { min-width: 0; overflow-wrap: anywhere; }.drop-copy h3,.drop-copy p { margin: 0; }.drop-copy h3 { font-size: 1rem; }.drop-copy p { margin-top: .2rem; color: #aeafb8; font-size: .85rem; }
+.star-action { display: grid; justify-items: end; gap: .3rem; }.favorite-star { border: 0; border-radius: .35rem; background: transparent; color: #c7c7cf; font-size: 1.5rem; line-height: 1; cursor: pointer; }.favorite-star--armed { color: #ef4444; }.favorite-star:focus-visible { outline: 2px solid #9147ff; outline-offset: 2px; }.unfavorite-hint { max-width: 11rem; color: #efb4b4; font-size: .75rem; text-align: right; }
 .skeleton-copy { display: grid; gap: .55rem; }.skeleton-block { display: block; border-radius: .35rem; background: linear-gradient(110deg, #242429 8%, #3a3542 18%, #242429 33%); background-size: 200% 100%; animation: skeleton-shine 1.5s linear infinite; }.skeleton-title { width: 48%; height: 1rem; }.skeleton-description { width: 72%; height: .8rem; }
 @keyframes skeleton-shine { to { background-position-x: -200%; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
-@media (max-width: 420px) { .drop-row { grid-template-columns: 2.8rem minmax(0, 1fr); }.cover-image,.cover-placeholder,.skeleton-cover { width: 2.8rem; height: 2.8rem; } }
+@media (max-width: 420px) { .drop-row { grid-template-columns: 2.8rem minmax(0, 1fr) auto; }.cover-image,.cover-placeholder,.skeleton-cover { width: 2.8rem; height: 2.8rem; }.unfavorite-hint { max-width: 8rem; } }
