@@ -41,6 +41,14 @@ describe('DropListComponent', () => {
     expect(row?.querySelector('.updated-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
+  it('marks a changed favorite with a pill before its favorite star', () => {
+    fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
+    render([sea], []);
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
+    expect(row?.querySelector('.new-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
   it('renders Favorites before Active Drops without duplicating rows', () => {
     render([sea], [valorant]);
     const headings = [...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent?.trim());
