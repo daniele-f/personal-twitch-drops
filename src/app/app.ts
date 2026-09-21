@@ -25,7 +25,9 @@ export class App {
       newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]),
       rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]),
       endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []),
-      clear: () => this.changesState.clear(),
+      multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]),
+      newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]),
+      clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     };
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }

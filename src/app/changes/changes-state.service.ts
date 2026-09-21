@@ -20,5 +20,5 @@ export class ChangesStateService {
     return this.changes();
   }
 
-  clear(): void { this.previous = null; this.drops.set([]); this.changes.set([]); }
+  clear(): readonly DropChange[] { this.previous = null; this.drops.set([]); this.changes.set([]); return this.changes(); }
 }
