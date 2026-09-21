@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ActiveDrop } from './drops/active-drop';
 import { DropsProvider } from './drops/drops-provider';
 import { DropListComponent } from './drop-list/drop-list';
+import { PreferencesService } from './preferences/preferences.service';
 
 @Component({
   imports: [DropListComponent, RouterOutlet],
@@ -12,11 +13,20 @@ import { DropListComponent } from './drop-list/drop-list';
 })
 export class App {
   private readonly dropsProvider = inject(DropsProvider);
+  protected readonly preferences = inject(PreferencesService);
 
   protected readonly drops = signal<readonly ActiveDrop[]>([]);
   protected readonly loading = signal(true);
   protected readonly updatedAt = signal<Date | null>(null);
   protected readonly loadFailed = signal(false);
+  protected readonly favoriteDrops = computed(() => {
+    const favoriteIds = this.preferences.favoriteIds();
+    return this.drops().filter((drop) => favoriteIds.has(drop.id));
+  });
+  protected readonly activeDrops = computed(() => {
+    const favoriteIds = this.preferences.favoriteIds();
+    return this.drops().filter((drop) => !favoriteIds.has(drop.id));
+  });
   private requestVersion = 0;
 
   constructor() {

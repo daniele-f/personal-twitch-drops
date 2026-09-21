@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { ActiveDrop } from '../drops/active-drop';
 
 @Component({
@@ -8,8 +8,29 @@ import { ActiveDrop } from '../drops/active-drop';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DropListComponent {
-  readonly drops = input.required<readonly ActiveDrop[]>();
+  readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
+  readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
+  readonly favoriteRequested = output<string>();
+  readonly unfavoriteRequested = output<string>();
+  protected readonly armedForId = signal<string | null>(null);
+
+  protected activateStar(drop: ActiveDrop, isFavorite: boolean): void {
+    if (!isFavorite) {
+      this.favoriteRequested.emit(drop.id);
+      return;
+    }
+    if (this.armedForId() === drop.id) {
+      this.unfavoriteRequested.emit(drop.id);
+      this.armedForId.set(null);
+      return;
+    }
+    this.armedForId.set(drop.id);
+  }
+
+  protected cancelArmed(id: string): void {
+    if (this.armedForId() === id) this.armedForId.set(null);
+  }
 
   protected summary(drop: ActiveDrop): string {
     const rewardLabel = drop.rewardCount === 1 ? 'reward' : 'rewards';

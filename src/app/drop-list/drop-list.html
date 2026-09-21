@@ -2,27 +2,20 @@
   <p class="loading-message" aria-live="polite">Loading active Drops</p>
   <ul class="drop-list" aria-hidden="true">
     @for (skeleton of [0, 1, 2, 3]; track skeleton) {
-      <li>
-        <article class="drop-row drop-row--skeleton">
-          <div class="skeleton-block skeleton-cover"></div>
-          <div class="skeleton-copy"><span class="skeleton-block skeleton-title"></span><span class="skeleton-block skeleton-description"></span></div>
-        </article>
-      </li>
+      <li><article class="drop-row drop-row--skeleton"><div class="skeleton-block skeleton-cover"></div><div class="skeleton-copy"><span class="skeleton-block skeleton-title"></span><span class="skeleton-block skeleton-description"></span></div></article></li>
     }
   </ul>
 } @else {
-  <ul class="drop-list">
-    @for (drop of drops(); track drop.id) {
-      <li>
-        <article class="drop-row">
-          @if (drop.imageUrl) {
-            <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName">
-          } @else {
-            <div class="cover-placeholder" aria-hidden="true"></div>
-          }
-          <div class="drop-copy"><h2>{{ drop.gameName }}</h2><p>{{ summary(drop) }}</p></div>
-        </article>
-      </li>
+  @if (favoriteDrops().length) {
+    <section class="favorites-section"><h2>Favorites</h2><ul class="drop-list">
+      @for (drop of favoriteDrops(); track drop.id) {
+        <li [attr.data-drop-id]="drop.id"><article class="drop-row">@if (drop.imageUrl) { <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName"> } @else { <div class="cover-placeholder" aria-hidden="true"></div> }<div class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></div><div class="star-action"><button class="favorite-star" [class.favorite-star--armed]="armedForId() === drop.id" type="button" title="Remove from Favorites" [attr.aria-label]="armedForId() === drop.id ? 'Press again to remove from Favorites ' + drop.gameName : 'Unfavorite ' + drop.gameName" [attr.aria-describedby]="armedForId() === drop.id ? 'unfavorite-hint-' + drop.id : null" (click)="activateStar(drop, true)" (mouseleave)="cancelArmed(drop.id)" (focusout)="cancelArmed(drop.id)">★</button>@if (armedForId() === drop.id) { <span class="unfavorite-hint" [id]="'unfavorite-hint-' + drop.id">Press again to remove from Favorites</span> }</div></article></li>
+      }
+    </ul></section>
+  }
+  <section class="active-section"><h2>Active Drops</h2><ul class="drop-list">
+    @for (drop of activeDrops(); track drop.id) {
+      <li [attr.data-drop-id]="drop.id"><article class="drop-row">@if (drop.imageUrl) { <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName"> } @else { <div class="cover-placeholder" aria-hidden="true"></div> }<div class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></div><div class="star-action"><button class="favorite-star" type="button" title="Add to Favorites" [attr.aria-label]="'Favorite ' + drop.gameName" (click)="activateStar(drop, false)">☆</button></div></article></li>
     }
-  </ul>
+  </ul></section>
 }
