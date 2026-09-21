@@ -38,11 +38,15 @@ export class TwitchDropsAppProvider extends DropsProvider {
 
     const image = card.querySelector<HTMLImageElement>('img[src]');
     const gameName = image?.alt.trim() || this.toDisplayName(sourceName);
+    const rewards = [...card.querySelectorAll<HTMLElement>('.card-rewards .reward-name')]
+      .map((reward) => reward.textContent?.trim() ?? '')
+      .filter((reward) => reward.length > 0);
 
     return {
       id,
       gameName,
       rewardCount,
+      rewards,
       endsAt: endDate.toISOString(),
       ...(image ? { imageUrl: image.src } : {}),
     };
