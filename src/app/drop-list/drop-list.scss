@@ -12,3 +12,4 @@
 @keyframes skeleton-shine { to { background-position-x: -200%; } }
 @media (prefers-reduced-motion: reduce) { .skeleton-block { animation: none; } }
 @media (max-width: 420px) { .drop-row { grid-template-columns: 2.8rem minmax(0, 1fr) auto; }.cover-image,.cover-placeholder,.skeleton-cover { width: 2.8rem; height: 2.8rem; }.unfavorite-hint { max-width: 8rem; } }
+.new-pill,.updated-pill { align-self:center; border-radius:999px; padding:.2rem .45rem; font-size:.7rem; font-weight:700; text-transform:uppercase; }.new-pill { background:#244e40; color:#a5f2c4; }.updated-pill { background:#45315f; color:#d8b7ff; }

@@ -15,7 +15,7 @@
   }
   <section class="active-section"><h2>Active Drops</h2><ul class="drop-list">
     @for (drop of activeDrops(); track drop.id) {
-      <li [attr.data-drop-id]="drop.id"><article class="drop-row">@if (drop.imageUrl) { <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName"> } @else { <div class="cover-placeholder" aria-hidden="true"></div> }<div class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></div>@if (newDropIds().has(drop.id)) { <span class="new-pill">New</span> }<div class="row-actions"><button class="favorite-star" type="button" title="Add to Favorites" [attr.aria-label]="'Favorite ' + drop.gameName" (click)="activateStar(drop, false)">☆</button><button class="blacklist-button" type="button" title="Ignore" [attr.aria-label]="'Ignore ' + drop.gameName" (click)="blacklist(drop)">⊘</button></div></article></li>
+      <li [attr.data-drop-id]="drop.id"><article class="drop-row">@if (drop.imageUrl) { <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName"> } @else { <div class="cover-placeholder" aria-hidden="true"></div> }<div class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></div>@if (newDropIds().has(drop.id)) { <span class="new-pill">New</span> } @else if (updatedDropIds().has(drop.id)) { <span class="updated-pill">Updated</span> }<div class="row-actions"><button class="favorite-star" type="button" title="Add to Favorites" [attr.aria-label]="'Favorite ' + drop.gameName" (click)="activateStar(drop, false)">☆</button><button class="blacklist-button" type="button" title="Ignore" [attr.aria-label]="'Ignore ' + drop.gameName" (click)="blacklist(drop)">⊘</button></div></article></li>
     }
   </ul></section>
 }

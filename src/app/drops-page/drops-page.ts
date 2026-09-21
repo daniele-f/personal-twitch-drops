@@ -22,6 +22,8 @@ export class DropsPageComponent {
     const favorites = this.preferences.favoriteIds(); const blacklisted = new Set(this.preferences.blacklistEntries().map((entry) => entry.id));
     return this.drops().filter((drop) => !favorites.has(drop.id) && !blacklisted.has(drop.id));
   });
+  protected readonly newDropIds = computed(() => new Set(this.changesState.changes().filter((change) => change.type === 'new').map((change) => change.drop.id)));
+  protected readonly updatedDropIds = computed(() => new Set(this.changesState.changes().filter((change) => change.type === 'updated').map((change) => change.drop.id)));
   private requestVersion = 0;
   constructor() { this.loadDrops(); }
   protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.changesState.updateDrops(drops); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); } }); }
