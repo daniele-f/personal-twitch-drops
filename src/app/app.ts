@@ -1,61 +1,21 @@
-import { Component, computed, inject, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
-import { ActiveDrop } from './drops/active-drop';
-import { DropsProvider } from './drops/drops-provider';
-import { DropListComponent } from './drop-list/drop-list';
+import { Component, computed, inject } from '@angular/core';
+import { RouterLink, RouterOutlet } from '@angular/router';
+import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
+import { ButtonDirective } from './ui/button.directive';
 
 @Component({
-  imports: [DropListComponent, RouterOutlet],
+  imports: [ButtonDirective, ConflictResolutionComponent, RouterLink, RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
 })
 export class App {
-  private readonly dropsProvider = inject(DropsProvider);
   protected readonly preferences = inject(PreferencesService);
-
-  protected readonly drops = signal<readonly ActiveDrop[]>([]);
-  protected readonly loading = signal(true);
-  protected readonly updatedAt = signal<Date | null>(null);
-  protected readonly loadFailed = signal(false);
-  protected readonly favoriteDrops = computed(() => {
-    const favoriteIds = this.preferences.favoriteIds();
-    return this.drops().filter((drop) => favoriteIds.has(drop.id));
+  protected readonly conflicts = computed(() => {
+    const favorites = this.preferences.favoriteIds();
+    return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
-  protected readonly activeDrops = computed(() => {
-    const favoriteIds = this.preferences.favoriteIds();
-    return this.drops().filter((drop) => !favoriteIds.has(drop.id));
-  });
-  private requestVersion = 0;
-
-  constructor() {
-    this.loadDrops();
-  }
-
-  protected loadDrops(): void {
-    const requestVersion = ++this.requestVersion;
-    this.loading.set(true);
-    this.loadFailed.set(false);
-    this.drops.set([]);
-
-    this.dropsProvider.loadActiveDrops().subscribe({
-      next: (drops) => {
-        if (requestVersion !== this.requestVersion) return;
-        this.drops.set(drops);
-        this.updatedAt.set(new Date());
-        this.loading.set(false);
-      },
-      error: () => {
-        if (requestVersion !== this.requestVersion) return;
-        this.loadFailed.set(true);
-        this.loading.set(false);
-      },
-    });
-  }
-
-  protected updatedLabel(): string {
-    const updatedAt = this.updatedAt();
-    return updatedAt ? `Updated ${new Intl.DateTimeFormat('en-US', { timeStyle: 'short' }).format(updatedAt)}` : 'Loading active Drops';
-  }
+  protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
+  protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
 }

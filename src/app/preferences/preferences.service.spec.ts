@@ -1,16 +1,16 @@
 import { TestBed } from '@angular/core/testing';
-import { FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
 import { PreferencesService } from './preferences.service';
 
-function createStorage(initialValue: string | null = null): Storage {
-  let value = initialValue;
+function createStorage(initialValues: Record<string, string> = {}): Storage {
+  const values = new Map(Object.entries(initialValues));
   return {
-    get length() { return value === null ? 0 : 1; },
-    clear: () => { value = null; },
-    getItem: (key) => key === FAVORITE_IDS_STORAGE_KEY ? value : null,
-    key: () => value === null ? null : FAVORITE_IDS_STORAGE_KEY,
-    removeItem: (key) => { if (key === FAVORITE_IDS_STORAGE_KEY) value = null; },
-    setItem: (key, nextValue) => { if (key === FAVORITE_IDS_STORAGE_KEY) value = nextValue; },
+    get length() { return values.size; },
+    clear: () => values.clear(),
+    getItem: (key) => values.get(key) ?? null,
+    key: (index) => [...values.keys()][index] ?? null,
+    removeItem: (key) => values.delete(key),
+    setItem: (key, value) => values.set(key, value),
   };
 }
 
@@ -20,16 +20,19 @@ describe('PreferencesService', () => {
     return TestBed.inject(PreferencesService);
   }
 
-  afterEach(() => TestBed.resetTestingModule());
+  afterEach(() => {
+    vi.useRealTimers();
+    TestBed.resetTestingModule();
+  });
 
   it('loads only unique non-empty favorite IDs from storage', () => {
-    const service = configure(createStorage('["/game/sea-of-thieves", "/game/sea-of-thieves", "/game/valorant"]'));
+    const service = configure(createStorage({ [FAVORITE_IDS_STORAGE_KEY]: '["/game/sea-of-thieves", "/game/sea-of-thieves", "/game/valorant"]' }));
 
     expect([...service.favoriteIds()]).toEqual(['/game/sea-of-thieves', '/game/valorant']);
   });
 
   it('starts empty for malformed stored favorites', () => {
-    const service = configure(createStorage('{"id":"/game/sea-of-thieves"}'));
+    const service = configure(createStorage({ [FAVORITE_IDS_STORAGE_KEY]: '{"id":"/game/sea-of-thieves"}' }));
 
     expect([...service.favoriteIds()]).toEqual([]);
   });
@@ -43,6 +46,46 @@ describe('PreferencesService', () => {
 
     service.removeFavorite('/game/sea-of-thieves');
     expect(storage.getItem(FAVORITE_IDS_STORAGE_KEY)).toBeNull();
+  });
+
+  it('persists a dated blacklist entry and preserves its original timestamp', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-21T10:00:00.000Z'));
+    const storage = createStorage();
+    const service = configure(storage);
+
+    service.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+    vi.setSystemTime(new Date('2026-09-22T10:00:00.000Z'));
+    service.addBlacklist('/game/sea-of-thieves', 'Different name');
+
+    expect(service.blacklistEntries()).toEqual([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-09-21T10:00:00.000Z' },
+    ]);
+    expect(storage.getItem(BLACKLIST_ENTRIES_STORAGE_KEY)).toBe('[{"id":"/game/sea-of-thieves","gameName":"Sea of Thieves","blacklistedAt":"2026-09-21T10:00:00.000Z"}]');
+  });
+
+  it('uses the newest valid entry for duplicate blacklist IDs', () => {
+    const service = configure(createStorage({
+      [BLACKLIST_ENTRIES_STORAGE_KEY]: JSON.stringify([
+        { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-09-21T10:00:00.000Z' },
+        { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-09-22T10:00:00.000Z' },
+        { id: '/game/bad', gameName: '', blacklistedAt: 'not-a-date' },
+      ]),
+    }));
+
+    expect(service.blacklistEntries()).toEqual([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-09-22T10:00:00.000Z' },
+    ]);
+  });
+
+  it('removes the blacklist storage key after the final entry is removed', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+
+    service.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+    service.removeBlacklist('/game/sea-of-thieves');
+
+    expect(storage.getItem(BLACKLIST_ENTRIES_STORAGE_KEY)).toBeNull();
   });
 
   it('keeps favorites in memory when storage is unavailable', () => {

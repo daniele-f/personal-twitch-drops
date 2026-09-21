@@ -13,3 +13,5 @@ body {
   background: var(--color-background);
   color: var(--color-text);
 }
+
+.app-button { border: 1px solid #3c3c45; border-radius: .45rem; padding: .45rem .7rem; background: #242429; color: var(--color-text); font: inherit; font-size: .8rem; font-weight: 650; text-decoration: none; cursor: pointer; transition: background-color .12s ease, border-color .12s ease, transform .12s ease; }.app-button:hover:not(:disabled) { border-color: #555560; background: #303036; }.app-button:active:not(:disabled) { background: #18181b; transform: translateY(1px); }.app-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }.app-button:disabled { cursor: default; opacity: .55; }.app-button--primary { border-color: var(--color-accent); background: var(--color-accent); color: #fff; }.app-button--primary:hover:not(:disabled) { background: #a970ff; }.app-button--neutral { background: #3c3c45; }.app-button--icon { border: 0; padding: .25rem; background: transparent; font-size: 1.25rem; }

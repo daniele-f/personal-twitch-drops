@@ -12,6 +12,10 @@
 * Use native execution for every feature or fix.
 * Never create or use Git worktrees for this project; work in the current checkout.
 
+## Documentation
+
+* Do not create design specifications or implementation-plan files for normal feature work unless the user explicitly requests them. Keep planning in the conversation. Create repository documentation only when it is required for the product, requested by the user, or needed to explain a lasting architectural decision.
+
 ## Git and merging
 
 * Put each normal feature or fix on its own `feature/...`, `fix/...`, or `refactor/...` branch from the latest `main`.
