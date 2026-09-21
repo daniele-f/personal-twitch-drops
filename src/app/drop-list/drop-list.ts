@@ -13,6 +13,7 @@ export class DropListComponent {
   readonly loading = input.required<boolean>();
   readonly favoriteRequested = output<string>();
   readonly unfavoriteRequested = output<string>();
+  readonly blacklistRequested = output<ActiveDrop>();
   protected readonly armedForId = signal<string | null>(null);
 
   protected activateStar(drop: ActiveDrop, isFavorite: boolean): void {
@@ -30,6 +31,10 @@ export class DropListComponent {
 
   protected cancelArmed(id: string): void {
     if (this.armedForId() === id) this.armedForId.set(null);
+  }
+
+  protected blacklist(drop: ActiveDrop): void {
+    this.blacklistRequested.emit(drop);
   }
 
   protected summary(drop: ActiveDrop): string {

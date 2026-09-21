@@ -40,6 +40,25 @@ describe('DropListComponent', () => {
     expect(favoriteRequested).toHaveBeenCalledWith('/game/sea-of-thieves');
   });
 
+  it('emits the active drop from its blacklist button', () => {
+    const blacklistRequested = vi.fn();
+    fixture.componentInstance.blacklistRequested.subscribe(blacklistRequested);
+    render();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .blacklist-button');
+    expect(button?.title).toBe('Blacklist');
+    expect(button?.getAttribute('aria-label')).toBe('Blacklist Sea of Thieves');
+    button?.click();
+
+    expect(blacklistRequested).toHaveBeenCalledWith(sea);
+  });
+
+  it('does not render a blacklist button on favorite rows', () => {
+    render([sea], []);
+
+    expect(fixture.nativeElement.querySelector('.favorites-section .blacklist-button')).toBeNull();
+  });
+
   it('requires a second favorite-star click to emit unfavorite', () => {
     const unfavoriteRequested = vi.fn();
     fixture.componentInstance.unfavoriteRequested.subscribe(unfavoriteRequested);
