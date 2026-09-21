@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { Subject } from 'rxjs';
 import { ActiveDrop } from './drops/active-drop';
 import { DropsProvider } from './drops/drops-provider';
+import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { App } from './app';
 
 class TestDropsProvider extends DropsProvider {
@@ -18,11 +19,28 @@ describe('App', () => {
   let provider: TestDropsProvider;
 
   beforeEach(async () => {
+    localStorage.clear();
     provider = new TestDropsProvider();
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [{ provide: DropsProvider, useValue: provider }],
+      providers: [{ provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }],
     }).compileComponents();
+  });
+
+  it('moves a clicked active Drop into Favorites without duplicating it', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    provider.requests[0].next([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 8, endsAt: '2026-09-28T12:00:00.000Z' },
+      { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-29T12:00:00.000Z' },
+    ]);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star')?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.favorites-section')?.textContent).toContain('Sea of Thieves');
+    expect(fixture.nativeElement.querySelectorAll('[data-drop-id="/game/sea-of-thieves"]')).toHaveLength(1);
   });
 
   it('should create the app', () => {
