@@ -1,8 +1,7 @@
 export interface DropListItem {
   readonly game: string;
   readonly campaign: string;
-  readonly indicator: string;
-  readonly indicatorKind: 'favorite' | 'new';
+  readonly isNew: boolean;
 }
 
 export interface DropListSection {
@@ -16,16 +15,16 @@ export const SHELL_SECTIONS: readonly DropListSection[] = [
     title: 'Favorites',
     countLabel: '2 active',
     items: [
-      { game: 'The Elder Scrolls Online', campaign: 'Crown Crate drops · Ends in 5 days', indicator: 'Favorite', indicatorKind: 'favorite' },
-      { game: 'Sea of Thieves', campaign: 'Community Weekend · Ends tomorrow', indicator: 'Favorite', indicatorKind: 'favorite' },
+      { game: 'The Elder Scrolls Online', campaign: 'Crown Crate drops · Ends in 5 days', isNew: false },
+      { game: 'Sea of Thieves', campaign: 'Community Weekend · Ends tomorrow', isNew: true },
     ],
   },
   {
     title: 'Newly added',
     countLabel: '2 games',
     items: [
-      { game: 'Rust', campaign: 'Twitch Rivals collection · 2 campaigns', indicator: 'New', indicatorKind: 'new' },
-      { game: 'Warframe', campaign: 'TennoGen rewards · Ends in 8 days', indicator: 'New', indicatorKind: 'new' },
+      { game: 'Rust', campaign: 'Twitch Rivals collection · 2 campaigns', isNew: true },
+      { game: 'Warframe', campaign: 'TennoGen rewards · Ends in 8 days', isNew: true },
     ],
   },
 ];

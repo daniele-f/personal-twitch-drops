@@ -11,7 +11,9 @@
             <article class="drop-row">
               <div class="cover-placeholder" aria-hidden="true"></div>
               <div class="drop-copy"><h3>{{ item.game }}</h3><p>{{ item.campaign }}</p></div>
-              <span class="indicator" [class.new]="item.indicatorKind === 'new'">{{ item.indicator }}</span>
+              @if (item.isNew) {
+                <span class="indicator new">New</span>
+              }
             </article>
           </li>
         }

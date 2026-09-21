@@ -14,6 +14,7 @@
 
 - Use only typed static placeholder data; do not add Twitch API calls, providers, localStorage, IndexedDB, filters, refresh behavior, notifications, or button actions.
 - Show Favorites before Newly added.
+- Do not badge Favorites entries as Favorite; show “New” only for newly added favorites and entries in Newly added.
 - Header controls are visible, labeled, and presentational only.
 - Use existing dark Twitch-purple CSS custom properties and support 320px widths without horizontal scrolling.
 - Keep the page compatible with static GitHub Pages hosting.

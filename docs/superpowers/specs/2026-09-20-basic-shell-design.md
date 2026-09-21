@@ -8,7 +8,7 @@ Replace the temporary Angular starter with the first visual Personal Twitch Drop
 
 The page uses the existing dark Twitch-purple CSS variables and is responsive from narrow mobile widths to desktop. Its header shows the Personal Twitch Drops wordmark plus visible Preferences, Changes, and Refresh actions. These controls are presentational in this branch and must not claim functional behavior.
 
-The main content starts with Active Drops and an updated timestamp. A Favorites section appears first and a Newly added section follows it. Each section has a small count and shows compact game/campaign rows with a visual thumbnail placeholder, game name, campaign description, and an appropriate favorite or new indicator. Static typed placeholder data supplies the rows.
+The main content starts with Active Drops and an updated timestamp. A Favorites section appears first and a Newly added section follows it. Each section has a small count and shows compact game/campaign rows with a visual thumbnail placeholder, game name, and campaign description. Favorites membership is implied by the section; do not show a Favorite badge. A favorite that was just added, and every entry in Newly added, may show a “New” status badge. Static typed placeholder data supplies the rows.
 
 ## Components and data
 

@@ -9,12 +9,15 @@ describe('DropListComponent', () => {
     {
       title: 'Favorites',
       countLabel: '1 active',
-      items: [{ game: 'The Elder Scrolls Online', campaign: 'Crown Crate drops', indicator: 'Favorite', indicatorKind: 'favorite' }],
+      items: [
+        { game: 'The Elder Scrolls Online', campaign: 'Crown Crate drops', isNew: false },
+        { game: 'Sea of Thieves', campaign: 'Community Weekend', isNew: true },
+      ],
     },
     {
       title: 'Newly added',
       countLabel: '1 game',
-      items: [{ game: 'Rust', campaign: 'Twitch Rivals collection', indicator: 'New', indicatorKind: 'new' }],
+      items: [{ game: 'Rust', campaign: 'Twitch Rivals collection', isNew: true }],
     },
   ];
 
@@ -33,6 +36,19 @@ describe('DropListComponent', () => {
   it('renders representative campaign content and a new indicator', () => {
     expect(fixture.nativeElement.textContent).toContain('The Elder Scrolls Online');
     expect(fixture.nativeElement.querySelector('.indicator.new')?.textContent?.trim()).toBe('New');
+  });
+
+  it('shows no favorite badge, and marks only a newly added favorite as new', () => {
+    const favoriteSection = fixture.nativeElement.querySelectorAll('.drop-section')[0] as HTMLElement;
+    const favoriteRows = [...favoriteSection.querySelectorAll('.drop-row')];
+    const regularFavorite = favoriteRows[0] as HTMLElement;
+    const newlyAddedFavorite = favoriteRows[1] as HTMLElement;
+
+    expect(favoriteRows).toHaveLength(2);
+    expect(regularFavorite.textContent).toContain('The Elder Scrolls Online');
+    expect(newlyAddedFavorite.textContent).toContain('Sea of Thieves');
+    expect(regularFavorite?.querySelector('.indicator')).toBeFalsy();
+    expect(newlyAddedFavorite?.querySelector('.indicator')?.textContent?.trim()).toBe('New');
   });
 
   it('connects every section to a valid heading ID', () => {
