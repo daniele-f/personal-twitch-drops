@@ -45,6 +45,7 @@ describe('DropListComponent', () => {
     fixture.componentInstance.unfavoriteRequested.subscribe(unfavoriteRequested);
     render([sea], []);
     const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star');
+    expect(star?.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
     star?.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Press the star again to unfavorite');
