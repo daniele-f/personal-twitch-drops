@@ -48,7 +48,8 @@ describe('DropListComponent', () => {
     expect(star?.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
     star?.click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Press the star again to unfavorite');
+    expect(fixture.nativeElement.textContent).toContain('Press again to remove from favorites');
+    expect(star?.getAttribute('title')).toBe('Remove from favorites');
     expect(star?.classList).toContain('favorite-star--armed');
     star?.click();
     expect(unfavoriteRequested).toHaveBeenCalledWith('/game/sea-of-thieves');
@@ -60,11 +61,11 @@ describe('DropListComponent', () => {
     star?.click();
     star?.dispatchEvent(new Event('mouseleave'));
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Press the star again to unfavorite');
+    expect(fixture.nativeElement.textContent).not.toContain('Press again to remove from favorites');
     star?.click();
     star?.dispatchEvent(new FocusEvent('focusout'));
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Press the star again to unfavorite');
+    expect(fixture.nativeElement.textContent).not.toContain('Press again to remove from favorites');
   });
 
   it('shows four decorative skeleton rows while Drops are loading', () => {
