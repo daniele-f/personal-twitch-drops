@@ -1,0 +1,28 @@
+import { TestBed } from '@angular/core/testing';
+import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PreferencesService } from '../preferences/preferences.service';
+import { PreferencesPageComponent } from './preferences-page';
+
+describe('PreferencesPageComponent', () => {
+  beforeEach(async () => {
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [PreferencesPageComponent],
+      providers: [{ provide: PREFERENCES_STORAGE, useValue: localStorage }],
+    }).compileComponents();
+  });
+
+  it('expands the blacklist table and removes an entry', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.blacklist-disclosure')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Blacklisted on');
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-blacklist-id="/game/sea-of-thieves"] .remove-blacklist')?.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No games are blacklisted.');
+  });
+});
