@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { DropListSection } from '../shell-data';
+import { ActiveDrop } from '../drops/active-drop';
 
 @Component({
   selector: 'app-drop-list',
@@ -8,5 +8,15 @@ import { DropListSection } from '../shell-data';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DropListComponent {
-  readonly sections = input.required<readonly DropListSection[]>();
+  readonly drops = input.required<readonly ActiveDrop[]>();
+  readonly loading = input.required<boolean>();
+
+  protected summary(drop: ActiveDrop): string {
+    const rewardLabel = drop.rewardCount === 1 ? 'reward' : 'rewards';
+    const endDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
+      new Date(drop.endsAt),
+    );
+
+    return `${drop.rewardCount} ${rewardLabel} · Ends ${endDate}`;
+  }
 }
