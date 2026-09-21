@@ -21,14 +21,10 @@ export class App {
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
   constructor() {
-    if (isDevMode()) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = {
-      newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]),
-      rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]),
-      endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []),
-      multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]),
-      newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]),
-      clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
-    };
+    if (isDevMode()) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { changes: {
+      showAll: () => ({ newGame: 'Show one new game.', rewardSwap: 'Show a same-count reward swap.', endedGame: 'Show an ended game.', multipleGames: 'Show three new games.', newAndUpdated: 'Show a new and an updated game.', clear: 'Reset the scenario.' }),
+      newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
+    } };
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }

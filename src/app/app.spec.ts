@@ -27,7 +27,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).not.toContain('Changes · 2');
+    expect(fixture.nativeElement.textContent).toContain('No Changes');
   });
 
   it('shows Changes only after a real comparison is available', () => {
@@ -38,6 +38,17 @@ describe('App', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Changes · 1');
+  });
+
+  it('marks the Changes control active while its panel is open', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button');
+
+    button?.click();
+    fixture.detectChanges();
+
+    expect(button?.classList).toContain('changes-button--active');
   });
 
   it('shows every favorite-blacklist conflict and removes them one at a time', () => {
