@@ -2,9 +2,10 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
+import { ButtonDirective } from './ui/button.directive';
 
 @Component({
-  imports: [ConflictResolutionComponent, RouterLink, RouterOutlet],
+  imports: [ButtonDirective, ConflictResolutionComponent, RouterLink, RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',

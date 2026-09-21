@@ -46,8 +46,8 @@ describe('DropListComponent', () => {
     render();
 
     const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .blacklist-button');
-    expect(button?.title).toBe('Blacklist');
-    expect(button?.getAttribute('aria-label')).toBe('Blacklist Sea of Thieves');
+    expect(button?.title).toBe('Ignore');
+    expect(button?.getAttribute('aria-label')).toBe('Ignore Sea of Thieves');
     button?.click();
 
     expect(blacklistRequested).toHaveBeenCalledWith(sea);
