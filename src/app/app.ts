@@ -20,6 +20,7 @@ export class App {
   protected readonly changesOpen = signal(false);
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
+  protected readonly debugStorageInfo = signal<string | null>(null);
   protected readonly conflicts = computed(() => {
     const favorites = this.preferences.favoriteIds();
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
@@ -38,6 +39,7 @@ export class App {
   protected debugMultipleGames(): void { this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]); }
   protected debugNewAndUpdated(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]); }
   protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
+  protected debugShowStorage(): void { this.debugStorageInfo.set(JSON.stringify(this.showStorage(), null, 2)); }
   private showStorage(): { available: boolean; favoriteIds: unknown; blacklistEntries: unknown } {
     if (!this.storage) return { available: false, favoriteIds: [], blacklistEntries: [] };
     try {
