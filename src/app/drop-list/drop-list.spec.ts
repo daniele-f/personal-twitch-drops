@@ -25,6 +25,40 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
   });
 
+  it('marks a newly active game with a New pill', () => {
+    fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
+    render();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"]')?.textContent).toContain('New');
+  });
+
+  it('marks an updated game with an Updated pill before its favorite star', () => {
+    fixture.componentRef.setInput('updatedDropIds', new Set(['/game/sea-of-thieves']));
+    render();
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
+    expect(row?.textContent).toContain('Updated');
+    expect(row?.querySelector('.updated-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('marks a changed favorite with a pill before its favorite star', () => {
+    fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
+    render([sea], []);
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
+    expect(row?.querySelector('.new-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('keeps a changed game tag and its actions in one row-end group', () => {
+    fixture.componentRef.setInput('updatedDropIds', new Set(['/game/sea-of-thieves']));
+    render();
+
+    const rowEnd = fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .row-end');
+    expect(rowEnd?.querySelector('.updated-pill')).toBeTruthy();
+    expect(rowEnd?.querySelector('.favorite-star')).toBeTruthy();
+    expect(rowEnd?.querySelector('.blacklist-button')).toBeTruthy();
+  });
+
   it('renders Favorites before Active Drops without duplicating rows', () => {
     render([sea], [valorant]);
     const headings = [...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent?.trim());
