@@ -1,5 +1,4 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
 import { DropListComponent } from '../drop-list/drop-list';
 import { PreferencesService } from '../preferences/preferences.service';
