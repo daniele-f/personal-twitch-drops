@@ -71,7 +71,7 @@ describe('DropListComponent', () => {
     fixture.componentInstance.favoriteRequested.subscribe(favoriteRequested);
     render();
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star')?.click();
-    expect(favoriteRequested).toHaveBeenCalledWith('/game/sea-of-thieves');
+    expect(favoriteRequested).toHaveBeenCalledWith(sea);
   });
 
   it('emits the active drop from its blacklist button', () => {

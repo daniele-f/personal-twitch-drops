@@ -93,7 +93,7 @@ describe('App', () => {
 
   it('shows the saved favorites and ignored games through the developer storage command', () => {
     const preferences = TestBed.inject(PreferencesService);
-    preferences.addFavorite('/game/sea-of-thieves');
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     preferences.addBlacklist('/game/valorant', 'VALORANT');
     TestBed.createComponent(App);
 
@@ -101,6 +101,7 @@ describe('App', () => {
     expect(debug.storage.show()).toMatchObject({
       available: true,
       favoriteIds: ['/game/sea-of-thieves'],
+      favoriteNames: { '/game/sea-of-thieves': 'Sea of Thieves' },
       blacklistEntries: [{ id: '/game/valorant', gameName: 'VALORANT' }],
     });
   });

@@ -4,7 +4,7 @@ import { ChangesStateService } from './changes/changes-state.service';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { ButtonDirective } from './ui/button.directive';
 
 @Component({
@@ -40,21 +40,22 @@ export class App {
   protected debugNewAndUpdated(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]); }
   protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
   protected debugShowStorage(): void { this.debugStorageInfo.set(JSON.stringify(this.showStorage(), null, 2)); }
-  private showStorage(): { available: boolean; favoriteIds: unknown; blacklistEntries: unknown } {
-    if (!this.storage) return { available: false, favoriteIds: [], blacklistEntries: [] };
+  private showStorage(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown; blacklistEntries: unknown } {
+    if (!this.storage) return { available: false, favoriteIds: [], favoriteNames: {}, blacklistEntries: [] };
     try {
       return {
         available: true,
         favoriteIds: this.readStoredValue(FAVORITE_IDS_STORAGE_KEY),
+        favoriteNames: this.readStoredValue(FAVORITE_NAMES_STORAGE_KEY, {}),
         blacklistEntries: this.readStoredValue(BLACKLIST_ENTRIES_STORAGE_KEY),
       };
     } catch {
-      return { available: false, favoriteIds: [], blacklistEntries: [] };
+      return { available: false, favoriteIds: [], favoriteNames: {}, blacklistEntries: [] };
     }
   }
-  private readStoredValue(key: string): unknown {
+  private readStoredValue(key: string, emptyValue: unknown = []): unknown {
     const raw = this.storage?.getItem(key);
-    if (raw === null || raw === undefined) return [];
+    if (raw === null || raw === undefined) return emptyValue;
     try { return JSON.parse(raw); } catch { return raw; }
   }
   private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly unknown[] { const changes = this.changesState.seed(previous, current); this.changesOpen.set(true); return changes; }
