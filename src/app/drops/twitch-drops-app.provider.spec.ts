@@ -30,6 +30,7 @@ describe('TwitchDropsAppProvider', () => {
         id: '/game/sea-of-thieves',
         gameName: 'Sea of Thieves',
         rewardCount: 8,
+        rewards: [],
         endsAt: '2026-09-28T12:00:00.000Z',
         imageUrl: 'https://cdn.example.test/sea.png',
       },
@@ -37,6 +38,7 @@ describe('TwitchDropsAppProvider', () => {
         id: '/game/no-image',
         gameName: 'No Image Game',
         rewardCount: 1,
+        rewards: [],
         endsAt: '2026-10-01T00:00:00.000Z',
       },
     ]);
