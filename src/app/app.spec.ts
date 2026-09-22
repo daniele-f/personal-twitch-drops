@@ -51,6 +51,16 @@ describe('App', () => {
     expect(button?.classList).toContain('changes-button--active');
   });
 
+  it('does not show the developer menu until it is opened', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.debug-menu')).toBeNull();
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.debug-menu')).toBeTruthy();
+  });
+
   it('shows every favorite-blacklist conflict and removes them one at a time', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addFavorite('/game/sea-of-thieves');

@@ -16,18 +16,26 @@ export class App {
   protected readonly preferences = inject(PreferencesService);
   protected readonly changesState = inject(ChangesStateService);
   protected readonly changesOpen = signal(false);
+  protected readonly debugMenuEnabled = isDevMode();
+  protected readonly debugMenuOpen = signal(false);
   protected readonly conflicts = computed(() => {
     const favorites = this.preferences.favoriteIds();
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
   constructor() {
-    if (isDevMode()) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { changes: {
+    if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
       newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     } };
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
+  protected debugNewGame(): void { this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]); }
+  protected debugRewardSwap(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]); }
+  protected debugEndedGame(): void { this.seed([this.drop('Rust', ['Supply crate'])], []); }
+  protected debugMultipleGames(): void { this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]); }
+  protected debugNewAndUpdated(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]); }
+  protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
   private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly unknown[] { const changes = this.changesState.seed(previous, current); this.changesOpen.set(true); return changes; }
   private drop(gameName: string, rewards: readonly string[]): ActiveDrop { return { id: `/game/${gameName.toLowerCase().replaceAll(' ', '-')}`, gameName, rewardCount: rewards.length, rewards, endsAt: '2026-09-30T00:00:00.000Z' }; }
 }
