@@ -11,14 +11,14 @@ export class DropListComponent {
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
-  readonly favoriteRequested = output<string>();
+  readonly favoriteRequested = output<ActiveDrop>();
   readonly unfavoriteRequested = output<string>();
   readonly blacklistRequested = output<ActiveDrop>();
   protected readonly armedForId = signal<string | null>(null);
 
   protected activateStar(drop: ActiveDrop, isFavorite: boolean): void {
     if (!isFavorite) {
-      this.favoriteRequested.emit(drop.id);
+      this.favoriteRequested.emit(drop);
       return;
     }
     if (this.armedForId() === drop.id) {
