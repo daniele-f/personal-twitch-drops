@@ -14,6 +14,8 @@ describe('App', () => {
     await TestBed.configureTestingModule({ imports: [App], providers: [provideRouter(routes), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
   });
 
+  afterEach(() => vi.useRealTimers());
+
   it('renders Preferences as a button-styled route link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
@@ -31,8 +33,11 @@ describe('App', () => {
   });
 
   it('shows Changes only after a real comparison is available', () => {
+    vi.useFakeTimers();
     const changes = TestBed.inject(ChangesStateService);
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
     changes.updateDrops([]);
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
     changes.updateDrops([{ id: '/game/arc-raiders', gameName: 'Arc Raiders', rewardCount: 1, rewards: ['Raider pack'], endsAt: '2026-09-24T00:00:00.000Z' }]);
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
