@@ -95,6 +95,45 @@ describe('App', () => {
     expect(groups[1].open).toBe(false);
   });
 
+  it('uses generic game names in every Changes menu scenario', () => {
+    const fixture = TestBed.createComponent(App);
+    const changes = TestBed.inject(ChangesStateService);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const group = (fixture.nativeElement as HTMLElement).querySelector<HTMLDetailsElement>('.debug-menu details')!;
+    group.querySelector('summary')?.click();
+    const scenarios: [string, string[]][] = [
+      ['New game', ['Game 01:new']],
+      ['Reward swap', ['Game 01:updated']],
+      ['Ended game', ['Game 01:ended']],
+      ['Multiple games', ['Game 01:new', 'Game 02:new', 'Game 03:new']],
+      ['New and updated', ['Game 01:updated', 'Game 02:new']],
+    ];
+    for (const [label, expected] of scenarios) {
+      [...group.querySelectorAll('button')].find((button) => button.textContent?.trim() === label)?.click();
+      fixture.detectChanges();
+      expect(changes.changes().map((change) => `${change.drop.gameName}:${change.type}`)).toEqual(expected);
+    }
+  });
+
+  it('uses the same generic game names in every Changes console command', () => {
+    TestBed.createComponent(App);
+    const debug = (window as unknown as { twitchDropsDebug: { changes: Record<string, () => unknown> } }).twitchDropsDebug;
+    const changes = TestBed.inject(ChangesStateService);
+    const scenarios: [string, string[]][] = [
+      ['newGame', ['Game 01:new']],
+      ['rewardSwap', ['Game 01:updated']],
+      ['endedGame', ['Game 01:ended']],
+      ['multipleGames', ['Game 01:new', 'Game 02:new', 'Game 03:new']],
+      ['newAndUpdated', ['Game 01:updated', 'Game 02:new']],
+    ];
+    for (const [command, expected] of scenarios) {
+      debug.changes[command]();
+      expect(changes.changes().map((change) => `${change.drop.gameName}:${change.type}`)).toEqual(expected);
+    }
+  });
+
   it('shows current saved preferences from the Storage menu action', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addFavorite('/game/sea-of-thieves');

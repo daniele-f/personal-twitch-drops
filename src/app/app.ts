@@ -28,16 +28,16 @@ export class App {
   constructor() {
     if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.show() — Show saved favorites and ignored games.'].join('\n'), storage: { show: () => this.showStorage() }, changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
-      newGame: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Rust', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
+      newGame: () => this.seed([], [this.drop('Game 01', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Game 01', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     } };
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
-  protected debugNewGame(): void { this.seed([], [this.drop('Arc Raiders', ['Raider pack'])]); }
-  protected debugRewardSwap(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula'])]); }
-  protected debugEndedGame(): void { this.seed([this.drop('Rust', ['Supply crate'])], []); }
-  protected debugMultipleGames(): void { this.seed([], [this.drop('Arc Raiders', ['Raider pack']), this.drop('Hades II', ['Moon dust']), this.drop('Pacific Drive', ['Garage decal'])]); }
-  protected debugNewAndUpdated(): void { this.seed([this.drop("No Man's Sky", ['Atlas', 'Cosmic'])], [this.drop("No Man's Sky", ['Atlas', 'Nebula']), this.drop('Arc Raiders', ['Raider pack'])]); }
+  protected debugNewGame(): void { this.seed([], [this.drop('Game 01', ['Raider pack'])]); }
+  protected debugRewardSwap(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]); }
+  protected debugEndedGame(): void { this.seed([this.drop('Game 01', ['Supply crate'])], []); }
+  protected debugMultipleGames(): void { this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]); }
+  protected debugNewAndUpdated(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]); }
   protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
   protected debugShowStorage(): void { this.debugStorageInfo.set(JSON.stringify(this.showStorage(), null, 2)); }
   private showStorage(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown; blacklistEntries: unknown } {
