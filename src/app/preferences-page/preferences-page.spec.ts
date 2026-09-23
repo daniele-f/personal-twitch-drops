@@ -5,6 +5,7 @@ import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
 import { FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
+import { ImportExportService } from '../preferences/import-export.service';
 import { PreferencesPageComponent } from './preferences-page';
 
 describe('PreferencesPageComponent', () => {
@@ -108,5 +109,40 @@ describe('PreferencesPageComponent', () => {
     favorites?.querySelector('button')?.click();
     fixture.detectChanges();
     expect(favorites?.querySelector('[data-favorite-id="/game/sea-of-thieves"]')?.textContent).toContain('Status unavailable');
+  });
+
+  it('replaces both lists when an opaque share code is imported', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    const importExport = TestBed.inject(ImportExportService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    preferences.addBlacklist('/game/valorant', 'VALORANT');
+    const shareCode = importExport.export();
+    preferences.removeFavorite('/game/sea-of-thieves');
+    preferences.removeBlacklist('/game/valorant');
+    preferences.addFavorite('/game/old-game', 'Old Game');
+
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('.import-code');
+    input!.value = shareCode;
+    input!.dispatchEvent(new Event('input'));
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.import-button')?.click();
+    fixture.detectChanges();
+
+    expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
+    expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
+  });
+
+  it('shows a generated share code outside a text field with a copy button', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.export-button')?.click();
+    fixture.detectChanges();
+
+    const code = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.share-code');
+    expect(code?.tagName).not.toBe('TEXTAREA');
+    expect(code?.textContent?.trim()).toBeTruthy();
+    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.copy-share-code')?.textContent?.trim()).toBe('Copy to clipboard');
   });
 });

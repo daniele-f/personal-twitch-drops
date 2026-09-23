@@ -1,6 +1,19 @@
 <main class="preferences-shell">
   <nav class="breadcrumbs" aria-label="Breadcrumb"><a class="home-link" routerLink="/"><span class="home-icon" aria-hidden="true">⌂</span> Home</a><span class="breadcrumb-separator" aria-hidden="true">/</span><span>Preferences</span></nav>
   <h1>Preferences</h1>
+  <div class="import-export" aria-labelledby="share-lists-heading">
+    <h2 id="share-lists-heading">Share lists</h2>
+    <p>Import or export your Favorites and Ignore List with a shareable code. Importing a code replaces both current lists.</p>
+    <label class="share-code-label" for="import-code">Import share code</label>
+    <textarea id="import-code" class="import-code" [value]="importCode()" (input)="importCode.set($any($event.target).value)" aria-describedby="import-help"></textarea>
+    <p id="import-help" class="import-help">Importing always overrides your current Favorites and Ignore List.</p>
+    <button class="import-button" type="button" (click)="importLists()">Import and replace lists</button>
+    @if (importMessage()) { <p class="import-message" role="status">{{ importMessage() }}</p> }
+    <hr>
+    <h3>Export share code</h3>
+    <button class="export-button" type="button" (click)="generateShareCode()">Generate share code</button>
+    @if (exportCode()) { <p class="share-code-label">Share code</p><code class="share-code">{{ exportCode() }}</code><button class="copy-share-code" type="button" (click)="copyShareCode()">Copy to clipboard</button>@if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> } }
+  </div>
   <section id="favorites" class="favorites-preferences">
     <button class="favorites-disclosure" type="button" [attr.aria-expanded]="favoritesExpanded()" (click)="favoritesExpanded.set(!favoritesExpanded())"><span class="favorite-icon" aria-hidden="true">★</span><span>Favorites ({{ favoriteRows().length }})</span><span class="disclosure-chevron" [class.disclosure-chevron--expanded]="favoritesExpanded()" aria-hidden="true"><i></i><i></i></span></button>
     @if (favoritesExpanded()) {
