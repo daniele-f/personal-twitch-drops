@@ -43,6 +43,16 @@ describe('PreferencesPageComponent', () => {
     expect(home?.getAttribute('href')).toBe('/');
   });
 
+  it('anchors the animated chevron strokes inside their icon wrapper', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const chevron = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.disclosure-chevron');
+    expect(getComputedStyle(chevron!).position).toBe('relative');
+    expect(getComputedStyle(chevron!.querySelector<HTMLElement>('i:first-child')!).left).toBe('0px');
+    expect(getComputedStyle(chevron!.querySelector<HTMLElement>('i:last-child')!).right).toBe('0px');
+  });
+
   it('lists active and inactive favorites above the ignore list', () => {
     localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, '["/game/sea-of-thieves","/game/valorant"]');
     localStorage.setItem('personal-twitch-drops.favorite-names.v1', '{"/game/sea-of-thieves":"Sea of Thieves","/game/valorant":"VALORANT"}');

@@ -1,14 +1,22 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of, throwError } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
+import { DropsProvider } from '../drops/drops-provider';
 import { DropListComponent } from './drop-list';
 
 describe('DropListComponent', () => {
   let fixture: ComponentFixture<DropListComponent>;
-  const sea: ActiveDrop = { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 8, endsAt: '2026-09-28T12:00:00.000Z', imageUrl: 'https://cdn.example.test/sea.png' };
+  const loadDropDetails = vi.fn();
+  const sea: ActiveDrop = { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 8, rewards: ['Coral Crown', 'Sailor’s Chest'], endsAt: '2026-09-28T12:00:00.000Z', imageUrl: 'https://cdn.example.test/sea.png', publisher: 'Rare', watchDuration: '1h–4h watch' };
   const valorant: ActiveDrop = { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-29T12:00:00.000Z' };
 
   beforeEach(async () => {
-    await TestBed.configureTestingModule({ imports: [DropListComponent] }).compileComponents();
+    loadDropDetails.mockReset();
+    loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [] }));
+    await TestBed.configureTestingModule({
+      imports: [DropListComponent],
+      providers: [{ provide: DropsProvider, useValue: { loadDropDetails } }],
+    }).compileComponents();
     fixture = TestBed.createComponent(DropListComponent);
   });
 
@@ -91,6 +99,170 @@ describe('DropListComponent', () => {
     render([sea], []);
 
     expect(fixture.nativeElement.querySelector('.favorites-section .blacklist-button')).toBeNull();
+  });
+
+  it('shows the selected favorite’s current rewards below its row', () => {
+    const valorantFavorite: ActiveDrop = { ...valorant, rewards: ['Arcade Spray'] };
+    render([sea, valorantFavorite], []);
+
+    const seaToggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle');
+    expect(seaToggle).toBeTruthy();
+    seaToggle!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
+
+    const valorantToggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/valorant"] .favorite-details-toggle');
+    valorantToggle!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')).toBeNull();
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/valorant"] .reward-details')?.textContent).toContain('Arcade Spray');
+  });
+
+  it('uses the favorite card image as part of the reward disclosure button', () => {
+    render([sea], []);
+
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle');
+    expect(toggle?.querySelector<HTMLImageElement>('.cover-image')?.alt).toBe('Sea of Thieves');
+    toggle!.click();
+    fixture.detectChanges();
+
+    expect(toggle?.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('marks an expanded favorite card as selected', () => {
+    render([sea], []);
+    const row = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-drop-id="/game/sea-of-thieves"] .drop-row');
+    const toggle = row?.querySelector<HTMLButtonElement>('.favorite-details-toggle');
+
+    expect(row?.classList).not.toContain('drop-row--expanded');
+    toggle!.click();
+    fixture.detectChanges();
+    expect(row?.classList).toContain('drop-row--expanded');
+  });
+
+  it('keeps a favorite disclosure in a flexible card column', () => {
+    render([sea], []);
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[data-drop-id="/game/sea-of-thieves"] .drop-row');
+    expect(getComputedStyle(row!).gridTemplateColumns).not.toContain('3.5rem');
+  });
+
+  it('renders supplied reward thumbnails in the selected favorite’s reward strip', () => {
+    const seaWithRewardImage = { ...sea, rewardImages: ['https://cdn.example.test/coral-crown.png'] } as ActiveDrop;
+    render([seaWithRewardImage], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const thumbnail = (fixture.nativeElement as HTMLElement).querySelector<HTMLImageElement>('.reward-card img');
+    expect(thumbnail?.src).toBe('https://cdn.example.test/coral-crown.png');
+    expect(thumbnail?.alt).toBe('Coral Crown');
+  });
+
+  it('shows publisher, watch range, and an exact end-time tooltip for an expanded favorite', () => {
+    render([sea], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const details = fixture.nativeElement.querySelector('.reward-details') as HTMLElement;
+    const endTime = details.querySelector<HTMLTimeElement>('.drop-end-time');
+    expect(details.textContent).toContain('Rare');
+    expect(details.textContent).toContain('1h–4h watch');
+    expect(endTime?.getAttribute('datetime')).toBe(sea.endsAt);
+    expect(endTime?.title).toContain('2026');
+  });
+
+  it('shows a subscription requirement and labels badge rewards after loading drop details', () => {
+    const eldenRing: ActiveDrop = {
+      id: '/game/elden-ring',
+      gameName: 'ELDEN RING',
+      rewardCount: 1,
+      rewards: ['Sorcerer Rogier'],
+      endsAt: '2026-09-28T12:00:00.000Z',
+    };
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: { 'Sorcerer Rogier': '1 sub' },
+      badgeRewardNames: ['Sorcerer Rogier'],
+    }));
+    render([eldenRing], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const details = fixture.nativeElement.querySelector('.reward-details') as HTMLElement;
+    expect(loadDropDetails).toHaveBeenCalledWith('/game/elden-ring');
+    expect(details.textContent).toContain('1 sub');
+    expect(details.querySelector('.reward-type')?.textContent).toContain('Badge');
+  });
+
+  it('orders timed rewards by watch duration and places a badge tag beneath its image', () => {
+    const rewards = ['Twelve Hour Reward', 'Subscription Reward', 'Two Hour Reward', 'Four Hour Reward'];
+    const favorite = { ...sea, rewards, rewardImages: rewards.map((reward) => `https://cdn.example.test/${reward}.png`) } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: {
+        'Twelve Hour Reward': '12h watch',
+        'Subscription Reward': '1 sub',
+        'Two Hour Reward': '2h watch',
+        'Four Hour Reward': '4h watch',
+      },
+      badgeRewardNames: ['Subscription Reward'],
+    }));
+    render([favorite], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const cards = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.reward-card')];
+    expect(cards.map((card) => card.querySelector('.reward-name')?.textContent?.trim())).toEqual([
+      'Two Hour Reward', 'Four Hour Reward', 'Twelve Hour Reward', 'Subscription Reward',
+    ]);
+    const badge = cards.at(-1)?.querySelector('.reward-type');
+    expect(badge?.parentElement?.classList).toContain('reward-media');
+  });
+
+  it('centers a reward requirement in a row below its name', () => {
+    const favorite = { ...sea, rewards: ['Coral Crown'] } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: { 'Coral Crown': '1h watch' }, badgeRewardNames: [],
+    }));
+    render([favorite], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const card = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-card');
+    const requirement = card?.querySelector<HTMLElement>('.reward-requirement');
+    expect(getComputedStyle(card!).display).toBe('grid');
+    expect(getComputedStyle(requirement!).gridColumn).toBe('1/-1');
+    expect(getComputedStyle(requirement!).justifySelf).toBe('center');
+  });
+
+  it('reserves five equal reward columns on desktop', () => {
+    render([{ ...sea, rewards: ['Coral Crown'] }], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const grid = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-grid');
+    expect(getComputedStyle(grid!).gridTemplateColumns).toBe('repeat(5, minmax(0, 1fr))');
+  });
+
+  it('keeps the reward panel usable when drop details cannot be loaded', () => {
+    const eldenRing: ActiveDrop = {
+      id: '/game/elden-ring', gameName: 'ELDEN RING', rewardCount: 1, rewards: ['Sorcerer Rogier'], endsAt: '2026-09-28T12:00:00.000Z',
+    };
+    loadDropDetails.mockReturnValue(throwError(() => new Error('Unavailable')));
+    render([eldenRing], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const details = fixture.nativeElement.querySelector('.reward-details') as HTMLElement;
+    expect(details.textContent).toContain('Sorcerer Rogier');
+    expect(details.textContent).not.toContain('Loading requirement…');
   });
 
   it('requires a second favorite-star click to emit unfavorite', () => {
