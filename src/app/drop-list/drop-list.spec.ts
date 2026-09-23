@@ -231,6 +231,10 @@ describe('DropListComponent', () => {
     ]);
     const badge = cards.at(-1)?.querySelector('.reward-type');
     expect(badge?.parentElement?.classList).toContain('reward-media');
+    expect(cards.at(-1)?.classList).toContain('reward-card--badge');
+    expect(getComputedStyle(cards.at(-1)!).columnGap).toBe('0.9rem');
+    expect(cards[0].querySelector('.reward-requirement')?.classList).toContain('reward-requirement--watch');
+    expect(cards.at(-1)?.querySelector('.reward-requirement')?.classList).toContain('reward-requirement--subscription');
   });
 
   it('centers a reward requirement in a row below its name', () => {
