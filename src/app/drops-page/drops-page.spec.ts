@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Subject } from 'rxjs';
+import { of, Subject } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
@@ -9,6 +9,7 @@ import { DropsPageComponent } from './drops-page';
 class TestDropsProvider extends DropsProvider {
   readonly requests: Subject<readonly ActiveDrop[]>[] = [];
   loadActiveDrops(): Subject<readonly ActiveDrop[]> { const request = new Subject<readonly ActiveDrop[]>(); this.requests.push(request); return request; }
+  loadDropDetails() { return of({ requirementByReward: {}, badgeRewardNames: [] }); }
 }
 
 describe('DropsPageComponent', () => {
