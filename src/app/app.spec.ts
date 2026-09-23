@@ -61,6 +61,27 @@ describe('App', () => {
     expect(fixture.nativeElement.querySelector('.debug-menu')).toBeTruthy();
   });
 
+  it('toggles the developer menu from a header button before Preferences', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const header = fixture.nativeElement as HTMLElement;
+    const button = header.querySelector<HTMLButtonElement>('.debug-button');
+    expect(button?.nextElementSibling?.classList).toContain('preferences-link');
+    expect(button?.getAttribute('aria-expanded')).toBe('false');
+
+    button?.click();
+    fixture.detectChanges();
+    expect(header.querySelector('.debug-menu')).toBeTruthy();
+    expect(button?.getAttribute('aria-expanded')).toBe('true');
+    expect(button?.classList).toContain('debug-button--active');
+
+    button?.click();
+    fixture.detectChanges();
+    expect(header.querySelector('.debug-menu')).toBeNull();
+    expect(button?.getAttribute('aria-expanded')).toBe('false');
+  });
+
   it('groups debug actions in collapsed Changes and Storage sections', () => {
     const fixture = TestBed.createComponent(App);
     (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
