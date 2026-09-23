@@ -24,8 +24,12 @@ export class App {
   protected readonly debugIgnoredInfo = signal<string | null>(null);
   protected readonly debugPreviousDayInfo = signal<string | null>(null);
   protected readonly debugTodayInfo = signal<string | null>(null);
-  protected readonly debugPreviousInput = signal('');
-  protected readonly debugTodayInput = signal('');
+  protected readonly debugPreviousGameName = signal('');
+  protected readonly debugPreviousRewardCount = signal('1');
+  protected readonly debugPreviousEndsInDays = signal('1');
+  protected readonly debugTodayGameName = signal('');
+  protected readonly debugTodayRewardCount = signal('1');
+  protected readonly debugTodayEndsInDays = signal('1');
   protected readonly debugPreviousError = signal<string | null>(null);
   protected readonly debugTodayError = signal<string | null>(null);
   private temporaryPrevious: readonly ActiveDrop[] | null = null;
@@ -84,20 +88,30 @@ export class App {
     }
   }
   private adjustSnapshot(target: 'previous' | 'today', mode: 'add' | 'replace'): void {
-    const input = target === 'previous' ? this.debugPreviousInput() : this.debugTodayInput();
     const setError = target === 'previous' ? this.debugPreviousError : this.debugTodayError;
     try {
-      const parsed: unknown = JSON.parse(input);
-      if (!Array.isArray(parsed) || !parsed.every((drop) => this.isActiveDrop(drop))) throw new Error('Paste a JSON array of valid drops.');
+      const drop = this.createDebugDrop(target);
       const existing = target === 'previous' ? this.temporaryPrevious ?? this.snapshotDrops('baseline') ?? [] : this.temporaryToday ?? this.snapshotDrops('current') ?? this.changesState.drops();
-      const next = mode === 'add' ? this.mergeDrops(existing, parsed) : parsed;
+      const next = mode === 'add' ? this.mergeDrops(existing, [drop]) : [drop];
       if (target === 'previous') this.temporaryPrevious = next;
       else this.temporaryToday = next;
       setError.set(null);
       this.applyTemporarySnapshots();
     } catch {
-      setError.set('Paste a JSON array of valid drops.');
+      setError.set('Enter a game name, a reward count of at least 1, and a whole number of days.');
     }
+  }
+  private createDebugDrop(target: 'previous' | 'today'): ActiveDrop {
+    const gameName = (target === 'previous' ? this.debugPreviousGameName() : this.debugTodayGameName()).trim();
+    const rewardCountInput = target === 'previous' ? this.debugPreviousRewardCount() : this.debugTodayRewardCount();
+    const endsInDaysInput = target === 'previous' ? this.debugPreviousEndsInDays() : this.debugTodayEndsInDays();
+    const rewardCount = Number(rewardCountInput);
+    const endsInDays = Number(endsInDaysInput);
+    if (!gameName || !Number.isInteger(rewardCount) || rewardCount < 1 || !Number.isInteger(endsInDays) || endsInDays < 0) throw new Error('Invalid debug drop.');
+    const endsAt = new Date();
+    endsAt.setHours(0, 0, 0, 0);
+    endsAt.setDate(endsAt.getDate() + endsInDays);
+    return this.drop(gameName, Array.from({ length: rewardCount }, (_, index) => `Reward ${String(index + 1).padStart(2, '0')}`), endsAt.toISOString());
   }
   private applyTemporarySnapshots(): void {
     const previous = this.temporaryPrevious ?? this.snapshotDrops('baseline') ?? [];
@@ -139,5 +153,5 @@ export class App {
     try { return JSON.parse(raw); } catch { return raw; }
   }
   private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly unknown[] { const changes = this.changesState.seed(previous, current); this.changesOpen.set(true); return changes; }
-  private drop(gameName: string, rewards: readonly string[]): ActiveDrop { return { id: `/game/${gameName.toLowerCase().replaceAll(' ', '-')}`, gameName, rewardCount: rewards.length, rewards, endsAt: '2026-09-30T00:00:00.000Z' }; }
+  private drop(gameName: string, rewards: readonly string[], endsAt = '2026-09-30T00:00:00.000Z'): ActiveDrop { return { id: `/game/${gameName.toLowerCase().replaceAll(' ', '-')}`, gameName, rewardCount: rewards.length, rewards, endsAt }; }
 }

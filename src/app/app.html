@@ -28,14 +28,22 @@
         <div class="debug-menu__storage-view" data-storage-view="previous-day">
           <button type="button" (click)="debugShowPreviousDay()">Show previous day</button>
           @if (debugPreviousDayInfo() !== null) { <pre class="debug-menu__output">{{ debugPreviousDayInfo() }}</pre> }
-          <textarea aria-label="Adjust previous day" [value]="debugPreviousInput()" (input)="debugPreviousInput.set($any($event.target).value)" placeholder="Paste a JSON array of drops"></textarea>
+          <div class="debug-menu__snapshot-fields">
+            <input aria-label="Game name" [value]="debugPreviousGameName()" (input)="debugPreviousGameName.set($any($event.target).value)" placeholder="Game name">
+            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugPreviousRewardCount()" (input)="debugPreviousRewardCount.set($any($event.target).value)" placeholder="Reward count">
+            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugPreviousEndsInDays()" (input)="debugPreviousEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+          </div>
           <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustPrevious('add')">Add</button><button type="button" (click)="debugAdjustPrevious('replace')">Replace</button></div>
           @if (debugPreviousError() !== null) { <p class="debug-menu__error">{{ debugPreviousError() }}</p> }
         </div>
         <div class="debug-menu__storage-view" data-storage-view="today">
           <button type="button" (click)="debugShowToday()">Show today's latest</button>
           @if (debugTodayInfo() !== null) { <pre class="debug-menu__output">{{ debugTodayInfo() }}</pre> }
-          <textarea aria-label="Adjust today" [value]="debugTodayInput()" (input)="debugTodayInput.set($any($event.target).value)" placeholder="Paste a JSON array of drops"></textarea>
+          <div class="debug-menu__snapshot-fields">
+            <input aria-label="Game name" [value]="debugTodayGameName()" (input)="debugTodayGameName.set($any($event.target).value)" placeholder="Game name">
+            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugTodayRewardCount()" (input)="debugTodayRewardCount.set($any($event.target).value)" placeholder="Reward count">
+            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugTodayEndsInDays()" (input)="debugTodayEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+          </div>
           <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustToday('add')">Add</button><button type="button" (click)="debugAdjustToday('replace')">Replace</button></div>
           @if (debugTodayError() !== null) { <p class="debug-menu__error">{{ debugTodayError() }}</p> }
         </div>

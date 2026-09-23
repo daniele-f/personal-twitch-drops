@@ -230,7 +230,9 @@ describe('App', () => {
     expect(storageGroup.querySelector<HTMLElement>('[data-storage-view="today"] pre')?.textContent?.trim()).toBe('null');
   });
 
-  it('temporarily adjusts pasted previous-day and today snapshots without changing storage', () => {
+  it('temporarily adjusts snapshots with generated rewards and end dates without changing storage', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
     const first = { id: '/game/second', gameName: 'Second', rewardCount: 1, rewards: ['Atlas'], endsAt: '2026-09-30T00:00:00.000Z' };
     const second = { id: '/game/second', gameName: 'Second', rewardCount: 1, rewards: ['Nebula'], endsAt: '2026-09-30T00:00:00.000Z' };
     const third = { id: '/game/third', gameName: 'Third', rewardCount: 1, rewards: ['Starship'], endsAt: '2026-09-30T00:00:00.000Z' };
@@ -246,22 +248,39 @@ describe('App', () => {
 
     const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
     storageGroup.querySelector('summary')?.click();
-    const previousInput = storageGroup.querySelector<HTMLTextAreaElement>('[data-storage-view="previous-day"] textarea');
-    const todayInput = storageGroup.querySelector<HTMLTextAreaElement>('[data-storage-view="today"] textarea');
-    expect(previousInput).toBeTruthy();
-    expect(todayInput).toBeTruthy();
+    const previousName = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="previous-day"] input[aria-label="Game name"]');
+    const previousRewardCount = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="previous-day"] input[aria-label="Reward count"]');
+    const previousEndsInDays = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="previous-day"] input[aria-label="Ends in days"]');
+    expect(previousName).toBeTruthy();
+    expect(previousRewardCount).toBeTruthy();
+    expect(previousEndsInDays).toBeTruthy();
 
-    previousInput!.value = JSON.stringify([{ ...first, rewards: ['Nebula'] }]);
-    previousInput!.dispatchEvent(new Event('input'));
+    previousName!.value = 'Second';
+    previousName!.dispatchEvent(new Event('input'));
+    previousRewardCount!.value = '2';
+    previousRewardCount!.dispatchEvent(new Event('input'));
+    previousEndsInDays!.value = '3';
+    previousEndsInDays!.dispatchEvent(new Event('input'));
     [...storageGroup.querySelectorAll<HTMLButtonElement>('[data-storage-view="previous-day"] button')].find((button) => button.textContent?.trim() === 'Add')?.click();
     fixture.detectChanges();
-    expect(changes.changes()).toEqual([]);
+    expect(changes.changes().map((change) => change.type)).toEqual(['updated']);
+    expect(changes.drops()).toEqual([second]);
 
-    todayInput!.value = JSON.stringify([third]);
-    todayInput!.dispatchEvent(new Event('input'));
+    const todayName = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="today"] input[aria-label="Game name"]');
+    const todayRewardCount = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="today"] input[aria-label="Reward count"]');
+    const todayEndsInDays = storageGroup.querySelector<HTMLInputElement>('[data-storage-view="today"] input[aria-label="Ends in days"]');
+    todayName!.value = 'Third';
+    todayName!.dispatchEvent(new Event('input'));
+    todayRewardCount!.value = '1';
+    todayRewardCount!.dispatchEvent(new Event('input'));
+    todayEndsInDays!.value = '1';
+    todayEndsInDays!.dispatchEvent(new Event('input'));
     [...storageGroup.querySelectorAll<HTMLButtonElement>('[data-storage-view="today"] button')].find((button) => button.textContent?.trim() === 'Replace')?.click();
     fixture.detectChanges();
-    expect(changes.drops()).toEqual([third]);
+    const expectedEndsAt = new Date();
+    expectedEndsAt.setHours(0, 0, 0, 0);
+    expectedEndsAt.setDate(expectedEndsAt.getDate() + 1);
+    expect(changes.drops()).toEqual([{ ...third, rewards: ['Reward 01'], endsAt: expectedEndsAt.toISOString() }]);
     expect(localStorage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY)).toBe(storedBefore);
   });
 
