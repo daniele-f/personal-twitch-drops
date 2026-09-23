@@ -6,7 +6,7 @@ import { routes } from './app.routes';
 import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
-import { ChangesStateService } from './changes/changes-state.service';
+import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -129,7 +129,7 @@ describe('App', () => {
     ];
     const changes = TestBed.inject(ChangesStateService);
     changes.updateDrops(liveDrops);
-    const storedBefore = localStorage.getItem('personal-twitch-drops.daily-snapshots.v1');
+    const storedBefore = localStorage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY);
     const fixture = TestBed.createComponent(App);
     (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
     fixture.detectChanges();
@@ -144,7 +144,7 @@ describe('App', () => {
       'VALORANT:updated',
       'Yesterday Game:ended',
     ]);
-    expect(localStorage.getItem('personal-twitch-drops.daily-snapshots.v1')).toBe(storedBefore);
+    expect(localStorage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY)).toBe(storedBefore);
   });
 
   it('uses the same generic game names in every Changes console command', () => {
@@ -164,9 +164,9 @@ describe('App', () => {
     }
   });
 
-  it('shows current saved preferences from the Storage menu action', () => {
+  it('shows favorites separately from ignored games in the Storage menu', () => {
     const preferences = TestBed.inject(PreferencesService);
-    preferences.addFavorite('/game/sea-of-thieves');
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     preferences.addBlacklist('/game/valorant', 'VALORANT');
     const fixture = TestBed.createComponent(App);
     (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
@@ -174,26 +174,80 @@ describe('App', () => {
 
     const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
     storageGroup.querySelector('summary')?.click();
-    storageGroup.querySelector('button')?.click();
+    const buttons = [...storageGroup.querySelectorAll('button')];
+    buttons.find((button) => button.textContent?.trim() === 'Show favorites')?.click();
     fixture.detectChanges();
+    const favoritesOutput = storageGroup.querySelector<HTMLElement>('[data-storage-view="favorites"] pre')?.textContent ?? '';
+    expect(favoritesOutput).toContain('Sea of Thieves');
+    expect(favoritesOutput).not.toContain('VALORANT');
 
-    expect(storageGroup.querySelector('pre')?.textContent).toContain('/game/sea-of-thieves');
-    expect(storageGroup.querySelector('pre')?.textContent).toContain('VALORANT');
+    buttons.find((button) => button.textContent?.trim() === 'Show ignored games')?.click();
+    fixture.detectChanges();
+    const ignoredOutput = storageGroup.querySelector<HTMLElement>('[data-storage-view="ignored"] pre')?.textContent ?? '';
+    expect(ignoredOutput).toContain('VALORANT');
+    expect(ignoredOutput).not.toContain('Sea of Thieves');
   });
 
-  it('shows the saved favorites and ignored games through the developer storage command', () => {
+  it('shows previous-day and today snapshots separately in the Storage menu', () => {
+    localStorage.setItem(DAILY_SNAPSHOTS_STORAGE_KEY, JSON.stringify({
+      baseline: { date: '2026-09-22', drops: [{ id: '/game/yesterday', gameName: 'Yesterday Game', rewardCount: 1, rewards: ['Old reward'], endsAt: '2026-09-30T00:00:00.000Z' }] },
+      current: { date: '2026-09-23', drops: [{ id: '/game/today', gameName: 'Today Game', rewardCount: 1, rewards: ['New reward'], endsAt: '2026-09-30T00:00:00.000Z' }] },
+    }));
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    const buttons = [...storageGroup.querySelectorAll('button')];
+    buttons.find((button) => button.textContent?.trim() === 'Show previous day')?.click();
+    buttons.find((button) => button.textContent?.trim() === 'Show today\'s latest')?.click();
+    fixture.detectChanges();
+
+    const previousOutput = storageGroup.querySelector<HTMLElement>('[data-storage-view="previous-day"] pre')?.textContent ?? '';
+    const todayOutput = storageGroup.querySelector<HTMLElement>('[data-storage-view="today"] pre')?.textContent ?? '';
+    expect(previousOutput).toContain('2026-09-22');
+    expect(previousOutput).toContain('Yesterday Game');
+    expect(previousOutput).not.toContain('Today Game');
+    expect(todayOutput).toContain('2026-09-23');
+    expect(todayOutput).toContain('Today Game');
+    expect(todayOutput).not.toContain('Yesterday Game');
+  });
+
+  it('shows missing previous-day and today snapshots as null', () => {
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    const buttons = [...storageGroup.querySelectorAll('button')];
+    buttons.find((button) => button.textContent?.trim() === 'Show previous day')?.click();
+    buttons.find((button) => button.textContent?.trim() === 'Show today\'s latest')?.click();
+    fixture.detectChanges();
+
+    expect(storageGroup.querySelector<HTMLElement>('[data-storage-view="previous-day"] pre')?.textContent?.trim()).toBe('null');
+    expect(storageGroup.querySelector<HTMLElement>('[data-storage-view="today"] pre')?.textContent?.trim()).toBe('null');
+  });
+
+  it('exposes every saved-data category through separate developer commands', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     preferences.addBlacklist('/game/valorant', 'VALORANT');
     TestBed.createComponent(App);
 
-    const debug = (window as unknown as { twitchDropsDebug: { storage: { show(): unknown } } }).twitchDropsDebug;
-    expect(debug.storage.show()).toMatchObject({
+    const debug = (window as unknown as { twitchDropsDebug: { storage: { favorites(): unknown; ignored(): unknown; previousDay(): unknown; today(): unknown } } }).twitchDropsDebug;
+    expect(debug.storage.favorites()).toMatchObject({
       available: true,
       favoriteIds: ['/game/sea-of-thieves'],
       favoriteNames: { '/game/sea-of-thieves': 'Sea of Thieves' },
+    });
+    expect(debug.storage.ignored()).toMatchObject({
+      available: true,
       blacklistEntries: [{ id: '/game/valorant', gameName: 'VALORANT' }],
     });
+    expect(debug.storage.previousDay()).toBeNull();
+    expect(debug.storage.today()).toBeNull();
   });
 
   it('shows every favorite-blacklist conflict and removes them one at a time', () => {

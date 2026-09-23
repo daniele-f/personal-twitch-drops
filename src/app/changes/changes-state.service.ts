@@ -3,7 +3,7 @@ import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { detectChanges, DropChange } from './change-detection';
 
-const SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
+export const DAILY_SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
 
 interface DatedDropSnapshot {
   readonly date: string;
@@ -45,7 +45,7 @@ export class ChangesStateService {
     if (!this.storage) return null;
 
     try {
-      const raw = this.storage.getItem(SNAPSHOTS_STORAGE_KEY);
+      const raw = this.storage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY);
       if (raw === null) return null;
       const parsed: unknown = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
@@ -62,7 +62,7 @@ export class ChangesStateService {
     this.sessionSnapshots = snapshots;
     if (!this.storage) return;
     try {
-      this.storage.setItem(SNAPSHOTS_STORAGE_KEY, JSON.stringify(snapshots));
+      this.storage.setItem(DAILY_SNAPSHOTS_STORAGE_KEY, JSON.stringify(snapshots));
       this.storageOutOfSync = false;
     } catch {
       this.storageOutOfSync = true;

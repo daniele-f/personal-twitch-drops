@@ -17,8 +17,22 @@
     <details>
       <summary>Storage</summary>
       <div class="debug-menu__actions">
-        <button type="button" (click)="debugShowStorage()">Show saved data</button>
-        @if (debugStorageInfo() !== null) { <pre class="debug-menu__output">{{ debugStorageInfo() }}</pre> }
+        <div class="debug-menu__storage-view" data-storage-view="favorites">
+          <button type="button" (click)="debugShowFavorites()">Show favorites</button>
+          @if (debugFavoritesInfo() !== null) { <pre class="debug-menu__output">{{ debugFavoritesInfo() }}</pre> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="ignored">
+          <button type="button" (click)="debugShowIgnored()">Show ignored games</button>
+          @if (debugIgnoredInfo() !== null) { <pre class="debug-menu__output">{{ debugIgnoredInfo() }}</pre> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="previous-day">
+          <button type="button" (click)="debugShowPreviousDay()">Show previous day</button>
+          @if (debugPreviousDayInfo() !== null) { <pre class="debug-menu__output">{{ debugPreviousDayInfo() }}</pre> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="today">
+          <button type="button" (click)="debugShowToday()">Show today's latest</button>
+          @if (debugTodayInfo() !== null) { <pre class="debug-menu__output">{{ debugTodayInfo() }}</pre> }
+        </div>
       </div>
     </details>
     <button type="button" (click)="debugMenuOpen.set(false)">Close menu</button>

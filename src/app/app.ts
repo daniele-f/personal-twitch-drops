@@ -1,6 +1,6 @@
 import { Component, computed, inject, isDevMode, signal } from '@angular/core';
 import { ActiveDrop } from './drops/active-drop';
-import { ChangesStateService } from './changes/changes-state.service';
+import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
@@ -20,13 +20,16 @@ export class App {
   protected readonly changesOpen = signal(false);
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
-  protected readonly debugStorageInfo = signal<string | null>(null);
+  protected readonly debugFavoritesInfo = signal<string | null>(null);
+  protected readonly debugIgnoredInfo = signal<string | null>(null);
+  protected readonly debugPreviousDayInfo = signal<string | null>(null);
+  protected readonly debugTodayInfo = signal<string | null>(null);
   protected readonly conflicts = computed(() => {
     const favorites = this.preferences.favoriteIds();
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
   constructor() {
-    if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.show() — Show saved favorites and ignored games.'].join('\n'), storage: { show: () => this.showStorage() }, changes: {
+    if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.favorites() — Show saved favorites.', '- twitchDropsDebug.storage.ignored() — Show ignored games.', '- twitchDropsDebug.storage.previousDay() — Show the previous-day snapshot.', '- twitchDropsDebug.storage.today() — Show today\'s latest snapshot.'].join('\n'), storage: { favorites: () => this.showFavorites(), ignored: () => this.showIgnored(), previousDay: () => this.readSnapshots().baseline, today: () => this.readSnapshots().current }, changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.mockYesterday() — Compare live campaigns with a temporary mock of yesterday.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
       newGame: () => this.seed([], [this.drop('Game 01', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Game 01', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]), mockYesterday: () => this.mockYesterday(), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     } };
@@ -40,18 +43,36 @@ export class App {
   protected debugNewAndUpdated(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]); }
   protected debugMockYesterday(): void { this.mockYesterday(); }
   protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
-  protected debugShowStorage(): void { this.debugStorageInfo.set(JSON.stringify(this.showStorage(), null, 2)); }
-  private showStorage(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown; blacklistEntries: unknown } {
-    if (!this.storage) return { available: false, favoriteIds: [], favoriteNames: {}, blacklistEntries: [] };
+  protected debugShowFavorites(): void { this.debugFavoritesInfo.set(JSON.stringify(this.showFavorites(), null, 2)); }
+  protected debugShowIgnored(): void { this.debugIgnoredInfo.set(JSON.stringify(this.showIgnored(), null, 2)); }
+  protected debugShowPreviousDay(): void { this.debugPreviousDayInfo.set(JSON.stringify(this.readSnapshots().baseline, null, 2)); }
+  protected debugShowToday(): void { this.debugTodayInfo.set(JSON.stringify(this.readSnapshots().current, null, 2)); }
+  private showFavorites(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown } {
+    if (!this.storage) return { available: false, favoriteIds: [], favoriteNames: {} };
     try {
       return {
         available: true,
         favoriteIds: this.readStoredValue(FAVORITE_IDS_STORAGE_KEY),
         favoriteNames: this.readStoredValue(FAVORITE_NAMES_STORAGE_KEY, {}),
-        blacklistEntries: this.readStoredValue(BLACKLIST_ENTRIES_STORAGE_KEY),
       };
     } catch {
-      return { available: false, favoriteIds: [], favoriteNames: {}, blacklistEntries: [] };
+      return { available: false, favoriteIds: [], favoriteNames: {} };
+    }
+  }
+  private showIgnored(): { available: boolean; blacklistEntries: unknown } {
+    if (!this.storage) return { available: false, blacklistEntries: [] };
+    try { return { available: true, blacklistEntries: this.readStoredValue(BLACKLIST_ENTRIES_STORAGE_KEY) }; }
+    catch { return { available: false, blacklistEntries: [] }; }
+  }
+  private readSnapshots(): { baseline: unknown; current: unknown } {
+    if (!this.storage) return { baseline: null, current: null };
+    try {
+      const value = this.readStoredValue(DAILY_SNAPSHOTS_STORAGE_KEY, null);
+      if (!value || typeof value !== 'object' || Array.isArray(value)) return { baseline: null, current: null };
+      const snapshots = value as Record<string, unknown>;
+      return { baseline: snapshots['baseline'] ?? null, current: snapshots['current'] ?? null };
+    } catch {
+      return { baseline: null, current: null };
     }
   }
   private mockYesterday(): readonly unknown[] {

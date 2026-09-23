@@ -1,13 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
-import { ChangesStateService } from './changes-state.service';
+import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes-state.service';
 
 const first: ActiveDrop = { id: '/game/no-mans-sky', gameName: 'No Man\'s Sky', rewardCount: 1, rewards: ['Atlas'], endsAt: '2026-09-23T00:00:00.000Z' };
 const second: ActiveDrop = { id: '/game/no-mans-sky', gameName: 'No Man\'s Sky', rewardCount: 1, rewards: ['Nebula'], endsAt: '2026-09-23T00:00:00.000Z' };
 const third: ActiveDrop = { id: '/game/no-mans-sky', gameName: 'No Man\'s Sky', rewardCount: 2, rewards: ['Nebula', 'Starship'], endsAt: '2026-09-23T00:00:00.000Z' };
-
-const SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
 
 function createStorage(initialValues: Record<string, string> = {}): Storage {
   const values = new Map(Object.entries(initialValues));
@@ -88,7 +86,7 @@ describe('ChangesStateService', () => {
     service.updateDrops([first]);
     service.updateDrops([second]);
 
-    expect(JSON.parse(storage.getItem(SNAPSHOTS_STORAGE_KEY) ?? '')).toEqual({
+    expect(JSON.parse(storage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY) ?? '')).toEqual({
       baseline: null,
       current: { date: '2026-09-23', drops: [second] },
     });
@@ -96,7 +94,7 @@ describe('ChangesStateService', () => {
 
   it('ignores malformed saved snapshots', () => {
     vi.setSystemTime(new Date('2026-09-23T10:00:00'));
-    const service = configure(createStorage({ [SNAPSHOTS_STORAGE_KEY]: '{"current":"broken"}' }));
+    const service = configure(createStorage({ [DAILY_SNAPSHOTS_STORAGE_KEY]: '{"current":"broken"}' }));
 
     service.updateDrops([first]);
 
@@ -116,7 +114,7 @@ describe('ChangesStateService', () => {
 
   it('prefers fresher session snapshots after browser storage rejects a write', () => {
     const storage = createStorage({
-      [SNAPSHOTS_STORAGE_KEY]: JSON.stringify({ baseline: null, current: { date: '2026-09-21', drops: [first] } }),
+      [DAILY_SNAPSHOTS_STORAGE_KEY]: JSON.stringify({ baseline: null, current: { date: '2026-09-21', drops: [first] } }),
     });
     storage.setItem = () => { throw new Error('Storage quota exceeded'); };
     const service = configure(storage);
