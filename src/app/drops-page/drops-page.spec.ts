@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
@@ -13,9 +14,38 @@ class TestDropsProvider extends DropsProvider {
 }
 
 describe('DropsPageComponent', () => {
+  it('keeps the Favorites manager beside Active Drops when no games are favorited', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    const activeHeading = (fixture.nativeElement as HTMLElement).querySelector('.active-section .section-heading');
+    const manageLink = activeHeading?.querySelector<HTMLAnchorElement>('.favorites-manage');
+    expect(activeHeading?.textContent).toContain('Active Drops');
+    expect(manageLink?.textContent?.trim()).toBe('Manage');
+    expect(manageLink?.getAttribute('href')).toBe('/preferences#favorites');
+  });
+
+  it('shows the Favorites manager only once when favorite games exist', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.favorites-manage')).toHaveLength(1);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.active-section .favorites-manage')).toBeNull();
+  });
+
   it('hides blacklisted active drops', async () => {
     const provider = new TestDropsProvider();
-    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [{ provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
     const preferences = TestBed.inject(PreferencesService);
     preferences.addBlacklist('/game/valorant', 'VALORANT');
     const fixture = TestBed.createComponent(DropsPageComponent);
