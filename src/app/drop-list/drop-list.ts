@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropDetails } from '../drops/drop-details';
 import { DropsProvider } from '../drops/drops-provider';
@@ -8,6 +9,7 @@ import { DropsProvider } from '../drops/drops-provider';
   templateUrl: './drop-list.html',
   styleUrl: './drop-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RouterLink],
 })
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
@@ -17,28 +19,13 @@ export class DropListComponent {
   readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly updatedDropIds = input<ReadonlySet<string>>(new Set());
   readonly favoriteRequested = output<ActiveDrop>();
-  readonly unfavoriteRequested = output<string>();
   readonly blacklistRequested = output<ActiveDrop>();
-  protected readonly armedForId = signal<string | null>(null);
   protected readonly expandedFavoriteId = signal<string | null>(null);
   protected readonly detailsByDropId = signal<ReadonlyMap<string, DropDetails>>(new Map());
   protected readonly loadingDetailIds = signal<ReadonlySet<string>>(new Set());
 
-  protected activateStar(drop: ActiveDrop, isFavorite: boolean): void {
-    if (!isFavorite) {
-      this.favoriteRequested.emit(drop);
-      return;
-    }
-    if (this.armedForId() === drop.id) {
-      this.unfavoriteRequested.emit(drop.id);
-      this.armedForId.set(null);
-      return;
-    }
-    this.armedForId.set(drop.id);
-  }
-
-  protected cancelArmed(id: string): void {
-    if (this.armedForId() === id) this.armedForId.set(null);
+  protected activateStar(drop: ActiveDrop): void {
+    this.favoriteRequested.emit(drop);
   }
 
   protected blacklist(drop: ActiveDrop): void {

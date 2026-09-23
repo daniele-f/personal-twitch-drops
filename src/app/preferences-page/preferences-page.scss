@@ -95,14 +95,11 @@
   text-align: left;
 }
 .preferences-shell th:first-child {
-  width: 35%;
-}
-.preferences-shell th:nth-child(2) {
-  width: 25%;
+  width: 70%;
 }
 .preferences-shell th,
 .preferences-shell td {
-  padding: 0.7rem;
+  padding: 0.8rem 0.7rem;
   overflow: visible;
   border-bottom: 1px solid #303036;
 }
@@ -114,7 +111,6 @@
 .remove-action {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
 }
 .remove-favorite,
 .remove-blacklist {
@@ -131,11 +127,6 @@
 .remove-favorite--armed,
 .remove-blacklist--armed {
   background: #d12f2f;
-}
-.remove-hint {
-  color: #ffb4b4;
-  font-size: 0.75rem;
-  white-space: nowrap;
 }
 @media (max-width: 520px) {
   .preferences-shell {

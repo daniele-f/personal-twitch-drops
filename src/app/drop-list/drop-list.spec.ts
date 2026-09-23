@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of, throwError } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
@@ -15,7 +16,7 @@ describe('DropListComponent', () => {
     loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [] }));
     await TestBed.configureTestingModule({
       imports: [DropListComponent],
-      providers: [{ provide: DropsProvider, useValue: { loadDropDetails } }],
+      providers: [provideRouter([]), { provide: DropsProvider, useValue: { loadDropDetails } }],
     }).compileComponents();
     fixture = TestBed.createComponent(DropListComponent);
   });
@@ -49,12 +50,13 @@ describe('DropListComponent', () => {
     expect(row?.querySelector('.updated-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('marks a changed favorite with a pill before its favorite star', () => {
+  it('marks a changed favorite without rendering an unfavorite star', () => {
     fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
     render([sea], []);
 
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
-    expect(row?.querySelector('.new-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(row?.querySelector('.new-pill')?.textContent).toBe('New');
+    expect(row?.querySelector('.favorite-star')).toBeNull();
   });
 
   it('keeps a changed game tag and its actions in one row-end group', () => {
@@ -72,6 +74,14 @@ describe('DropListComponent', () => {
     const headings = [...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent?.trim());
     expect(headings).toEqual(['Favorites', 'Active Drops']);
     expect(fixture.nativeElement.querySelectorAll('[data-drop-id="/game/sea-of-thieves"]')).toHaveLength(1);
+  });
+
+  it('links the Favorites manage action to the favorites preferences section', () => {
+    render([sea], []);
+
+    const manage = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.favorites-manage');
+    expect(manage?.textContent?.trim()).toBe('Manage');
+    expect(manage?.getAttribute('href')).toBe('/preferences#favorites');
   });
 
   it('emits a favorite request from an active row star', () => {
@@ -265,32 +275,12 @@ describe('DropListComponent', () => {
     expect(details.textContent).not.toContain('Loading requirement…');
   });
 
-  it('requires a second favorite-star click to emit unfavorite', () => {
-    const unfavoriteRequested = vi.fn();
-    fixture.componentInstance.unfavoriteRequested.subscribe(unfavoriteRequested);
+  it('does not render an unfavorite star or confirmation hint on favorite rows', () => {
     render([sea], []);
-    const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star');
-    expect(star?.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
-    star?.click();
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Press again to remove from Favorites');
-    expect(star?.getAttribute('title')).toBe('Remove from Favorites');
-    expect(star?.classList).toContain('favorite-star--armed');
-    star?.click();
-    expect(unfavoriteRequested).toHaveBeenCalledWith('/game/sea-of-thieves');
-  });
+    const favorites = (fixture.nativeElement as HTMLElement).querySelector('.favorites-section');
 
-  it('cancels armed unfavorite when the star loses pointer or keyboard focus', () => {
-    render([sea], []);
-    const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-star');
-    star?.click();
-    star?.dispatchEvent(new Event('mouseleave'));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Press again to remove from Favorites');
-    star?.click();
-    star?.dispatchEvent(new FocusEvent('focusout'));
-    fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).not.toContain('Press again to remove from Favorites');
+    expect(favorites?.querySelector('.favorite-star')).toBeNull();
+    expect(favorites?.textContent).not.toContain('Press again to remove from Favorites');
   });
 
   it('shows four decorative skeleton rows while Drops are loading', () => {

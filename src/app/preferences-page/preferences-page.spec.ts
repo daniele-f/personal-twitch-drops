@@ -18,7 +18,7 @@ describe('PreferencesPageComponent', () => {
     }).compileComponents();
   });
 
-  it('expands the blacklist table and removes an entry', () => {
+  it('hides the ignored date and changes the remove button to Confirm? before removing an entry', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
     const fixture = TestBed.createComponent(PreferencesPageComponent);
@@ -26,10 +26,13 @@ describe('PreferencesPageComponent', () => {
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.blacklist-disclosure')?.click();
     fixture.detectChanges();
-    expect(fixture.nativeElement.textContent).toContain('Ignored on');
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-blacklist-id="/game/sea-of-thieves"] .remove-blacklist')?.click();
+    expect(fixture.nativeElement.textContent).not.toContain('Ignored on');
+    const remove = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-blacklist-id="/game/sea-of-thieves"] .remove-blacklist');
+    remove?.click();
     fixture.detectChanges();
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-blacklist-id="/game/sea-of-thieves"] .remove-blacklist')?.click();
+    expect(remove?.textContent?.trim()).toBe('Confirm?');
+    expect(fixture.nativeElement.textContent).not.toContain('Press again to remove from Ignore List');
+    remove?.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No games are ignored.');
   });
@@ -86,6 +89,8 @@ describe('PreferencesPageComponent', () => {
     const remove = row?.querySelector<HTMLButtonElement>('.remove-favorite');
     remove?.click();
     fixture.detectChanges();
+    expect(remove?.textContent?.trim()).toBe('Confirm?');
+    expect(favorites?.textContent).not.toContain('Press again to remove from Favorites');
     remove?.click();
     fixture.detectChanges();
     expect(favorites?.textContent).toContain('No favorite games yet.');
