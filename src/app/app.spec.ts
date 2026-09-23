@@ -230,6 +230,41 @@ describe('App', () => {
     expect(storageGroup.querySelector<HTMLElement>('[data-storage-view="today"] pre')?.textContent?.trim()).toBe('null');
   });
 
+  it('temporarily adjusts pasted previous-day and today snapshots without changing storage', () => {
+    const first = { id: '/game/second', gameName: 'Second', rewardCount: 1, rewards: ['Atlas'], endsAt: '2026-09-30T00:00:00.000Z' };
+    const second = { id: '/game/second', gameName: 'Second', rewardCount: 1, rewards: ['Nebula'], endsAt: '2026-09-30T00:00:00.000Z' };
+    const third = { id: '/game/third', gameName: 'Third', rewardCount: 1, rewards: ['Starship'], endsAt: '2026-09-30T00:00:00.000Z' };
+    localStorage.setItem(DAILY_SNAPSHOTS_STORAGE_KEY, JSON.stringify({
+      baseline: { date: '2026-09-22', drops: [first] },
+      current: { date: '2026-09-23', drops: [second] },
+    }));
+    const storedBefore = localStorage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY);
+    const changes = TestBed.inject(ChangesStateService);
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    const previousInput = storageGroup.querySelector<HTMLTextAreaElement>('[data-storage-view="previous-day"] textarea');
+    const todayInput = storageGroup.querySelector<HTMLTextAreaElement>('[data-storage-view="today"] textarea');
+    expect(previousInput).toBeTruthy();
+    expect(todayInput).toBeTruthy();
+
+    previousInput!.value = JSON.stringify([{ ...first, rewards: ['Nebula'] }]);
+    previousInput!.dispatchEvent(new Event('input'));
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('[data-storage-view="previous-day"] button')].find((button) => button.textContent?.trim() === 'Add')?.click();
+    fixture.detectChanges();
+    expect(changes.changes()).toEqual([]);
+
+    todayInput!.value = JSON.stringify([third]);
+    todayInput!.dispatchEvent(new Event('input'));
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('[data-storage-view="today"] button')].find((button) => button.textContent?.trim() === 'Replace')?.click();
+    fixture.detectChanges();
+    expect(changes.drops()).toEqual([third]);
+    expect(localStorage.getItem(DAILY_SNAPSHOTS_STORAGE_KEY)).toBe(storedBefore);
+  });
+
   it('exposes every saved-data category through separate developer commands', () => {
     const preferences = TestBed.inject(PreferencesService);
     preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');

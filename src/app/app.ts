@@ -24,6 +24,12 @@ export class App {
   protected readonly debugIgnoredInfo = signal<string | null>(null);
   protected readonly debugPreviousDayInfo = signal<string | null>(null);
   protected readonly debugTodayInfo = signal<string | null>(null);
+  protected readonly debugPreviousInput = signal('');
+  protected readonly debugTodayInput = signal('');
+  protected readonly debugPreviousError = signal<string | null>(null);
+  protected readonly debugTodayError = signal<string | null>(null);
+  private temporaryPrevious: readonly ActiveDrop[] | null = null;
+  private temporaryToday: readonly ActiveDrop[] | null = null;
   protected readonly conflicts = computed(() => {
     const favorites = this.preferences.favoriteIds();
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
@@ -47,6 +53,8 @@ export class App {
   protected debugShowIgnored(): void { this.debugIgnoredInfo.set(JSON.stringify(this.showIgnored(), null, 2)); }
   protected debugShowPreviousDay(): void { this.debugPreviousDayInfo.set(JSON.stringify(this.readSnapshots().baseline, null, 2)); }
   protected debugShowToday(): void { this.debugTodayInfo.set(JSON.stringify(this.readSnapshots().current, null, 2)); }
+  protected debugAdjustPrevious(mode: 'add' | 'replace'): void { this.adjustSnapshot('previous', mode); }
+  protected debugAdjustToday(mode: 'add' | 'replace'): void { this.adjustSnapshot('today', mode); }
   private showFavorites(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown } {
     if (!this.storage) return { available: false, favoriteIds: [], favoriteNames: {} };
     try {
@@ -74,6 +82,46 @@ export class App {
     } catch {
       return { baseline: null, current: null };
     }
+  }
+  private adjustSnapshot(target: 'previous' | 'today', mode: 'add' | 'replace'): void {
+    const input = target === 'previous' ? this.debugPreviousInput() : this.debugTodayInput();
+    const setError = target === 'previous' ? this.debugPreviousError : this.debugTodayError;
+    try {
+      const parsed: unknown = JSON.parse(input);
+      if (!Array.isArray(parsed) || !parsed.every((drop) => this.isActiveDrop(drop))) throw new Error('Paste a JSON array of valid drops.');
+      const existing = target === 'previous' ? this.temporaryPrevious ?? this.snapshotDrops('baseline') ?? [] : this.temporaryToday ?? this.snapshotDrops('current') ?? this.changesState.drops();
+      const next = mode === 'add' ? this.mergeDrops(existing, parsed) : parsed;
+      if (target === 'previous') this.temporaryPrevious = next;
+      else this.temporaryToday = next;
+      setError.set(null);
+      this.applyTemporarySnapshots();
+    } catch {
+      setError.set('Paste a JSON array of valid drops.');
+    }
+  }
+  private applyTemporarySnapshots(): void {
+    const previous = this.temporaryPrevious ?? this.snapshotDrops('baseline') ?? [];
+    const current = this.temporaryToday ?? this.snapshotDrops('current') ?? this.changesState.drops();
+    this.seed(previous, current);
+  }
+  private snapshotDrops(snapshot: 'baseline' | 'current'): readonly ActiveDrop[] | null {
+    const value = this.readSnapshots()[snapshot];
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+    const drops = (value as Record<string, unknown>)['drops'];
+    return Array.isArray(drops) && drops.every((drop) => this.isActiveDrop(drop)) ? drops : null;
+  }
+  private mergeDrops(existing: readonly ActiveDrop[], additions: readonly ActiveDrop[]): readonly ActiveDrop[] {
+    const byId = new Map(existing.map((drop) => [drop.id, drop]));
+    for (const drop of additions) byId.set(drop.id, drop);
+    return [...byId.values()];
+  }
+  private isActiveDrop(value: unknown): value is ActiveDrop {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const { id, gameName, rewardCount, rewards, endsAt, imageUrl } = value as Record<string, unknown>;
+    return typeof id === 'string' && !!id && typeof gameName === 'string' && !!gameName
+      && typeof rewardCount === 'number' && Number.isFinite(rewardCount)
+      && (rewards === undefined || (Array.isArray(rewards) && rewards.every((reward) => typeof reward === 'string')))
+      && typeof endsAt === 'string' && (imageUrl === undefined || typeof imageUrl === 'string');
   }
   private mockYesterday(): readonly unknown[] {
     const current = this.changesState.drops();
