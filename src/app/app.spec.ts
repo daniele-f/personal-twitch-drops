@@ -122,6 +122,31 @@ describe('App', () => {
     }
   });
 
+  it('mocks yesterday against the live campaigns without replacing them', () => {
+    const liveDrops = [
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, rewards: ['Supply crate'], endsAt: '2026-09-30T00:00:00.000Z' },
+      { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, rewards: ['Spray'], endsAt: '2026-09-30T00:00:00.000Z' },
+    ];
+    const changes = TestBed.inject(ChangesStateService);
+    changes.updateDrops(liveDrops);
+    const storedBefore = localStorage.getItem('personal-twitch-drops.daily-snapshots.v1');
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const changesGroup = (fixture.nativeElement as HTMLElement).querySelector<HTMLDetailsElement>('.debug-menu details')!;
+    changesGroup.querySelector('summary')?.click();
+    [...changesGroup.querySelectorAll('button')].find((button) => button.textContent?.trim() === 'Mock yesterday\'s campaigns')?.click();
+
+    expect(changes.drops()).toEqual(liveDrops);
+    expect(changes.changes().map((change) => `${change.drop.gameName}:${change.type}`)).toEqual([
+      'Sea of Thieves:new',
+      'VALORANT:updated',
+      'Yesterday Game:ended',
+    ]);
+    expect(localStorage.getItem('personal-twitch-drops.daily-snapshots.v1')).toBe(storedBefore);
+  });
+
   it('uses the same generic game names in every Changes console command', () => {
     TestBed.createComponent(App);
     const debug = (window as unknown as { twitchDropsDebug: { changes: Record<string, () => unknown> } }).twitchDropsDebug;
