@@ -72,15 +72,7 @@
                 } @else {
                   <div class="cover-placeholder" aria-hidden="true"></div>
                 }
-                <span class="drop-copy"
-                  ><h3>{{ drop.gameName }}</h3>
-                  <p>{{ summary(drop) }}</p></span
-                ><span
-                  class="disclosure-chevron"
-                  [class.disclosure-chevron--expanded]="expandedFavoriteId() === drop.id"
-                  aria-hidden="true"
-                  ><i></i><i></i
-                ></span>
+                <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></span>
               </button>
               <div class="row-end">
                 @if (newDropIds().has(drop.id)) {
@@ -88,6 +80,39 @@
                 } @else if (updatedDropIds().has(drop.id)) {
                   <span class="updated-pill">Updated</span>
                 }
+                <div class="row-actions">
+                  <button
+                    class="favorite-star favorite-star--selected"
+                    type="button"
+                    [class.favorite-star--confirming]="unfavoriteConfirmationId() === drop.id"
+                    [attr.aria-label]="
+                      unfavoriteConfirmationId() === drop.id
+                        ? 'Confirm unfavorite ' + drop.gameName
+                        : 'Unfavorite ' + drop.gameName
+                    "
+                    [attr.title]="unfavoriteConfirmationId() === drop.id ? 'Confirm unfavorite' : 'Remove from Favorites'"
+                    (click)="requestUnfavorite(drop)"
+                    (pointerleave)="cancelUnfavoriteConfirmation(drop)"
+                    (focusout)="cancelUnfavoriteConfirmation(drop)"
+                  >{{ unfavoriteConfirmationId() === drop.id ? 'Confirm' : '★' }}</button>
+                  <button
+                    class="favorite-details-toggle favorite-details-toggle--icon"
+                    type="button"
+                    [attr.aria-expanded]="expandedFavoriteId() === drop.id"
+                    [attr.aria-controls]="'reward-details-' + drop.id"
+                    [attr.aria-label]="
+                      (expandedFavoriteId() === drop.id ? 'Hide' : 'Show') +
+                      ' rewards for ' +
+                      drop.gameName
+                    "
+                    (click)="toggleFavoriteDetails(drop)"
+                  ><span
+                    class="disclosure-chevron"
+                    [class.disclosure-chevron--expanded]="expandedFavoriteId() === drop.id"
+                    aria-hidden="true"
+                    ><i></i><i></i
+                  ></span></button>
+                </div>
               </div>
             </article>
             @if (expandedFavoriteId() === drop.id) {

@@ -20,8 +20,10 @@ export class DropListComponent {
   readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly updatedDropIds = input<ReadonlySet<string>>(new Set());
   readonly favoriteRequested = output<ActiveDrop>();
+  readonly unfavoriteRequested = output<ActiveDrop>();
   readonly blacklistRequested = output<ActiveDrop>();
   protected readonly expandedFavoriteId = signal<string | null>(null);
+  protected readonly unfavoriteConfirmationId = signal<string | null>(null);
   protected readonly detailsByDropId = signal<ReadonlyMap<string, DropDetails>>(new Map());
   protected readonly loadingDetailIds = signal<ReadonlySet<string>>(new Set());
   protected readonly failedDetailIds = signal<ReadonlySet<string>>(new Set());
@@ -38,6 +40,20 @@ export class DropListComponent {
 
   protected activateStar(drop: ActiveDrop): void {
     this.favoriteRequested.emit(drop);
+  }
+
+  protected requestUnfavorite(drop: ActiveDrop): void {
+    if (this.unfavoriteConfirmationId() === drop.id) {
+      this.unfavoriteRequested.emit(drop);
+      this.unfavoriteConfirmationId.set(null);
+      return;
+    }
+
+    this.unfavoriteConfirmationId.set(drop.id);
+  }
+
+  protected cancelUnfavoriteConfirmation(drop: ActiveDrop): void {
+    if (this.unfavoriteConfirmationId() === drop.id) this.unfavoriteConfirmationId.set(null);
   }
 
   protected blacklist(drop: ActiveDrop): void {

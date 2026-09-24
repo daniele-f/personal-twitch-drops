@@ -50,13 +50,26 @@ describe('DropListComponent', () => {
     expect(row?.querySelector('.updated-pill')?.compareDocumentPosition(row.querySelector('.favorite-star')!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
   });
 
-  it('marks a changed favorite without rendering an unfavorite star', () => {
+  it('keeps the unfavorite star beside a changed favorite tag', () => {
     fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
     render([sea], []);
 
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
     expect(row?.querySelector('.new-pill')?.textContent).toBe('New');
-    expect(row?.querySelector('.favorite-star')).toBeNull();
+    expect(row?.querySelector('.favorite-star')?.textContent?.trim()).toBe('★');
+  });
+
+  it('places favorite tags, star, and disclosure chevron in the active-row action order', () => {
+    fixture.componentRef.setInput('updatedDropIds', new Set(['/game/sea-of-thieves']));
+    render([sea], []);
+
+    const rowEnd = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"] .row-end')!;
+    const actions = rowEnd.querySelector('.row-actions')!;
+    expect([...rowEnd.children].map((element) => element.className)).toEqual(['updated-pill', 'row-actions']);
+    expect([...actions.children].map((element) => element.className)).toEqual([
+      'favorite-star favorite-star--selected',
+      'favorite-details-toggle favorite-details-toggle--icon',
+    ]);
   });
 
   it('keeps a changed game tag and its actions in one row-end group', () => {
@@ -429,12 +442,33 @@ describe('DropListComponent', () => {
     expect(details.textContent).not.toContain('Loading requirement…');
   });
 
-  it('does not render an unfavorite star or confirmation hint on favorite rows', () => {
+  it('requires a second click to unfavorite a favorite game', () => {
+    const unfavoriteRequested = vi.fn();
+    fixture.componentInstance.unfavoriteRequested.subscribe(unfavoriteRequested);
     render([sea], []);
-    const favorites = (fixture.nativeElement as HTMLElement).querySelector('.favorites-section');
 
-    expect(favorites?.querySelector('.favorite-star')).toBeNull();
-    expect(favorites?.textContent).not.toContain('Press again to remove from Favorites');
+    const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorites-section .favorite-star')!;
+    expect(star.textContent?.trim()).toBe('★');
+    expect(star.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
+
+    star.click();
+    fixture.detectChanges();
+    expect(star.textContent?.trim()).toBe('Confirm');
+    expect(unfavoriteRequested).not.toHaveBeenCalled();
+
+    star.click();
+    expect(unfavoriteRequested).toHaveBeenCalledWith(sea);
+  });
+
+  it('cancels unfavorite confirmation when the pointer leaves the star', () => {
+    render([sea], []);
+    const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorites-section .favorite-star')!;
+
+    star.click();
+    star.dispatchEvent(new Event('pointerleave'));
+    fixture.detectChanges();
+
+    expect(star.textContent?.trim()).toBe('★');
   });
 
   it('shows four decorative skeleton rows while Drops are loading', () => {
