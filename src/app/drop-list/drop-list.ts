@@ -1,4 +1,5 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, effect, inject, Injector, input, output, signal, untracked } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropDetails } from '../drops/drop-details';
@@ -9,7 +10,7 @@ import { DropsProvider } from '../drops/drops-provider';
   templateUrl: './drop-list.html',
   styleUrl: './drop-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink],
+  imports: [RouterLink, NgTemplateOutlet],
 })
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
