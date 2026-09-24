@@ -14,6 +14,42 @@ class TestDropsProvider extends DropsProvider {
 }
 
 describe('DropsPageComponent', () => {
+  it('announces an indeterminate source fetch while Drops are loading', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+
+    const progress = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[role="progressbar"]');
+    expect(progress?.getAttribute('aria-label')).toBe('Fetching current Drops from TwitchDrops.app');
+    expect(progress?.hasAttribute('aria-valuenow')).toBe(false);
+  });
+
+  it('confirms the loaded Drop count after a successful fetch', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    const status = (fixture.nativeElement as HTMLElement).querySelector('.load-status');
+    expect(status?.textContent).toMatch(/^✓ Loaded 1 active Drop at /);
+  });
+
+  it('keeps the completion confirmation beside Refresh without a duplicate count', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    const refreshStatus = (fixture.nativeElement as HTMLElement).querySelector('.refresh-status');
+    expect(refreshStatus?.textContent ?? '').toMatch(/✓ Loaded 1 active Drop at /);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.page-heading > p')).toBeNull();
+  });
+
   it('keeps the Favorites manager beside Active Drops when no games are favorited', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();

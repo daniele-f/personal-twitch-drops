@@ -1,1 +1,9 @@
 @use '../app';
+
+.refresh-status { display:flex; align-items:center; gap:.6rem; margin-top:1rem; }
+.load-status { margin:0; padding:.45rem .7rem; color:#d8b7ff; font-size:.85rem; }
+.load-progress { display: grid; gap: .45rem; margin-top: 1rem; color: #d8b7ff; font-size: .85rem; }
+.load-progress__bar { height: .3rem; overflow: hidden; border-radius: 999px; background: #303036; }
+.load-progress__bar::after { content: ''; display: block; width: 40%; height: 100%; border-radius: inherit; background: #9147ff; animation: load-progress 1.2s ease-in-out infinite; }
+@keyframes load-progress { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .load-progress__bar::after { animation: none; transform: translateX(75%); } }

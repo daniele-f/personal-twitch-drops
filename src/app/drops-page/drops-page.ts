@@ -26,5 +26,5 @@ export class DropsPageComponent {
   private requestVersion = 0;
   constructor() { this.loadDrops(); }
   protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.changesState.updateDrops(drops); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); } }); }
-  protected updatedLabel(): string { const updatedAt = this.updatedAt(); return updatedAt ? `Updated ${new Intl.DateTimeFormat('en-US', { timeStyle: 'short' }).format(updatedAt)}` : 'Loading active Drops'; }
+  protected updatedLabel(): string { const updatedAt = this.updatedAt(); const count = this.drops().length; return updatedAt ? `✓ Loaded ${count} active Drop${count === 1 ? '' : 's'} at ${new Intl.DateTimeFormat('en-US', { timeStyle: 'short' }).format(updatedAt)}` : 'Loading active Drops'; }
 }
