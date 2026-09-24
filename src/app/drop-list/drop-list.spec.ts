@@ -59,6 +59,19 @@ describe('DropListComponent', () => {
     expect(row?.querySelector('.favorite-star')?.textContent?.trim()).toBe('★');
   });
 
+  it('places favorite tags, star, and disclosure chevron in the active-row action order', () => {
+    fixture.componentRef.setInput('updatedDropIds', new Set(['/game/sea-of-thieves']));
+    render([sea], []);
+
+    const rowEnd = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"] .row-end')!;
+    const actions = rowEnd.querySelector('.row-actions')!;
+    expect([...rowEnd.children].map((element) => element.className)).toEqual(['updated-pill', 'row-actions']);
+    expect([...actions.children].map((element) => element.className)).toEqual([
+      'favorite-star favorite-star--selected',
+      'favorite-details-toggle favorite-details-toggle--icon',
+    ]);
+  });
+
   it('keeps a changed game tag and its actions in one row-end group', () => {
     fixture.componentRef.setInput('updatedDropIds', new Set(['/game/sea-of-thieves']));
     render();
