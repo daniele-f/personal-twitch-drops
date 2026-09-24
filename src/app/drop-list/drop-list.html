@@ -88,6 +88,20 @@
                 } @else if (updatedDropIds().has(drop.id)) {
                   <span class="updated-pill">Updated</span>
                 }
+                <button
+                  class="favorite-star favorite-star--selected"
+                  type="button"
+                  [class.favorite-star--confirming]="unfavoriteConfirmationId() === drop.id"
+                  [attr.aria-label]="
+                    unfavoriteConfirmationId() === drop.id
+                      ? 'Confirm unfavorite ' + drop.gameName
+                      : 'Unfavorite ' + drop.gameName
+                  "
+                  [attr.title]="unfavoriteConfirmationId() === drop.id ? 'Confirm unfavorite' : 'Remove from Favorites'"
+                  (click)="requestUnfavorite(drop)"
+                  (pointerleave)="cancelUnfavoriteConfirmation(drop)"
+                  (focusout)="cancelUnfavoriteConfirmation(drop)"
+                >{{ unfavoriteConfirmationId() === drop.id ? 'Confirm' : '★' }}</button>
               </div>
             </article>
             @if (expandedFavoriteId() === drop.id) {
