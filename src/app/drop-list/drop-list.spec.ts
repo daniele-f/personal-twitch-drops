@@ -284,6 +284,28 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-drop-id="/game/valorant"] .reward-details')?.textContent).toContain('Arcade Spray');
   });
 
+  it('shows an active game’s current rewards when its disclosure chevron is opened', () => {
+    render([], [sea]);
+
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.active-section .favorite-details-toggle--icon');
+    expect(toggle).toBeTruthy();
+    toggle?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
+  });
+
+  it('opens an active game’s rewards when its card is clicked', () => {
+    render([], [sea]);
+
+    const card = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.active-section .active-details-toggle--card');
+    expect(card).toBeTruthy();
+    card?.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
+  });
+
   it('uses the favorite card image as part of the reward disclosure button', () => {
     render([sea], []);
 

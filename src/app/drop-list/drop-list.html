@@ -1,3 +1,54 @@
+<ng-template #dropDetails let-drop>
+  @if (expandedFavoriteId() === drop.id) {
+    <section
+      class="reward-details"
+      [id]="'reward-details-' + drop.id"
+      [attr.aria-label]="'Current rewards for ' + drop.gameName"
+    >
+      <h3>Current rewards</h3>
+      <div class="drop-metadata">
+        @if (drop.publisher) {
+          <span>{{ drop.publisher }}</span>
+        }
+        @if (drop.watchDuration) {
+          <span>{{ drop.watchDuration }}</span>
+        } @else if (showSubscriptions() && subscriptionRequirement(drop); as requirement) {
+          <span class="subscription-requirement">{{ requirement }}</span>
+        } @else if (isLoadingDetails(drop)) {
+          <span>Loading requirement…</span>
+        }
+        <time class="drop-end-time" [attr.datetime]="drop.endsAt" [title]="exactEndTime(drop)">{{ remainingTime(drop) }}</time>
+      </div>
+      @if (isLoadingDetails(drop)) {
+        <p>Loading reward details…</p>
+      } @else if (drop.rewards?.length && detailsFor(drop)) {
+        <ol class="reward-grid">
+          @for (reward of visibleRewards(drop); track reward.name; let index = $index) {
+            <li class="reward-card" [class.reward-card--badge]="isBadgeReward(drop, reward.name)">
+              <span class="reward-media">
+                @if (reward.imageUrl) {
+                  <img class="reward-image" [src]="reward.imageUrl" [alt]="reward.name" />
+                } @else {
+                  <span class="reward-number">{{ index + 1 }}</span>
+                }
+                @if (isBadgeReward(drop, reward.name)) {
+                  <span class="reward-type">Badge</span>
+                }
+              </span>
+              <span class="reward-copy"><span class="reward-name">{{ reward.name }}</span></span>
+              @if (rewardRequirement(drop, reward.name); as requirement) {
+                <span class="reward-requirement" [class.reward-requirement--watch]="requirement.startsWith('Watch')" [class.reward-requirement--subscription]="!requirement.startsWith('Watch')">{{ requirement }}</span>
+              }
+            </li>
+          }
+        </ol>
+      } @else {
+        <p>Current reward details are unavailable.</p>
+      }
+    </section>
+  }
+</ng-template>
+
 @if (loading()) {
   <p class="loading-message" aria-live="polite">Loading active Drops</p>
   <ul class="drop-list" aria-hidden="true">
@@ -115,73 +166,7 @@
                 </div>
               </div>
             </article>
-            @if (expandedFavoriteId() === drop.id) {
-              <section
-                class="reward-details"
-                [id]="'reward-details-' + drop.id"
-                [attr.aria-label]="'Current rewards for ' + drop.gameName"
-              >
-                <h3>Current rewards</h3>
-                <div class="drop-metadata">
-                  @if (drop.publisher) {
-                    <span>{{ drop.publisher }}</span>
-                  }
-                  @if (drop.watchDuration) {
-                    <span>{{ drop.watchDuration }}</span>
-                  } @else if (
-                    showSubscriptions() && subscriptionRequirement(drop);
-                    as requirement
-                  ) {
-                    <span class="subscription-requirement">{{ requirement }}</span>
-                  } @else if (isLoadingDetails(drop)) {
-                    <span>Loading requirement…</span>
-                  }
-                  <time
-                    class="drop-end-time"
-                    [attr.datetime]="drop.endsAt"
-                    [title]="exactEndTime(drop)"
-                    >{{ remainingTime(drop) }}</time
-                  >
-                </div>
-                @if (isLoadingDetails(drop)) {
-                  <p>Loading reward details…</p>
-                } @else if (drop.rewards?.length && detailsFor(drop)) {
-                  <ol class="reward-grid">
-                    @for (reward of visibleRewards(drop); track reward.name; let index = $index) {
-                      <li
-                        class="reward-card"
-                        [class.reward-card--badge]="isBadgeReward(drop, reward.name)"
-                      >
-                        <span class="reward-media">
-                          @if (reward.imageUrl) {
-                            <img class="reward-image" [src]="reward.imageUrl" [alt]="reward.name" />
-                          } @else {
-                            <span class="reward-number">{{ index + 1 }}</span>
-                          }
-                          @if (isBadgeReward(drop, reward.name)) {
-                            <span class="reward-type">Badge</span>
-                          }</span
-                        ><span class="reward-copy"
-                          ><span class="reward-name">{{ reward.name }}</span></span
-                        >
-                        @if (rewardRequirement(drop, reward.name); as requirement) {
-                          <span
-                            class="reward-requirement"
-                            [class.reward-requirement--watch]="requirement.startsWith('Watch')"
-                            [class.reward-requirement--subscription]="
-                              !requirement.startsWith('Watch')
-                            "
-                            >{{ requirement }}</span
-                          >
-                        }
-                      </li>
-                    }
-                  </ol>
-                } @else {
-                  <p>Current reward details are unavailable.</p>
-                }
-              </section>
-            }
+            <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
           </li>
         }
       </ul>
@@ -225,16 +210,26 @@
     <ul class="drop-list">
       @for (drop of visibleActiveDrops(); track drop.id) {
         <li [attr.data-drop-id]="drop.id">
-          <article class="drop-row">
-            @if (drop.imageUrl) {
-              <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" />
-            } @else {
-              <div class="cover-placeholder" aria-hidden="true"></div>
-            }
-            <div class="drop-copy">
-              <h3>{{ drop.gameName }}</h3>
-              <p>{{ summary(drop) }}</p>
-            </div>
+          <article class="drop-row drop-row--active" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
+            <button
+              class="favorite-details-toggle active-details-toggle--card"
+              type="button"
+              [attr.aria-expanded]="expandedFavoriteId() === drop.id"
+              [attr.aria-controls]="'reward-details-' + drop.id"
+              [attr.aria-label]="
+                (expandedFavoriteId() === drop.id ? 'Hide' : 'Show') +
+                ' rewards for ' +
+                drop.gameName
+              "
+              (click)="toggleFavoriteDetails(drop)"
+            >
+              @if (drop.imageUrl) {
+                <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" />
+              } @else {
+                <div class="cover-placeholder" aria-hidden="true"></div>
+              }
+              <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ summary(drop) }}</p></span>
+            </button>
             <div class="row-end">
               @if (newDropIds().has(drop.id)) {
                 <span class="new-pill">New</span>
@@ -258,10 +253,27 @@
                   (click)="blacklist(drop)"
                 >
                   ⊘
-                </button>
+                </button><button
+                  class="favorite-details-toggle favorite-details-toggle--icon"
+                  type="button"
+                  [attr.aria-expanded]="expandedFavoriteId() === drop.id"
+                  [attr.aria-controls]="'reward-details-' + drop.id"
+                  [attr.aria-label]="
+                    (expandedFavoriteId() === drop.id ? 'Hide' : 'Show') +
+                    ' rewards for ' +
+                    drop.gameName
+                  "
+                  (click)="toggleFavoriteDetails(drop)"
+                ><span
+                  class="disclosure-chevron"
+                  [class.disclosure-chevron--expanded]="expandedFavoriteId() === drop.id"
+                  aria-hidden="true"
+                  ><i></i><i></i
+                ></span></button>
               </div>
             </div>
           </article>
+          <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
         </li>
       }
     </ul>
