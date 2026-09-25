@@ -121,6 +121,27 @@ describe('App', () => {
     expect([...groups].map((group) => group.querySelector('li')?.textContent?.trim())).toEqual(['New Game', 'Updated Game', 'Ended Game']);
   });
 
+  it('marks newly added games that arrived since the prior same-day refresh', () => {
+    vi.useFakeTimers();
+    const existing = { id: '/game/existing', gameName: 'Existing Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const added = { id: '/game/added', gameName: 'Added Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const changes = TestBed.inject(ChangesStateService);
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    changes.updateDrops([existing]);
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    changes.updateDrops([existing]);
+    changes.updateDrops([existing, added]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    fixture.detectChanges();
+
+    const newGame = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.changes-group li')]
+      .find((item) => item.textContent?.includes('Added Game'));
+    expect(newGame?.querySelector('.change-since-refresh-dot')).toBeTruthy();
+  });
+
   it('does not show the developer menu until it is opened', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

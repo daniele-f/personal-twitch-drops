@@ -136,6 +136,25 @@ describe('ChangesStateService', () => {
     expect(changes).toEqual([{ type: 'updated', drop: second, addedRewards: ['Nebula'], removedRewards: ['Atlas'] }]);
   });
 
+  it('marks only games added since the preceding refresh on the same day', () => {
+    const added: ActiveDrop = { id: '/game/astroneer', gameName: 'ASTRONEER', rewardCount: 1, rewards: ['Suit'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const storage = createStorage();
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    configure(storage).updateDrops([first]);
+
+    TestBed.resetTestingModule();
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    const service = configure(storage);
+    service.updateDrops([first]);
+    service.updateDrops([first, added]);
+
+    expect(service.newSinceLastRefreshIds()).toEqual(new Set([added.id]));
+
+    service.updateDrops([first, added]);
+    expect(service.changes().map((change) => change.drop.id)).toContain(added.id);
+    expect(service.newSinceLastRefreshIds()).toEqual(new Set());
+  });
+
   it('persists that today’s changes have been viewed', () => {
     const storage = createStorage();
     vi.setSystemTime(new Date('2026-09-23T10:00:00'));

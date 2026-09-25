@@ -21,6 +21,7 @@ export class ChangesStateService {
   private readonly storage = inject(PREFERENCES_STORAGE);
   readonly drops = signal<readonly ActiveDrop[]>([]);
   readonly changes = signal<readonly DropChange[]>([]);
+  readonly newSinceLastRefreshIds = signal<ReadonlySet<string>>(new Set());
   private readonly viewedChangesSignature = signal(this.readViewedChangesSignature());
   readonly hasUnseenChanges = computed(() => {
     const signature = this.changesSignature(this.changes());
@@ -33,19 +34,22 @@ export class ChangesStateService {
     const date = this.localDateKey(new Date());
     const saved = this.storageOutOfSync ? this.sessionSnapshots : this.readSnapshots() ?? this.sessionSnapshots;
     const baseline = saved?.current.date === date ? saved.baseline : saved?.current ?? null;
+    const previousSameDayDrops = saved?.current.date === date ? saved.current.drops : null;
 
     this.changes.set(baseline ? detectChanges(baseline.drops, current) : []);
+    this.newSinceLastRefreshIds.set(previousSameDayDrops ? this.addedDropIds(previousSameDayDrops, current) : new Set());
     this.drops.set(current);
     this.persistSnapshots({ baseline, current: { date, drops: current } });
   }
 
   seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly DropChange[] {
     this.changes.set(detectChanges(previous, current));
+    this.newSinceLastRefreshIds.set(new Set());
     this.drops.set(current);
     return this.changes();
   }
 
-  clear(): readonly DropChange[] { this.drops.set([]); this.changes.set([]); return this.changes(); }
+  clear(): readonly DropChange[] { this.drops.set([]); this.changes.set([]); this.newSinceLastRefreshIds.set(new Set()); return this.changes(); }
 
   markChangesViewed(): void {
     const signature = this.changesSignature(this.changes());
@@ -86,6 +90,11 @@ export class ChangesStateService {
         ? { type: change.type, id: change.drop.id, addedRewards: change.addedRewards, removedRewards: change.removedRewards }
         : { type: change.type, id: change.drop.id })
       .sort((left, right) => left.id.localeCompare(right.id) || left.type.localeCompare(right.type)));
+  }
+
+  private addedDropIds(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): ReadonlySet<string> {
+    const previousIds = new Set(previous.map((drop) => drop.id));
+    return new Set(current.filter((drop) => !previousIds.has(drop.id)).map((drop) => drop.id));
   }
 
   private persistSnapshots(snapshots: DailyDropSnapshots): void {
