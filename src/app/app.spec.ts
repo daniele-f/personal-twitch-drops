@@ -56,6 +56,29 @@ describe('App', () => {
     expect(button?.classList).toContain('changes-button--active');
   });
 
+  it('groups new, updated, and ended games in the Changes panel', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    changes.seed(
+      [
+        { id: '/game/updated', gameName: 'Updated Game', rewardCount: 1, rewards: ['Old reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+        { id: '/game/ended', gameName: 'Ended Game', rewardCount: 1, rewards: ['Final reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+      ],
+      [
+        { id: '/game/new', gameName: 'New Game', rewardCount: 1, rewards: ['New reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+        { id: '/game/updated', gameName: 'Updated Game', rewardCount: 1, rewards: ['Updated reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+      ],
+    );
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    fixture.detectChanges();
+
+    const groups = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.changes-group');
+    expect([...groups].map((group) => group.querySelector('h3')?.textContent?.trim())).toEqual(['Newly added', 'Updated drops', 'Ended campaign']);
+    expect([...groups].map((group) => group.querySelector('li')?.textContent?.trim())).toEqual(['New Game', 'Updated Game', 'Ended Game']);
+  });
+
   it('does not show the developer menu until it is opened', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

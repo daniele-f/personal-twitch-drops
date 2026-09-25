@@ -52,4 +52,21 @@
     <button type="button" (click)="debugMenuOpen.set(false)">Close menu</button>
   </aside>
 }
-@if (changesOpen()) { <aside class="changes-popover"><h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>@if (changesState.changes().length) { <ul>@for (change of changesState.changes(); track change.drop.id) { <li><strong>{{ change.drop.gameName }}</strong> · {{ change.type === 'new' ? 'New game' : change.type === 'ended' ? 'Ended' : 'Rewards updated' }}</li> }</ul> } @else { <p>No changes since your last refresh.</p> }<button class="changes-close" type="button" (click)="changesOpen.set(false)">Close</button></aside> } @if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }
+@if (changesOpen()) {
+  <aside class="changes-popover">
+    <h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>
+    @if (changesState.changes().length) {
+      @for (group of changeGroups; track group.type) {
+        @if (changesOf(group.type); as changes) {
+          @if (changes.length) {
+            <section class="changes-group">
+              <h3>{{ group.label }}</h3>
+              <ul>@for (change of changes; track change.drop.id) { <li>{{ change.drop.gameName }}</li> }</ul>
+            </section>
+          }
+        }
+      }
+    } @else { <p>No changes since your last refresh.</p> }
+    <button class="changes-close" type="button" (click)="changesOpen.set(false)">Close</button>
+  </aside>
+} @if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }
