@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
+import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { DropListComponent } from './drop-list';
 
 describe('DropListComponent', () => {
@@ -12,11 +13,12 @@ describe('DropListComponent', () => {
   const valorant: ActiveDrop = { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-29T12:00:00.000Z' };
 
   beforeEach(async () => {
+    localStorage.clear();
     loadDropDetails.mockReset();
     loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [] }));
     await TestBed.configureTestingModule({
       imports: [DropListComponent],
-      providers: [provideRouter([]), { provide: DropsProvider, useValue: { loadDropDetails } }],
+      providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadDropDetails } }],
     }).compileComponents();
     fixture = TestBed.createComponent(DropListComponent);
   });
@@ -119,6 +121,27 @@ describe('DropListComponent', () => {
     expect(switches?.[0].checked).toBe(false);
     expect(switches?.[1].checked).toBe(false);
     expect(getComputedStyle(controls!).flexWrap).toBe('wrap');
+  });
+
+  it('restores persisted Subs and Badges switches', () => {
+    localStorage.setItem('personal-twitch-drops.display-preferences.v1', JSON.stringify({ showSubscriptions: true, showBadges: true }));
+    fixture.destroy();
+    fixture = TestBed.createComponent(DropListComponent);
+    render();
+
+    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    expect(switches[0].checked).toBe(true);
+    expect(switches[1].checked).toBe(true);
+  });
+
+  it('persists changed Subs and Badges switches', () => {
+    render();
+
+    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    switches[0].click();
+    switches[1].click();
+
+    expect(localStorage.getItem('personal-twitch-drops.display-preferences.v1')).toBe(JSON.stringify({ showSubscriptions: true, showBadges: true }));
   });
 
   it('reveals subscription and badge rewards only when their switches are enabled', () => {

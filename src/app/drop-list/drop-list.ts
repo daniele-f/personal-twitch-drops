@@ -4,6 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropDetails } from '../drops/drop-details';
 import { DropsProvider } from '../drops/drops-provider';
+import { DISPLAY_PREFERENCES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 
 @Component({
   selector: 'app-drop-list',
@@ -15,6 +16,7 @@ import { DropsProvider } from '../drops/drops-provider';
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly injector = inject(Injector);
+  private readonly storage = inject(PREFERENCES_STORAGE);
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
@@ -29,8 +31,9 @@ export class DropListComponent {
   protected readonly loadingDetailIds = signal<ReadonlySet<string>>(new Set());
   protected readonly failedDetailIds = signal<ReadonlySet<string>>(new Set());
   private readonly detailSignaturesById = signal<ReadonlyMap<string, string>>(new Map());
-  protected readonly showSubscriptions = signal(false);
-  protected readonly showBadges = signal(false);
+  private readonly displayPreferences = this.readDisplayPreferences();
+  protected readonly showSubscriptions = signal(this.displayPreferences.showSubscriptions);
+  protected readonly showBadges = signal(this.displayPreferences.showBadges);
 
   constructor() {
     effect(() => {
@@ -63,11 +66,13 @@ export class DropListComponent {
 
   protected setShowSubscriptions(checked: boolean): void {
     this.showSubscriptions.set(checked);
+    this.persistDisplayPreferences();
     this.restoreToggleFocus('show-subs');
   }
 
   protected setShowBadges(checked: boolean): void {
     this.showBadges.set(checked);
+    this.persistDisplayPreferences();
     this.restoreToggleFocus('show-badges');
   }
 
@@ -190,6 +195,30 @@ export class DropListComponent {
 
   private restoreToggleFocus(id: string): void {
     afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
+  }
+
+  private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean } {
+    if (!this.storage) return { showSubscriptions: false, showBadges: false };
+
+    try {
+      const stored = this.storage.getItem(DISPLAY_PREFERENCES_STORAGE_KEY);
+      const parsed: unknown = stored === null ? {} : JSON.parse(stored);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { showSubscriptions: false, showBadges: false };
+      const preferences = parsed as Record<string, unknown>;
+      return { showSubscriptions: preferences['showSubscriptions'] === true, showBadges: preferences['showBadges'] === true };
+    } catch {
+      return { showSubscriptions: false, showBadges: false };
+    }
+  }
+
+  private persistDisplayPreferences(): void {
+    if (!this.storage) return;
+
+    try {
+      this.storage.setItem(DISPLAY_PREFERENCES_STORAGE_KEY, JSON.stringify({ showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() }));
+    } catch {
+      // Display preferences remain available for this browser session.
+    }
   }
 
   protected remainingTime(drop: ActiveDrop): string {
