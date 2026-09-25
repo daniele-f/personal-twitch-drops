@@ -93,9 +93,7 @@ export class ChangesStateService {
   }
 
   private changedDropIds(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): ReadonlySet<string> {
-    return new Set(detectChanges(previous, current)
-      .filter((change) => change.type !== 'ended')
-      .map((change) => change.drop.id));
+    return new Set(detectChanges(previous, current).map((change) => change.drop.id));
   }
 
   private persistSnapshots(snapshots: DailyDropSnapshots): void {

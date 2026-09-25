@@ -162,6 +162,26 @@ describe('App', () => {
     expect(updatedGame?.querySelector('.change-since-refresh-dot')).toBeTruthy();
   });
 
+  it('marks ended games that were removed since the prior same-day refresh', () => {
+    vi.useFakeTimers();
+    const removed = { id: '/game/removed', gameName: 'Removed Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const changes = TestBed.inject(ChangesStateService);
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    changes.updateDrops([removed]);
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    changes.updateDrops([removed]);
+    changes.updateDrops([]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    fixture.detectChanges();
+
+    const endedGame = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.changes-group li')]
+      .find((item) => item.textContent?.includes('Removed Game'));
+    expect(endedGame?.querySelector('.change-since-refresh-dot')).toBeTruthy();
+  });
+
   it('does not show the developer menu until it is opened', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
