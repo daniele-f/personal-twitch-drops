@@ -45,6 +45,20 @@ describe('App', () => {
     expect(fixture.nativeElement.textContent).toContain('Changes · 1');
   });
 
+  it('marks unseen changes with a notification dot until the panel is opened', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    changes.seed([], [{ id: '/game/arc-raiders', gameName: 'Arc Raiders', rewardCount: 1, rewards: ['Raider pack'], endsAt: '2026-09-24T00:00:00.000Z' }]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')!;
+    expect(button.querySelector('.changes-notification-dot')).toBeTruthy();
+
+    button.click();
+    fixture.detectChanges();
+    expect(button.querySelector('.changes-notification-dot')).toBeNull();
+  });
+
   it('marks the Changes control active while its panel is open', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

@@ -1,9 +1,10 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { detectChanges, DropChange } from './change-detection';
 
 export const DAILY_SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
+export const CHANGES_VIEWED_SIGNATURE_STORAGE_KEY = 'personal-twitch-drops.changes-viewed-signature.v1';
 
 interface DatedDropSnapshot {
   readonly date: string;
@@ -20,6 +21,11 @@ export class ChangesStateService {
   private readonly storage = inject(PREFERENCES_STORAGE);
   readonly drops = signal<readonly ActiveDrop[]>([]);
   readonly changes = signal<readonly DropChange[]>([]);
+  private readonly viewedChangesSignature = signal(this.readViewedChangesSignature());
+  readonly hasUnseenChanges = computed(() => {
+    const signature = this.changesSignature(this.changes());
+    return signature !== '[]' && signature !== this.viewedChangesSignature();
+  });
   private sessionSnapshots = this.readSnapshots();
   private storageOutOfSync = false;
 
@@ -41,6 +47,13 @@ export class ChangesStateService {
 
   clear(): readonly DropChange[] { this.drops.set([]); this.changes.set([]); return this.changes(); }
 
+  markChangesViewed(): void {
+    const signature = this.changesSignature(this.changes());
+    this.viewedChangesSignature.set(signature);
+    if (!this.storage) return;
+    try { this.storage.setItem(CHANGES_VIEWED_SIGNATURE_STORAGE_KEY, signature); } catch { /* Session state remains current. */ }
+  }
+
   private readSnapshots(): DailyDropSnapshots | null {
     if (!this.storage) return null;
 
@@ -56,6 +69,23 @@ export class ChangesStateService {
     } catch {
       return null;
     }
+  }
+
+  private readViewedChangesSignature(): string | null {
+    if (!this.storage) return null;
+    try {
+      return this.storage.getItem(CHANGES_VIEWED_SIGNATURE_STORAGE_KEY);
+    } catch {
+      return null;
+    }
+  }
+
+  private changesSignature(changes: readonly DropChange[]): string {
+    return JSON.stringify(changes
+      .map((change) => change.type === 'updated'
+        ? { type: change.type, id: change.drop.id, addedRewards: change.addedRewards, removedRewards: change.removedRewards }
+        : { type: change.type, id: change.drop.id })
+      .sort((left, right) => left.id.localeCompare(right.id) || left.type.localeCompare(right.type)));
   }
 
   private persistSnapshots(snapshots: DailyDropSnapshots): void {

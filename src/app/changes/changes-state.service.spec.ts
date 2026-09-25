@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
-import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes-state.service';
+import { ChangesStateService, CHANGES_VIEWED_SIGNATURE_STORAGE_KEY, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes-state.service';
 
 const first: ActiveDrop = { id: '/game/no-mans-sky', gameName: 'No Man\'s Sky', rewardCount: 1, rewards: ['Atlas'], endsAt: '2026-09-23T00:00:00.000Z' };
 const second: ActiveDrop = { id: '/game/no-mans-sky', gameName: 'No Man\'s Sky', rewardCount: 1, rewards: ['Nebula'], endsAt: '2026-09-23T00:00:00.000Z' };
@@ -134,6 +134,34 @@ describe('ChangesStateService', () => {
 
     expect(service.drops()).toEqual([second]);
     expect(changes).toEqual([{ type: 'updated', drop: second, addedRewards: ['Nebula'], removedRewards: ['Atlas'] }]);
+  });
+
+  it('persists that today’s changes have been viewed', () => {
+    const storage = createStorage();
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
+    const service = configure(storage);
+    service.seed([], [first]);
+
+    expect(service.hasUnseenChanges()).toBe(true);
+    service.markChangesViewed();
+    expect(service.hasUnseenChanges()).toBe(false);
+    expect(storage.getItem(CHANGES_VIEWED_SIGNATURE_STORAGE_KEY)).toBeTruthy();
+
+    TestBed.resetTestingModule();
+    const reloaded = configure(storage);
+    reloaded.seed([], [first]);
+    expect(reloaded.hasUnseenChanges()).toBe(false);
+  });
+
+  it('marks a change set as unseen again when a later refresh changes it', () => {
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
+    const service = configure(createStorage());
+    service.seed([], [first]);
+    service.markChangesViewed();
+
+    service.seed([first], [second]);
+
+    expect(service.hasUnseenChanges()).toBe(true);
   });
 
   it('returns an empty change list when a developer scenario is cleared', () => {
