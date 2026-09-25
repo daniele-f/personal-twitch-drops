@@ -54,6 +54,11 @@ export class App {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
+  protected toggleChangesPanel(): void {
+    const opening = !this.changesOpen();
+    this.changesOpen.set(opening);
+    if (opening) this.changesState.markChangesViewed();
+  }
   @HostListener('document:click', ['$event'])
   protected closeChangesOnOutsideClick(event: MouseEvent): void {
     if (!this.changesOpen() || !(event.target instanceof Node)) return;
