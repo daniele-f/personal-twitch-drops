@@ -1,4 +1,4 @@
-import { Component, computed, inject, isDevMode, signal } from '@angular/core';
+import { Component, computed, ElementRef, HostListener, inject, isDevMode, signal, viewChild } from '@angular/core';
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { DropChange } from './changes/change-detection';
@@ -23,6 +23,8 @@ export class App {
     { type: 'updated', label: 'Updated drops' },
     { type: 'ended', label: 'Ended campaign' },
   ];
+  private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
+  private readonly changesPanel = viewChild<ElementRef<HTMLElement>>('changesPanel');
   protected readonly changesOpen = signal(false);
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
@@ -52,6 +54,12 @@ export class App {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
+  @HostListener('document:click', ['$event'])
+  protected closeChangesOnOutsideClick(event: MouseEvent): void {
+    if (!this.changesOpen() || !(event.target instanceof Node)) return;
+    if (this.changesButton()?.nativeElement.contains(event.target) || this.changesPanel()?.nativeElement.contains(event.target)) return;
+    this.changesOpen.set(false);
+  }
   protected changesOf(type: DropChange['type']): readonly DropChange[] { return this.changesState.changes().filter((change) => change.type === type); }
   protected debugNewGame(): void { this.seed([], [this.drop('Game 01', ['Raider pack'])]); }
   protected debugRewardSwap(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]); }

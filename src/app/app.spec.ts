@@ -56,6 +56,34 @@ describe('App', () => {
     expect(button?.classList).toContain('changes-button--active');
   });
 
+  it('keeps the Changes control active while hovered', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')!;
+
+    button.click();
+    button.dispatchEvent(new Event('pointerenter'));
+    fixture.detectChanges();
+
+    const componentStyles = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
+      .join('');
+    expect(componentStyles).toMatch(/\.changes-button--active\[[^\]]+\]:hover:not\(:disabled\)/);
+  });
+
+  it('closes the Changes panel when a click lands outside it', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')!;
+
+    button.click();
+    fixture.detectChanges();
+    document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.changes-popover')).toBeNull();
+  });
+
   it('groups new, updated, and ended games in the Changes panel', () => {
     const changes = TestBed.inject(ChangesStateService);
     changes.seed(
