@@ -1,28 +1,27 @@
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DropsProvider } from './drops/drops-provider';
-import { routes } from './app.routes';
 import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
+import { appConfig } from './app.config';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 
 describe('App', () => {
   beforeEach(async () => {
     localStorage.clear();
-    await TestBed.configureTestingModule({ imports: [App], providers: [provideRouter(routes), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
+    await TestBed.configureTestingModule({ imports: [App], providers: [...appConfig.providers, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
   });
 
   afterEach(() => vi.useRealTimers());
 
-  it('renders Preferences as a button-styled route link', () => {
+  it('renders Preferences as a button-styled hash route link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
     expect(link?.classList).toContain('app-button');
-    expect(link?.getAttribute('href')).toContain('/preferences');
+    expect(link?.getAttribute('href')).toBe('#/preferences');
   });
 
   it('does not render a placeholder Changes control', () => {
