@@ -71,6 +71,9 @@
         <h2>Favorites ({{ visibleFavoriteDrops().length }})</h2>
         <div class="section-heading-actions">
           <div class="display-toggles">
+            @if (hiddenGameCount(); as hiddenCount) {
+              <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
+            }
             <span class="toggle-control"
               ><label for="show-subs">Subs</label>
               <div class="toggle">
@@ -92,7 +95,7 @@
                   type="checkbox"
                   aria-label="Show badge Drops"
                   [checked]="showBadges()"
-                  (change)="setShowBadges(favoriteBadgeToggle.checked)"
+                (change)="setShowBadges(favoriteBadgeToggle.checked)"
                 /><label for="show-badges"></label></div
             ></span>
           </div>
@@ -178,6 +181,9 @@
       @if (!visibleFavoriteDrops().length) {
         <div class="section-heading-actions">
           <div class="display-toggles">
+            @if (hiddenGameCount(); as hiddenCount) {
+              <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
+            }
             <span class="toggle-control"
               ><label for="show-subs">Subs</label>
               <div class="toggle">
@@ -199,7 +205,7 @@
                   type="checkbox"
                   aria-label="Show badge Drops"
                   [checked]="showBadges()"
-                  (change)="setShowBadges(activeBadgeToggle.checked)"
+                (change)="setShowBadges(activeBadgeToggle.checked)"
                 /><label for="show-badges"></label></div
             ></span>
           </div>

@@ -179,6 +179,34 @@ describe('DropListComponent', () => {
     expect(page.querySelector('.active-section .section-heading')?.textContent).toContain('Manage');
   });
 
+  it('reports how many games are hidden by the reward filters', () => {
+    const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
+    const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
+    loadDropDetails.mockImplementation((id: string) => of(
+      id === subscriptionOnly.id
+        ? { requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }
+        : { requirementByReward: { 'Badge Reward': '1h watch' }, badgeRewardNames: ['Badge Reward'] },
+    ));
+    render([subscriptionOnly], [badgeOnly]);
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
+    const toggles = page.querySelector('.active-section .display-toggles')!;
+    expect([...toggles.children].map((element) => element.className)).toEqual([
+      'hidden-games-count', 'toggle-control', 'toggle-control',
+    ]);
+    const hiddenCount = toggles.querySelector<HTMLElement>('.hidden-games-count')!;
+    expect(getComputedStyle(hiddenCount).fontSize).toBe('11px');
+    expect(getComputedStyle(hiddenCount).color).toBe('rgb(184, 184, 189)');
+
+    const switches = page.querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]');
+    switches[0].click();
+    switches[1].click();
+    fixture.detectChanges();
+
+    expect(page.querySelector('.hidden-games-count')).toBeNull();
+  });
+
   it('reclassifies a game when a refresh changes its reward set', () => {
     const initial = { ...sea, id: '/game/changing-game', gameName: 'Changing Game', rewards: ['Watch Reward'] } as ActiveDrop;
     const changed = { ...initial, rewards: ['Subscription Reward'] } as ActiveDrop;

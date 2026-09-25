@@ -89,6 +89,10 @@ export class DropListComponent {
     return this.activeDrops().filter((drop) => this.isDropVisible(drop));
   }
 
+  protected hiddenGameCount(): number {
+    return [...this.favoriteDrops(), ...this.activeDrops()].filter((drop) => !this.isDropVisible(drop)).length;
+  }
+
   private ensureDetailsFor(drops: readonly ActiveDrop[]): void {
     const detailsById = this.detailsByDropId();
     const loadingIds = this.loadingDetailIds();
