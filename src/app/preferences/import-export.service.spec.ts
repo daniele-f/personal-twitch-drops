@@ -18,7 +18,7 @@ function createStorage(): Storage {
 describe('ImportExportService', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('exports an opaque share code that replaces both lists when imported', () => {
+  it('exports a compact v2 share code that replaces both lists when imported', () => {
     const sourceStorage = createStorage();
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: sourceStorage }] });
     const sourcePreferences = TestBed.inject(PreferencesService);
@@ -29,6 +29,11 @@ describe('ImportExportService', () => {
 
     expect(shareCode).not.toContain('Sea of Thieves');
     expect(shareCode).not.toContain('VALORANT');
+    expect(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(shareCode), (character) => character.codePointAt(0)!)))).toEqual([
+      2,
+      [['sea-of-thieves', 'Sea of Thieves']],
+      [['valorant', 'VALORANT']],
+    ]);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
@@ -55,5 +60,13 @@ describe('ImportExportService', () => {
     expect(importExport.import('not-a-share-code')).toBe(false);
     expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
+  });
+
+  it('rejects legacy v1 share codes', () => {
+    TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
+    const importExport = TestBed.inject(ImportExportService);
+    const v1ShareCode = btoa(JSON.stringify({ version: 1, favorites: [], blacklist: [] }));
+
+    expect(importExport.import(v1ShareCode)).toBe(false);
   });
 });

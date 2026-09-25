@@ -45,10 +45,25 @@ export class PreferencesPageComponent {
       this.copyMessage.set('Unable to copy automatically. Select and copy the code manually.');
     }
   }
+  protected saveShareCode(): void {
+    const url = URL.createObjectURL(new Blob([this.exportCode()], { type: 'text/plain;charset=utf-8' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = this.shareCodeFileName();
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
   protected importLists(): void {
     if (this.importExport.import(this.importCode())) {
       this.importMessage.set('Lists replaced successfully.');
       this.importCode.set('');
     } else this.importMessage.set('That share code is not valid.');
+  }
+  private shareCodeFileName(): string {
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, '0');
+    return `personal-twitch-drops-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}.txt`;
   }
 }

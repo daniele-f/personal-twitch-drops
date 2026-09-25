@@ -12,7 +12,7 @@
     <hr>
     <h3>Export share code</h3>
     <button class="export-button" type="button" (click)="generateShareCode()">Generate share code</button>
-    @if (exportCode()) { <p class="share-code-label">Share code</p><code class="share-code">{{ exportCode() }}</code><button class="copy-share-code" type="button" (click)="copyShareCode()">Copy to clipboard</button>@if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> } }
+    @if (exportCode()) { <p class="share-code-label">Share code</p><code class="share-code">{{ exportCode() }}</code><div class="share-code-actions"><button class="copy-share-code" type="button" (click)="copyShareCode()">Copy to clipboard</button><button class="save-share-code" type="button" aria-label="Download as file" title="Download as file" (click)="saveShareCode()"><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button></div>@if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> } }
   </div>
   <section id="favorites" class="favorites-preferences">
     <button class="favorites-disclosure" type="button" [attr.aria-expanded]="favoritesExpanded()" (click)="favoritesExpanded.set(!favoritesExpanded())"><span class="favorite-icon" aria-hidden="true">★</span><span>Favorites ({{ favoriteRows().length }})</span><span class="disclosure-chevron" [class.disclosure-chevron--expanded]="favoritesExpanded()" aria-hidden="true"><i></i><i></i></span></button>

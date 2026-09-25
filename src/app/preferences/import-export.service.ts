@@ -3,7 +3,6 @@ import { BlacklistEntry } from './blacklist-entry';
 import { PreferencesService } from './preferences.service';
 
 interface SharePayload {
-  version: 1;
   favorites: readonly { id: string; gameName?: string }[];
   blacklist: readonly BlacklistEntry[];
 }
@@ -13,11 +12,11 @@ export class ImportExportService {
   private readonly preferences = inject(PreferencesService);
 
   export(): string {
-    const payload: SharePayload = {
-      version: 1,
-      favorites: [...this.preferences.favoriteIds()].map((id) => ({ id, ...(this.preferences.favoriteNames().get(id) ? { gameName: this.preferences.favoriteNames().get(id) } : {}) })),
-      blacklist: this.preferences.blacklistEntries(),
-    };
+    const payload = [
+      2,
+      [...this.preferences.favoriteIds()].map((id) => [this.slugFor(id), ...(this.preferences.favoriteNames().get(id) ? [this.preferences.favoriteNames().get(id)!] : [])]),
+      this.preferences.blacklistEntries().map((entry) => [this.slugFor(entry.id), entry.gameName]),
+    ];
     return btoa(String.fromCodePoint(...new TextEncoder().encode(JSON.stringify(payload))));
   }
 
@@ -32,27 +31,30 @@ export class ImportExportService {
   private decode(shareCode: string): SharePayload | null {
     try {
       const parsed: unknown = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(shareCode), (character) => character.codePointAt(0)!)));
-      if (!parsed || typeof parsed !== 'object') return null;
-      const { version, favorites, blacklist } = parsed as Record<string, unknown>;
-      if (version !== 1 || !Array.isArray(favorites) || !Array.isArray(blacklist)) return null;
-      if (!favorites.every((favorite) => this.isFavorite(favorite)) || !blacklist.every((entry) => this.isBlacklistEntry(entry))) return null;
-      return { version, favorites, blacklist };
+      if (!Array.isArray(parsed) || parsed.length !== 3) return null;
+      const [version, favorites, blacklist] = parsed;
+      if (version !== 2 || !Array.isArray(favorites) || !Array.isArray(blacklist)) return null;
+      if (!favorites.every((favorite) => this.isCompactFavorite(favorite)) || !blacklist.every((entry) => this.isCompactBlacklistEntry(entry))) return null;
+      const blacklistedAt = new Date().toISOString();
+      return {
+        favorites: favorites.map(([slug, gameName]) => ({ id: this.idFor(slug), ...(gameName ? { gameName } : {}) })),
+        blacklist: blacklist.map(([slug, gameName]) => ({ id: this.idFor(slug), gameName, blacklistedAt })),
+      };
     } catch {
       return null;
     }
   }
 
-  private isFavorite(value: unknown): value is { id: string; gameName?: string } {
-    if (!value || typeof value !== 'object') return false;
-    const { id, gameName } = value as Record<string, unknown>;
-    return typeof id === 'string' && !!id && (gameName === undefined || (typeof gameName === 'string' && !!gameName.trim()));
+  private isCompactFavorite(value: unknown): value is [string, string?] {
+    return Array.isArray(value) && (value.length === 1 || value.length === 2) && this.isSlug(value[0])
+      && (value.length === 1 || (typeof value[1] === 'string' && !!value[1].trim()));
   }
 
-  private isBlacklistEntry(value: unknown): value is BlacklistEntry {
-    if (!value || typeof value !== 'object') return false;
-    const { id, gameName, blacklistedAt } = value as Record<string, unknown>;
-    if (typeof id !== 'string' || !id || typeof gameName !== 'string' || !gameName || typeof blacklistedAt !== 'string') return false;
-    const date = new Date(blacklistedAt);
-    return !Number.isNaN(date.valueOf()) && date.toISOString() === blacklistedAt;
+  private isCompactBlacklistEntry(value: unknown): value is [string, string] {
+    return Array.isArray(value) && value.length === 2 && this.isSlug(value[0]) && typeof value[1] === 'string' && !!value[1].trim();
   }
+
+  private isSlug(value: unknown): value is string { return typeof value === 'string' && !!value && !value.includes('/'); }
+  private slugFor(id: string): string { return id.startsWith('/game/') ? id.slice('/game/'.length) : id; }
+  private idFor(slug: string): string { return `/game/${slug}`; }
 }

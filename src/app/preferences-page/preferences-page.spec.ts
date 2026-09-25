@@ -111,6 +111,12 @@ describe('PreferencesPageComponent', () => {
     expect(favorites?.querySelector('[data-favorite-id="/game/sea-of-thieves"]')?.textContent).toContain('Status unavailable');
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  });
+
   it('replaces both lists when an opaque share code is imported', () => {
     const preferences = TestBed.inject(PreferencesService);
     const importExport = TestBed.inject(ImportExportService);
@@ -133,7 +139,7 @@ describe('PreferencesPageComponent', () => {
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
   });
 
-  it('shows a generated share code outside a text field with a copy button', () => {
+  it('shows a generated share code outside a text field with copy and save buttons', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
@@ -144,5 +150,35 @@ describe('PreferencesPageComponent', () => {
     expect(code?.tagName).not.toBe('TEXTAREA');
     expect(code?.textContent?.trim()).toBeTruthy();
     expect((fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.copy-share-code')?.textContent?.trim()).toBe('Copy to clipboard');
+    const actions = (fixture.nativeElement as HTMLElement).querySelector('.share-code-actions')!;
+    expect([...actions.children].map((action) => action.className)).toEqual(['copy-share-code', 'save-share-code']);
+    const save = actions.querySelector<HTMLButtonElement>('.save-share-code');
+    expect(save?.getAttribute('aria-label')).toBe('Download as file');
+    expect(save?.title).toBe('Download as file');
+    expect(save?.querySelector('.download-icon')).toBeTruthy();
+  });
+
+  it('downloads the generated share code in a timestamped text file', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-25T10:15:00'));
+    const createObjectUrl = vi.fn(() => 'blob:share-code');
+    const revokeObjectUrl = vi.fn();
+    class TestUrl extends URL {
+      static override createObjectURL = createObjectUrl;
+      static override revokeObjectURL = revokeObjectUrl;
+    }
+    vi.stubGlobal('URL', TestUrl);
+    let downloadedFileName = '';
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (this: HTMLAnchorElement) { downloadedFileName = this.download; });
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.export-button')?.click();
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.save-share-code')?.click();
+
+    expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));
+    expect(downloadedFileName).toBe('personal-twitch-drops-2026-09-25-1015.txt');
+    expect(revokeObjectUrl).toHaveBeenCalledWith('blob:share-code');
   });
 });
