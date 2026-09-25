@@ -1,6 +1,7 @@
 import { Component, computed, inject, isDevMode, signal } from '@angular/core';
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
+import { DropChange } from './changes/change-detection';
 import { RouterLink, RouterOutlet } from '@angular/router';
 import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
@@ -17,6 +18,11 @@ export class App {
   protected readonly preferences = inject(PreferencesService);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);
+  protected readonly changeGroups: readonly { readonly type: DropChange['type']; readonly label: string }[] = [
+    { type: 'new', label: 'Newly added' },
+    { type: 'updated', label: 'Updated drops' },
+    { type: 'ended', label: 'Ended campaign' },
+  ];
   protected readonly changesOpen = signal(false);
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
@@ -46,6 +52,7 @@ export class App {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
+  protected changesOf(type: DropChange['type']): readonly DropChange[] { return this.changesState.changes().filter((change) => change.type === type); }
   protected debugNewGame(): void { this.seed([], [this.drop('Game 01', ['Raider pack'])]); }
   protected debugRewardSwap(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]); }
   protected debugEndedGame(): void { this.seed([this.drop('Game 01', ['Supply crate'])], []); }
