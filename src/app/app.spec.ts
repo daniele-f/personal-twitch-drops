@@ -141,6 +141,27 @@ describe('App', () => {
     expect(newGame?.querySelector('.change-since-refresh-dot')).toBeTruthy();
   });
 
+  it('marks updated games that changed since the prior same-day refresh', () => {
+    vi.useFakeTimers();
+    const previous = { id: '/game/existing', gameName: 'Existing Game', rewardCount: 1, rewards: ['Old reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const updated = { ...previous, rewards: ['Updated reward'] };
+    const changes = TestBed.inject(ChangesStateService);
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    changes.updateDrops([previous]);
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    changes.updateDrops([previous]);
+    changes.updateDrops([updated]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    fixture.detectChanges();
+
+    const updatedGame = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.changes-group li')]
+      .find((item) => item.textContent?.includes('Existing Game'));
+    expect(updatedGame?.querySelector('.change-since-refresh-dot')).toBeTruthy();
+  });
+
   it('does not show the developer menu until it is opened', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

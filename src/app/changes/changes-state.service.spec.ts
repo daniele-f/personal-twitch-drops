@@ -148,11 +148,11 @@ describe('ChangesStateService', () => {
     service.updateDrops([first]);
     service.updateDrops([first, added]);
 
-    expect(service.newSinceLastRefreshIds()).toEqual(new Set([added.id]));
+    expect(service.changedSinceLastRefreshIds()).toEqual(new Set([added.id]));
 
     service.updateDrops([first, added]);
     expect(service.changes().map((change) => change.drop.id)).toContain(added.id);
-    expect(service.newSinceLastRefreshIds()).toEqual(new Set());
+    expect(service.changedSinceLastRefreshIds()).toEqual(new Set());
   });
 
   it('persists that today’s changes have been viewed', () => {

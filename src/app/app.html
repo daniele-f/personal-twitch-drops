@@ -61,7 +61,7 @@
           @if (changes.length) {
             <section class="changes-group">
               <h3>{{ group.label }}</h3>
-              <ul>@for (change of changes; track change.drop.id) { <li>{{ change.drop.gameName }}@if (change.type === 'new' && changesState.newSinceLastRefreshIds().has(change.drop.id)) { <span class="change-since-refresh-dot" aria-label="Added since last refresh"></span> }</li> }</ul>
+              <ul>@for (change of changes; track change.drop.id) { <li>{{ change.drop.gameName }}@if (changesState.changedSinceLastRefreshIds().has(change.drop.id)) { <span class="change-since-refresh-dot" aria-label="Changed since last refresh"></span> }</li> }</ul>
             </section>
           }
         }
