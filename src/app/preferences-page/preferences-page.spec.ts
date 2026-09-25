@@ -117,12 +117,12 @@ describe('PreferencesPageComponent', () => {
     vi.unstubAllGlobals();
   });
 
-  it('replaces both lists when an opaque share code is imported', () => {
+  it('replaces both lists when an opaque share code is imported', async () => {
     const preferences = TestBed.inject(PreferencesService);
     const importExport = TestBed.inject(ImportExportService);
     preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     preferences.addBlacklist('/game/valorant', 'VALORANT');
-    const shareCode = importExport.export();
+    const shareCode = await importExport.export();
     preferences.removeFavorite('/game/sea-of-thieves');
     preferences.removeBlacklist('/game/valorant');
     preferences.addFavorite('/game/old-game', 'Old Game');
@@ -132,18 +132,18 @@ describe('PreferencesPageComponent', () => {
     const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('.import-code');
     input!.value = shareCode;
     input!.dispatchEvent(new Event('input'));
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.import-button')?.click();
+    await (fixture.componentInstance as unknown as { importLists(): Promise<void> }).importLists();
     fixture.detectChanges();
 
     expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
   });
 
-  it('shows a generated share code outside a text field with copy and save buttons', () => {
+  it('shows a generated share code outside a text field with copy and save buttons', async () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.export-button')?.click();
+    await (fixture.componentInstance as unknown as { generateShareCode(): Promise<void> }).generateShareCode();
     fixture.detectChanges();
 
     const code = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.share-code');
@@ -158,9 +158,7 @@ describe('PreferencesPageComponent', () => {
     expect(save?.querySelector('.download-icon')).toBeTruthy();
   });
 
-  it('downloads the generated share code in a timestamped text file', () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-09-25T10:15:00'));
+  it('downloads the generated share code in a timestamped text file', async () => {
     const createObjectUrl = vi.fn(() => 'blob:share-code');
     const revokeObjectUrl = vi.fn();
     class TestUrl extends URL {
@@ -173,8 +171,10 @@ describe('PreferencesPageComponent', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.export-button')?.click();
+    await (fixture.componentInstance as unknown as { generateShareCode(): Promise<void> }).generateShareCode();
     fixture.detectChanges();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-25T10:15:00'));
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.save-share-code')?.click();
 
     expect(createObjectUrl).toHaveBeenCalledWith(expect.any(Blob));

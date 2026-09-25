@@ -18,22 +18,18 @@ function createStorage(): Storage {
 describe('ImportExportService', () => {
   afterEach(() => TestBed.resetTestingModule());
 
-  it('exports a compact v2 share code that replaces both lists when imported', () => {
+  it('exports a slug-only URL-safe code that restores slug-derived display names', async () => {
     const sourceStorage = createStorage();
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: sourceStorage }] });
     const sourcePreferences = TestBed.inject(PreferencesService);
     const source = TestBed.inject(ImportExportService);
     sourcePreferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     sourcePreferences.addBlacklist('/game/valorant', 'VALORANT');
-    const shareCode = source.export();
+    const shareCode = await source.export();
 
     expect(shareCode).not.toContain('Sea of Thieves');
     expect(shareCode).not.toContain('VALORANT');
-    expect(JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(shareCode), (character) => character.codePointAt(0)!)))).toEqual([
-      2,
-      [['sea-of-thieves', 'Sea of Thieves']],
-      [['valorant', 'VALORANT']],
-    ]);
+    expect(shareCode).toMatch(/^[A-Za-z0-9_-]+$/);
 
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
@@ -42,31 +38,57 @@ describe('ImportExportService', () => {
     targetPreferences.addFavorite('/game/old-game', 'Old Game');
     targetPreferences.addBlacklist('/game/old-ignored', 'Old Ignored');
 
-    expect(target.import(shareCode)).toBe(true);
+    expect(await target.import(shareCode)).toBe(true);
     expect([...targetPreferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
-    expect(targetPreferences.favoriteNames().get('/game/sea-of-thieves')).toBe('Sea of Thieves');
+    expect(targetPreferences.favoriteNames().get('/game/sea-of-thieves')).toBe('Sea Of Thieves');
     expect(targetPreferences.blacklistEntries()).toEqual([
-      { id: '/game/valorant', gameName: 'VALORANT', blacklistedAt: expect.any(String) },
+      { id: '/game/valorant', gameName: 'Valorant', blacklistedAt: expect.any(String) },
     ]);
   });
 
-  it('leaves both lists untouched when the share code is invalid', () => {
+  it('falls back to an uncompressed slug-only code when native streams are unavailable', async () => {
+    vi.stubGlobal('CompressionStream', undefined);
+    vi.stubGlobal('DecompressionStream', undefined);
+    try {
+      TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
+      const sourcePreferences = TestBed.inject(PreferencesService);
+      const source = TestBed.inject(ImportExportService);
+      sourcePreferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+      sourcePreferences.addBlacklist('/game/valorant', 'VALORANT');
+
+      const shareCode = await source.export();
+      expect(shareCode).toMatch(/^j[A-Za-z0-9_-]+$/);
+
+      TestBed.resetTestingModule();
+      TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
+      const targetPreferences = TestBed.inject(PreferencesService);
+      const target = TestBed.inject(ImportExportService);
+
+      expect(await target.import(shareCode)).toBe(true);
+      expect([...targetPreferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
+      expect(targetPreferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('leaves both lists untouched when the share code is invalid', async () => {
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
     const preferences = TestBed.inject(PreferencesService);
     const importExport = TestBed.inject(ImportExportService);
     preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
     preferences.addBlacklist('/game/valorant', 'VALORANT');
 
-    expect(importExport.import('not-a-share-code')).toBe(false);
+    expect(await importExport.import('not-a-share-code')).toBe(false);
     expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
   });
 
-  it('rejects legacy v1 share codes', () => {
+  it('rejects v2 share codes', async () => {
     TestBed.configureTestingModule({ providers: [{ provide: PREFERENCES_STORAGE, useValue: createStorage() }] });
     const importExport = TestBed.inject(ImportExportService);
-    const v1ShareCode = btoa(JSON.stringify({ version: 1, favorites: [], blacklist: [] }));
+    const v2ShareCode = btoa(JSON.stringify([2, [], []]));
 
-    expect(importExport.import(v1ShareCode)).toBe(false);
+    expect(await importExport.import(v2ShareCode)).toBe(false);
   });
 });

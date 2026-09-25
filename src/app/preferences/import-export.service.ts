@@ -13,11 +13,11 @@ export class ImportExportService {
 
   export(): string {
     const payload = [
-      2,
-      [...this.preferences.favoriteIds()].map((id) => [this.slugFor(id), ...(this.preferences.favoriteNames().get(id) ? [this.preferences.favoriteNames().get(id)!] : [])]),
-      this.preferences.blacklistEntries().map((entry) => [this.slugFor(entry.id), entry.gameName]),
+      3,
+      [...this.preferences.favoriteIds()].map((id) => this.slugFor(id)),
+      this.preferences.blacklistEntries().map((entry) => this.slugFor(entry.id)),
     ];
-    return btoa(String.fromCodePoint(...new TextEncoder().encode(JSON.stringify(payload))));
+    return `j${this.toUrlSafeBase64(new TextEncoder().encode(JSON.stringify(payload)))}`;
   }
 
   import(shareCode: string): boolean {
@@ -30,31 +30,30 @@ export class ImportExportService {
 
   private decode(shareCode: string): SharePayload | null {
     try {
-      const parsed: unknown = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(shareCode), (character) => character.codePointAt(0)!)));
+      if (!shareCode.startsWith('j')) return null;
+      const parsed: unknown = JSON.parse(new TextDecoder().decode(this.fromUrlSafeBase64(shareCode.slice(1))));
       if (!Array.isArray(parsed) || parsed.length !== 3) return null;
       const [version, favorites, blacklist] = parsed;
-      if (version !== 2 || !Array.isArray(favorites) || !Array.isArray(blacklist)) return null;
-      if (!favorites.every((favorite) => this.isCompactFavorite(favorite)) || !blacklist.every((entry) => this.isCompactBlacklistEntry(entry))) return null;
+      if (version !== 3 || !Array.isArray(favorites) || !Array.isArray(blacklist)) return null;
+      if (!favorites.every((slug) => this.isSlug(slug)) || !blacklist.every((slug) => this.isSlug(slug))) return null;
       const blacklistedAt = new Date().toISOString();
       return {
-        favorites: favorites.map(([slug, gameName]) => ({ id: this.idFor(slug), ...(gameName ? { gameName } : {}) })),
-        blacklist: blacklist.map(([slug, gameName]) => ({ id: this.idFor(slug), gameName, blacklistedAt })),
+        favorites: favorites.map((slug) => ({ id: this.idFor(slug), gameName: this.displayNameFor(slug) })),
+        blacklist: blacklist.map((slug) => ({ id: this.idFor(slug), gameName: this.displayNameFor(slug), blacklistedAt })),
       };
     } catch {
       return null;
     }
   }
 
-  private isCompactFavorite(value: unknown): value is [string, string?] {
-    return Array.isArray(value) && (value.length === 1 || value.length === 2) && this.isSlug(value[0])
-      && (value.length === 1 || (typeof value[1] === 'string' && !!value[1].trim()));
+  private toUrlSafeBase64(bytes: Uint8Array): string { return btoa(String.fromCodePoint(...bytes)).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/, ''); }
+  private fromUrlSafeBase64(value: string): Uint8Array {
+    if (!/^[A-Za-z0-9_-]*$/.test(value) || value.length % 4 === 1) throw new Error('Invalid URL-safe Base64.');
+    const base64 = value.replaceAll('-', '+').replaceAll('_', '/').padEnd(Math.ceil(value.length / 4) * 4, '=');
+    return Uint8Array.from(atob(base64), (character) => character.codePointAt(0)!);
   }
-
-  private isCompactBlacklistEntry(value: unknown): value is [string, string] {
-    return Array.isArray(value) && value.length === 2 && this.isSlug(value[0]) && typeof value[1] === 'string' && !!value[1].trim();
-  }
-
   private isSlug(value: unknown): value is string { return typeof value === 'string' && !!value && !value.includes('/'); }
   private slugFor(id: string): string { return id.startsWith('/game/') ? id.slice('/game/'.length) : id; }
   private idFor(slug: string): string { return `/game/${slug}`; }
+  private displayNameFor(slug: string): string { return slug.replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (letter) => letter.toUpperCase()); }
 }
