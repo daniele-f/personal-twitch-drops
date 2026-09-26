@@ -79,11 +79,11 @@
     <section class="favorites-section">
       <div class="section-heading">
         <h2>Favorites ({{ visibleFavoriteDrops().length }})</h2>
+        @if (hiddenGameCount(); as hiddenCount) {
+          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
+        }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            @if (hiddenGameCount(); as hiddenCount) {
-              <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-            }
             <span class="toggle-control"
               ><label for="show-subs">Subs</label>
               <div class="toggle">
@@ -189,11 +189,11 @@
     <div class="section-heading">
       <h2>Active Drops ({{ visibleActiveDrops().length }})</h2>
       @if (!visibleFavoriteDrops().length) {
+        @if (hiddenGameCount(); as hiddenCount) {
+          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
+        }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            @if (hiddenGameCount(); as hiddenCount) {
-              <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-            }
             <span class="toggle-control"
               ><label for="show-subs">Subs</label>
               <div class="toggle">

@@ -229,9 +229,9 @@ describe('DropListComponent', () => {
     expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
     const toggles = page.querySelector('.active-section .display-toggles')!;
     expect([...toggles.children].map((element) => element.className)).toEqual([
-      'hidden-games-count', 'toggle-control', 'toggle-control',
+      'toggle-control', 'toggle-control',
     ]);
-    const hiddenCount = toggles.querySelector<HTMLElement>('.hidden-games-count')!;
+    const hiddenCount = page.querySelector<HTMLElement>('.active-section .hidden-games-count')!;
     expect(getComputedStyle(hiddenCount).fontSize).toBe('11px');
     expect(getComputedStyle(hiddenCount).color).toBe('rgb(184, 184, 189)');
 
