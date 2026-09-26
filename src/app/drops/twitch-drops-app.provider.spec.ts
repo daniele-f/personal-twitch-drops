@@ -1,7 +1,8 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { ACTIVE_DROPS_FIXTURE } from '../../test/fixtures/twitchdrops-active.fixture';
+import { Observable } from 'rxjs';
+import { ACTIVE_DROPS_FIXTURE, DROP_DETAILS_FIXTURE } from '../../test/fixtures/twitchdrops-active.fixture';
 import { TwitchDropsAppProvider } from './twitch-drops-app.provider';
 
 describe('TwitchDropsAppProvider', () => {
@@ -30,7 +31,10 @@ describe('TwitchDropsAppProvider', () => {
         id: '/game/sea-of-thieves',
         gameName: 'Sea of Thieves',
         rewardCount: 8,
-        rewards: [],
+        rewards: ['Coral Crown'],
+        rewardImages: ['https://cdn.example.test/coral-crown.png'],
+        publisher: 'Rare',
+        watchDuration: '1h–4h watch',
         endsAt: '2026-09-28T12:00:00.000Z',
         imageUrl: 'https://cdn.example.test/sea.png',
       },
@@ -42,6 +46,19 @@ describe('TwitchDropsAppProvider', () => {
         endsAt: '2026-10-01T00:00:00.000Z',
       },
     ]);
+  });
+
+  it('normalizes subscription requirements and badge rewards from a game detail page', () => {
+    let result: unknown;
+    const detailsProvider = provider as unknown as { loadDropDetails(id: string): Observable<unknown> };
+
+    detailsProvider.loadDropDetails('/game/elden-ring').subscribe((details) => (result = details));
+    httpTesting.expectOne('https://twitchdrops.app/game/elden-ring').flush(DROP_DETAILS_FIXTURE);
+
+    expect(result).toEqual({
+      requirementByReward: { 'Sorcerer Rogier': '1 sub' },
+      badgeRewardNames: ['Sorcerer Rogier'],
+    });
   });
 
   it('passes source request errors to the caller', () => {
