@@ -48,6 +48,23 @@ describe('TwitchDropsAppProvider', () => {
     ]);
   });
 
+  it('orders campaigns by their end datetime when the source cards are out of order', () => {
+    let result: unknown;
+
+    provider.loadActiveDrops().subscribe((drops) => (result = drops));
+    httpTesting.expectOne('https://twitchdrops.app/').flush(`
+      <main class="games-grid">
+        <a class="game-card" href="/game/later" data-game="later" data-drops="1" data-end="2026-10-02T12:00:00.000Z"></a>
+        <a class="game-card" href="/game/earlier" data-game="earlier" data-drops="1" data-end="2026-09-29T12:00:00.000Z"></a>
+      </main>
+    `);
+
+    expect(result).toEqual([
+      { id: '/game/earlier', gameName: 'Earlier', rewardCount: 1, rewards: [], endsAt: '2026-09-29T12:00:00.000Z' },
+      { id: '/game/later', gameName: 'Later', rewardCount: 1, rewards: [], endsAt: '2026-10-02T12:00:00.000Z' },
+    ]);
+  });
+
   it('normalizes subscription requirements and badge rewards from a game detail page', () => {
     let result: unknown;
     const detailsProvider = provider as unknown as { loadDropDetails(id: string): Observable<unknown> };

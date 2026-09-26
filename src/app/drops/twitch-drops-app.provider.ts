@@ -28,7 +28,8 @@ export class TwitchDropsAppProvider extends DropsProvider {
 
     return [...document.querySelectorAll<HTMLAnchorElement>('.game-card[data-game][data-drops][data-end]')]
       .map((card) => this.normalizeCard(card))
-      .filter((drop): drop is ActiveDrop => drop !== null);
+      .filter((drop): drop is ActiveDrop => drop !== null)
+      .sort((left, right) => Date.parse(left.endsAt) - Date.parse(right.endsAt));
   }
 
   private normalizeCard(card: HTMLAnchorElement): ActiveDrop | null {
