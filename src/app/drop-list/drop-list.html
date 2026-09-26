@@ -21,11 +21,11 @@
       </div>
       @if (detailsFor(drop); as details) {
         <nav class="game-links" [attr.aria-label]="'Links for ' + drop.gameName">
-          @if (details.primaryLink; as primaryLink) {
-            <a [href]="primaryLink.url" target="_blank" rel="noopener noreferrer">{{ primaryLink.label }}</a>
-          }
           @if (details.streamersUrl) {
             <a [href]="details.streamersUrl" target="_blank" rel="noopener noreferrer">Watch eligible streams</a>
+          }
+          @if (details.primaryLink; as primaryLink) {
+            <a [href]="primaryLink.url" target="_blank" rel="noopener noreferrer">{{ primaryLink.label }}</a>
           }
         </nav>
       }
