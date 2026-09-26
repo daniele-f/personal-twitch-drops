@@ -16,7 +16,7 @@ Add integration tests when service interactions need coverage, especially refres
 
 ## Manual browser testing
 
-Manually assess visual layout, responsive behavior, navigation, notification permissions, persistence across reloads, real Twitch data, and user experience. These require a browser or human judgment; deterministic logic does not.
+The user performs manual browser testing. At handoff, provide a focused checklist for visual layout, responsive behavior, navigation, notification permissions, persistence across reloads, real Twitch data, and user experience when those areas are affected. Deterministic logic belongs in automated tests.
 
 ## Commands
 

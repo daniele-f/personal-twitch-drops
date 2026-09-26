@@ -1,4 +1,4 @@
-<header class="app-header"><a class="wordmark" href="./" aria-label="Personal Twitch Drops home">Personal <span>Twitch Drops</span></a><nav aria-label="Application actions">@if (debugMenuEnabled) { <button class="debug-button" [class.debug-button--active]="debugMenuOpen()" type="button" (click)="debugMenuOpen.set(!debugMenuOpen())" [attr.aria-expanded]="debugMenuOpen()" aria-controls="debug-menu">Debug</button> }<a class="preferences-link" appButton="default" routerLink="/preferences">Preferences</a><button class="changes-button" [class.changes-button--active]="changesOpen()" type="button" (click)="changesOpen.set(!changesOpen())" [attr.aria-expanded]="changesOpen()">{{ changesState.changes().length ? 'Changes · ' + changesState.changes().length : 'No Changes' }}</button></nav></header>
+<header class="app-header"><a class="wordmark" href="./" aria-label="Personal Twitch Drops home">Personal <span>Twitch Drops</span></a><nav aria-label="Application actions">@if (debugMenuEnabled) { <button class="debug-button" [class.debug-button--active]="debugMenuOpen()" type="button" (click)="debugMenuOpen.set(!debugMenuOpen())" [attr.aria-expanded]="debugMenuOpen()" aria-controls="debug-menu">Debug</button> }<a class="preferences-link" appButton="default" routerLink="/preferences">Preferences</a><button #changesButton class="changes-button" [class.changes-button--active]="changesOpen()" type="button" (click)="toggleChangesPanel()" [attr.aria-expanded]="changesOpen()">{{ changesState.changes().length ? 'Changes · ' + changesState.changes().length : 'No Changes' }}@if (changesState.hasUnseenChanges()) { <span class="changes-notification-dot" aria-hidden="true"></span> }</button></nav></header>
 @if (debugMenuEnabled && debugMenuOpen()) {
   <aside class="debug-menu" id="debug-menu">
     <h2>Debug menu</h2>
@@ -10,17 +10,66 @@
         <button type="button" (click)="debugEndedGame()">Ended game</button>
         <button type="button" (click)="debugMultipleGames()">Multiple games</button>
         <button type="button" (click)="debugNewAndUpdated()">New and updated</button>
+        <button type="button" (click)="debugMockYesterday()">Mock yesterday's campaigns</button>
         <button type="button" (click)="debugClear()">Clear</button>
       </div>
     </details>
     <details>
       <summary>Storage</summary>
       <div class="debug-menu__actions">
-        <button type="button" (click)="debugShowStorage()">Show saved data</button>
-        @if (debugStorageInfo() !== null) { <pre class="debug-menu__output">{{ debugStorageInfo() }}</pre> }
+        <div class="debug-menu__storage-view" data-storage-view="favorites">
+          <button type="button" (click)="debugShowFavorites()">Show favorites</button>
+          @if (debugFavoritesInfo() !== null) { <pre class="debug-menu__output">{{ debugFavoritesInfo() }}</pre> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="ignored">
+          <button type="button" (click)="debugShowIgnored()">Show ignored games</button>
+          @if (debugIgnoredInfo() !== null) { <pre class="debug-menu__output">{{ debugIgnoredInfo() }}</pre> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="previous-day">
+          <button type="button" (click)="debugShowPreviousDay()">Show previous day</button>
+          @if (debugPreviousDayInfo() !== null) { <pre class="debug-menu__output">{{ debugPreviousDayInfo() }}</pre> }
+          <div class="debug-menu__snapshot-fields">
+            <input aria-label="Game name" [value]="debugPreviousGameName()" (input)="debugPreviousGameName.set($any($event.target).value)" placeholder="Game name">
+            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugPreviousRewardCount()" (input)="debugPreviousRewardCount.set($any($event.target).value)" placeholder="Reward count">
+            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugPreviousEndsInDays()" (input)="debugPreviousEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+          </div>
+          <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustPrevious('add')">Add</button><button type="button" (click)="debugAdjustPrevious('replace')">Replace</button></div>
+          @if (debugPreviousError() !== null) { <p class="debug-menu__error">{{ debugPreviousError() }}</p> }
+        </div>
+        <div class="debug-menu__storage-view" data-storage-view="today">
+          <button type="button" (click)="debugShowToday()">Show today's latest</button>
+          @if (debugTodayInfo() !== null) { <pre class="debug-menu__output">{{ debugTodayInfo() }}</pre> }
+          <div class="debug-menu__snapshot-fields">
+            <input aria-label="Game name" [value]="debugTodayGameName()" (input)="debugTodayGameName.set($any($event.target).value)" placeholder="Game name">
+            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugTodayRewardCount()" (input)="debugTodayRewardCount.set($any($event.target).value)" placeholder="Reward count">
+            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugTodayEndsInDays()" (input)="debugTodayEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+          </div>
+          <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustToday('add')">Add</button><button type="button" (click)="debugAdjustToday('replace')">Replace</button></div>
+          @if (debugTodayError() !== null) { <p class="debug-menu__error">{{ debugTodayError() }}</p> }
+        </div>
       </div>
     </details>
     <button type="button" (click)="debugMenuOpen.set(false)">Close menu</button>
   </aside>
 }
-@if (changesOpen()) { <aside class="changes-popover"><h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>@if (changesState.changes().length) { <ul>@for (change of changesState.changes(); track change.drop.id) { <li><strong>{{ change.drop.gameName }}</strong> · {{ change.type === 'new' ? 'New game' : change.type === 'ended' ? 'Ended' : 'Rewards updated' }}</li> }</ul> } @else { <p>No changes since your last refresh.</p> }<button class="changes-close" type="button" (click)="changesOpen.set(false)">Close</button></aside> } @if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }
+@if (changesOpen()) {
+  <aside #changesPanel class="changes-popover">
+    <div class="changes-popover__header">
+      <h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>
+      <span class="changes-show-hidden toggle-control"><label for="changes-show-hidden">Show ignored games</label><div class="toggle"><input #changesShowHiddenToggle id="changes-show-hidden" type="checkbox" [checked]="showHiddenChanges()" (change)="setShowHiddenChanges(changesShowHiddenToggle.checked)" /><label for="changes-show-hidden"></label></div></span>
+    </div>
+    @if (changesState.changes().length) {
+      @for (group of changeGroups; track group.type) {
+        @if (changesOf(group.type); as changes) {
+          @if (changes.length) {
+            <section class="changes-group">
+              <h3>{{ group.label }}</h3>
+              <ul>@for (change of changes; track change.drop.id) { <li [class.changes-change--ignored]="isIgnoredChange(change)">{{ change.drop.gameName }}@if (changesState.changedSinceLastRefreshIds().has(change.drop.id)) { <span class="change-since-refresh-dot" aria-label="Changed since last refresh"></span> }</li> }</ul>
+            </section>
+          }
+        }
+      }
+    } @else { <p>No changes since your last refresh.</p> }
+    <button class="changes-close" type="button" (click)="closeChangesPanel()">Close</button>
+  </aside>
+} @if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }
