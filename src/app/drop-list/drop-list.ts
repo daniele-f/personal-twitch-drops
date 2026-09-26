@@ -33,6 +33,8 @@ export class DropListComponent {
   protected readonly loadingDetailIds = signal<ReadonlySet<string>>(new Set());
   protected readonly failedDetailIds = signal<ReadonlySet<string>>(new Set());
   private readonly detailSignaturesById = signal<ReadonlyMap<string, string>>(new Map());
+  private readonly enrichedGameLinkIds = new Set<string>();
+  private readonly pendingGameLinkDropsById = new Map<string, ActiveDrop>();
   private readonly displayPreferences = this.readDisplayPreferences();
   protected readonly showSubscriptions = signal(this.displayPreferences.showSubscriptions);
   protected readonly showBadges = signal(this.displayPreferences.showBadges);
@@ -81,11 +83,14 @@ export class DropListComponent {
   protected toggleFavoriteDetails(drop: ActiveDrop): void {
     if (this.expandedFavoriteId() === drop.id) {
       this.expandedFavoriteId.set(null);
+      this.pendingGameLinkDropsById.delete(drop.id);
       return;
     }
 
+    const previouslyExpandedId = this.expandedFavoriteId();
+    if (previouslyExpandedId) this.pendingGameLinkDropsById.delete(previouslyExpandedId);
     this.expandedFavoriteId.set(drop.id);
-    this.ensureDetailsFor([drop]);
+    this.ensureDetailsFor([drop], true);
   }
 
   protected visibleFavoriteDrops(): readonly ActiveDrop[] {
@@ -100,7 +105,7 @@ export class DropListComponent {
     return [...this.favoriteDrops(), ...this.activeDrops()].filter((drop) => !this.isDropVisible(drop)).length;
   }
 
-  private ensureDetailsFor(drops: readonly ActiveDrop[]): void {
+  private ensureDetailsFor(drops: readonly ActiveDrop[], includeGameLinks = false): void {
     const detailsById = this.detailsByDropId();
     const loadingIds = this.loadingDetailIds();
     const failedIds = this.failedDetailIds();
@@ -108,12 +113,17 @@ export class DropListComponent {
     for (const drop of drops) {
       const signature = this.detailsSignature(drop);
       const isCurrent = signaturesById.get(drop.id) === signature;
+      const needsGameLinks = includeGameLinks && !this.enrichedGameLinkIds.has(drop.id);
       if ((detailsById.has(drop.id) || failedIds.has(drop.id)) && !isCurrent) {
         this.detailsByDropId.update((details) => { const next = new Map(details); next.delete(drop.id); return next; });
         this.failedDetailIds.update((ids) => { const next = new Set(ids); next.delete(drop.id); return next; });
       }
-      if ((detailsById.has(drop.id) && isCurrent) || loadingIds.has(drop.id) || (failedIds.has(drop.id) && isCurrent)) continue;
-      this.loadDetails(drop, signature);
+      if (needsGameLinks && loadingIds.has(drop.id)) {
+        this.pendingGameLinkDropsById.set(drop.id, drop);
+        continue;
+      }
+      if ((detailsById.has(drop.id) && isCurrent && !needsGameLinks) || loadingIds.has(drop.id) || (failedIds.has(drop.id) && isCurrent)) continue;
+      this.loadDetails(drop, signature, needsGameLinks);
     }
   }
 
@@ -122,23 +132,45 @@ export class DropListComponent {
     this.ensureDetailsFor(drops);
   }
 
-  private loadDetails(drop: ActiveDrop, signature: string): void {
+  private loadDetails(drop: ActiveDrop, signature: string, includeGameLinks = false): void {
 
     this.loadingDetailIds.update((ids) => new Set(ids).add(drop.id));
     this.detailSignaturesById.update((signatures) => new Map(signatures).set(drop.id, signature));
-    this.dropsProvider.loadDropDetails(drop.id).subscribe({
-      next: (details) => this.detailsByDropId.update((detailsById) => new Map(detailsById).set(drop.id, details)),
-      error: () => { this.failedDetailIds.update((ids) => new Set(ids).add(drop.id)); this.finishLoadingDetails(drop.id); },
+    if (includeGameLinks) this.enrichedGameLinkIds.add(drop.id);
+    const detailsRequest = includeGameLinks
+      ? this.dropsProvider.loadDropDetails(drop.id, drop.gameName)
+      : this.dropsProvider.loadDropDetails(drop.id);
+    detailsRequest.subscribe({
+      next: (details) => {
+        this.detailsByDropId.update((detailsById) => new Map(detailsById).set(drop.id, details));
+        if (includeGameLinks) this.logGameLinkResult(drop, details);
+      },
+      error: () => {
+        if (includeGameLinks) this.enrichedGameLinkIds.delete(drop.id);
+        this.failedDetailIds.update((ids) => new Set(ids).add(drop.id));
+        this.finishLoadingDetails(drop.id, false);
+      },
       complete: () => this.finishLoadingDetails(drop.id),
     });
   }
 
-  private finishLoadingDetails(id: string): void {
+  private logGameLinkResult(drop: ActiveDrop, details: DropDetails): void {
+    const link = details.primaryLink;
+    console.log(`[Game links] ${drop.gameName}: ${link ? `${link.label} — ${link.url}` : 'None'}`);
+  }
+
+  private finishLoadingDetails(id: string, startPendingGameLinkLookup = true): void {
     this.loadingDetailIds.update((ids) => {
       const nextIds = new Set(ids);
       nextIds.delete(id);
       return nextIds;
     });
+    if (!startPendingGameLinkLookup) return;
+
+    const pendingDrop = this.pendingGameLinkDropsById.get(id);
+    if (!pendingDrop) return;
+    this.pendingGameLinkDropsById.delete(id);
+    this.ensureDetailsFor([pendingDrop], true);
   }
 
   protected detailsFor(drop: ActiveDrop): DropDetails | undefined {

@@ -359,6 +359,72 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
   });
 
+  it('defers game-link enrichment until a game is opened', () => {
+    render([], [sea, valorant]);
+
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id);
+    expect(loadDropDetails).toHaveBeenCalledWith(valorant.id);
+    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
+    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--icon')!.click();
+    fixture.detectChanges();
+
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
+    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
+  });
+
+  it('starts game-link enrichment after details finish loading for an opened game', () => {
+    const initialDetails = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();
+    loadDropDetails.mockImplementation((_id: string, gameName?: string) => gameName
+      ? of({ requirementByReward: {}, badgeRewardNames: [], primaryLink: { label: 'Official website', url: 'https://example-game.test/' } })
+      : initialDetails);
+    render([], [sea]);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!.click();
+    fixture.detectChanges();
+    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
+
+    initialDetails.next({ requirementByReward: {}, badgeRewardNames: [] });
+    initialDetails.complete();
+    fixture.detectChanges();
+
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
+  });
+
+  it('cancels queued game-link enrichment when the game is closed before details finish loading', () => {
+    const initialDetails = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();
+    loadDropDetails.mockReturnValue(initialDetails);
+    render([], [sea]);
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!;
+
+    toggle.click();
+    toggle.click();
+    initialDetails.next({ requirementByReward: {}, badgeRewardNames: [] });
+    initialDetails.complete();
+    fixture.detectChanges();
+
+    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
+  });
+
+  it('retries game-link enrichment after its source request fails and details refresh', () => {
+    loadDropDetails.mockImplementation((_id: string, gameName?: string) => gameName
+      ? throwError(() => new Error('Unavailable'))
+      : of({ requirementByReward: {}, badgeRewardNames: [] }));
+    render([], [sea]);
+    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!;
+
+    toggle.click();
+    fixture.detectChanges();
+    fixture.componentRef.setInput('activeDrops', [{ ...sea }]);
+    fixture.detectChanges();
+    toggle.click();
+    toggle.click();
+    fixture.detectChanges();
+
+    expect(loadDropDetails.mock.calls.filter((call) => call[0] === sea.id && call[1] === sea.gameName)).toHaveLength(2);
+  });
+
   it('opens an active game’s rewards when its card is clicked', () => {
     render([], [sea]);
 
@@ -425,6 +491,52 @@ describe('DropListComponent', () => {
     expect(endTime?.title).toContain('2026');
   });
 
+  it('renders Steam and eligible-stream links without a TwitchDrops details link for an opened game', () => {
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: {},
+      badgeRewardNames: [],
+      primaryLink: { label: 'Steam', url: 'https://store.steampowered.com/app/1172470/Apex_Legends/' },
+      detailsUrl: 'https://twitchdrops.app/game/apex-legends',
+      streamersUrl: 'https://www.twitch.tv/directory/category/apex-legends',
+    }));
+    render([sea], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.game-links a')];
+    expect(links.map((link) => ({ label: link.textContent?.trim(), url: link.href }))).toEqual([
+      { label: 'Steam', url: 'https://store.steampowered.com/app/1172470/Apex_Legends/' },
+      { label: 'Watch eligible streams', url: 'https://www.twitch.tv/directory/category/apex-legends' },
+    ]);
+    expect(links.every((link) => link.target === '_blank' && link.rel === 'noopener noreferrer')).toBe(true);
+  });
+
+  it('logs the Steam link after a game is opened', () => {
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: {}, badgeRewardNames: [], primaryLink: { label: 'Steam', url: 'https://store.steampowered.com/app/123456/' },
+    }));
+    render([], [sea]);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!.click();
+
+    expect(consoleLog).toHaveBeenCalledWith('[Game links] Sea of Thieves: Steam — https://store.steampowered.com/app/123456/');
+  });
+
+  it.each([
+    [{ label: 'Official website' as const, url: 'https://example-game.test/' }, '[Game links] Sea of Thieves: Official website — https://example-game.test/'],
+    [undefined, '[Game links] Sea of Thieves: None'],
+  ])('logs the resolved primary-link state after a game is opened', (primaryLink, expectedMessage) => {
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [], ...(primaryLink ? { primaryLink } : {}) }));
+    render([], [sea]);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!.click();
+
+    expect(consoleLog).toHaveBeenCalledWith(expectedMessage);
+  });
+
   it('shows the remaining time in the card summary and the end date in expanded details', () => {
     vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-26T12:00:00.000Z'));
     render([sea], []);
@@ -470,7 +582,7 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
 
     const details = fixture.nativeElement.querySelector('.reward-details') as HTMLElement;
-    expect(loadDropDetails).toHaveBeenCalledWith('/game/elden-ring');
+    expect(loadDropDetails).toHaveBeenCalledWith('/game/elden-ring', 'ELDEN RING');
     expect(details.textContent).toContain('1 sub');
     expect(details.querySelector('.reward-type')?.textContent).toContain('Badge');
   });

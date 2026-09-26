@@ -4,5 +4,5 @@ import { DropDetails } from './drop-details';
 
 export abstract class DropsProvider {
   abstract loadActiveDrops(): Observable<readonly ActiveDrop[]>;
-  abstract loadDropDetails(id: string): Observable<DropDetails>;
+  abstract loadDropDetails(id: string, gameName?: string): Observable<DropDetails>;
 }
