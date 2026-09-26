@@ -246,12 +246,14 @@ export class DropListComponent {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(drop.endsAt));
   }
 
-  protected summary(drop: ActiveDrop): string {
+  protected rewardSummary(drop: ActiveDrop): string {
     const rewardLabel = drop.rewardCount === 1 ? 'reward' : 'rewards';
-    const endDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
+    return `${drop.rewardCount} ${rewardLabel}`;
+  }
+
+  protected endDate(drop: ActiveDrop): string {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
       new Date(drop.endsAt),
     );
-
-    return `${drop.rewardCount} ${rewardLabel} · Ends ${endDate}`;
   }
 }
