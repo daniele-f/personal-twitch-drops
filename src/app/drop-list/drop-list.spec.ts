@@ -202,6 +202,19 @@ describe('DropListComponent', () => {
     expect(page.querySelector('.active-section .section-heading')?.textContent).toContain('Manage');
   });
 
+  it('shows a search result hidden by reward filters with an explanatory state', () => {
+    const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({ requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }));
+    fixture.componentRef.setInput('searchActive', true);
+    fixture.componentRef.setInput('ignoredDropIds', new Set([subscriptionOnly.id]));
+    render([], [subscriptionOnly]);
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/subscription-only"]');
+    expect(row?.textContent).toContain('Subscription Only');
+    expect(row?.textContent).toContain('Ignored');
+    expect(row?.textContent).toContain('Hidden by reward filter');
+  });
+
   it('reports how many games are hidden by the reward filters', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
