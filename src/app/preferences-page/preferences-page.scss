@@ -37,6 +37,42 @@
   margin: 0 0 1.1rem;
   font-size: 1.7rem;
 }
+.import-export {
+  display: grid;
+  gap: .65rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #3c2c55;
+  border-radius: .65rem;
+  background: #1b1820;
+}
+.import-export h2,
+.import-export h3,
+.import-export p { margin: 0; }
+.import-export h2 { font-size: 1.1rem; }
+.import-export hr { width: 100%; border: 0; border-top: 1px solid #3c2c55; }
+.share-code-label { font-weight: 600; }
+.share-code,
+.import-code { box-sizing: border-box; border: 1px solid #5f3b91; border-radius: .45rem; padding: .6rem; background: #111114; color: var(--color-text); font-family: monospace; }
+.share-code { display: block; overflow-wrap: anywhere; }
+.import-code { width: 100%; min-height: 4.5rem; resize: vertical; }
+.share-code-actions { display: flex; gap: .5rem; }
+.download-icon { display: block; width: 1.1rem; height: 1.1rem; }
+.export-button,
+.import-button,
+.copy-share-code,
+.save-share-code { width: fit-content; border: 1px solid var(--color-accent); border-radius: .45rem; padding: .5rem .75rem; background: #2d1b44; color: var(--color-text); cursor: pointer; }
+.export-button:hover,
+.export-button:focus-visible,
+.import-button:hover,
+.import-button:focus-visible,
+.copy-share-code:hover,
+.copy-share-code:focus-visible,
+.save-share-code:hover,
+.save-share-code:focus-visible { background: #44266b; }
+.import-help { color: #aeafb8; font-size: .85rem; }
+.import-message,
+.copy-message { color: #83d7ad; }
 .favorites-disclosure,
 .blacklist-disclosure {
   display: inline-flex;
@@ -95,14 +131,11 @@
   text-align: left;
 }
 .preferences-shell th:first-child {
-  width: 35%;
-}
-.preferences-shell th:nth-child(2) {
-  width: 25%;
+  width: 70%;
 }
 .preferences-shell th,
 .preferences-shell td {
-  padding: 0.7rem;
+  padding: 0.8rem 0.7rem;
   overflow: visible;
   border-bottom: 1px solid #303036;
 }
@@ -114,7 +147,6 @@
 .remove-action {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
 }
 .remove-favorite,
 .remove-blacklist {
@@ -131,11 +163,6 @@
 .remove-favorite--armed,
 .remove-blacklist--armed {
   background: #d12f2f;
-}
-.remove-hint {
-  color: #ffb4b4;
-  font-size: 0.75rem;
-  white-space: nowrap;
 }
 @media (max-width: 520px) {
   .preferences-shell {

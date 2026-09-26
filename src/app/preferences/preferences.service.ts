@@ -65,6 +65,19 @@ export class PreferencesService {
     this.persistBlacklist(next);
   }
 
+  replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[]): void {
+    const favoriteIds = new Set(favorites.map((favorite) => favorite.id));
+    const favoriteNames = new Map(favorites.flatMap((favorite) => favorite.gameName ? [[favorite.id, favorite.gameName.trim()] as const] : []));
+    const blacklistEntries = [...blacklist].sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
+
+    this.favoriteIds.set(favoriteIds);
+    this.favoriteNames.set(favoriteNames);
+    this.blacklistEntries.set(blacklistEntries);
+    this.persist(favoriteIds);
+    this.persistFavoriteNames(favoriteNames);
+    this.persistBlacklist(blacklistEntries);
+  }
+
   private readFavoriteIds(): ReadonlySet<string> {
     if (!this.storage) return new Set();
 
