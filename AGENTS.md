@@ -2,7 +2,7 @@
 
 ## Focus
 
-* Read and inspect only the files and documentation relevant to the current task.
+* Read and inspect only the files and documentation directly relevant to the current task. Do not enumerate, read, or summarize the entire `docs/` tree; open a document only when the task needs it.
 * Keep plans and explanations concise.
 * Do not make unrelated refactors, cleanup, or architectural changes. Report unrelated issues instead.
 
@@ -15,6 +15,7 @@
 ## Documentation
 
 * Do not create design specifications or implementation-plan files for normal feature work unless the user explicitly requests them. Keep planning in the conversation. Create repository documentation only when it is required for the product, requested by the user, or needed to explain a lasting architectural decision.
+* When locating an unfamiliar feature area, consult docs/CODEMAP.md before scanning the source tree. Update that map only when adding, removing, or moving a feature area, or when its responsibility changes materially; do not update it for routine edits.
 
 ## Git and merging
 
@@ -27,10 +28,13 @@
 
 ## Testing and handoff
 
-* For code changes, run appropriate automated tests, lint, and a production build. For documentation-only changes, run only relevant checks.
+* Choose verification by change impact to avoid unnecessary work:
+  * For deterministic logic or provider/parser changes, run the relevant automated tests and lint. Run the full test suite and production build for cross-cutting changes, provider changes, or before merge.
+  * For template or style-only changes, run lint and a production build; add or run a component test only when behavior changes.
+  * For documentation or configuration-only changes, run only the relevant checks.
 * Automate deterministic logic; use fixtures or mocks for external-provider tests instead of repeatedly calling real services.
-* Manually check UI features in the browser, including real external data when relevant.
-* At handoff, state what changed, which checks ran, what the user should test, and any limitations.
+* Do not run browser or UI checks. The user performs manual UI testing; at handoff, provide a focused list of UI behaviors for them to test when relevant. Use real external data only for provider/parser or refresh behavior changes.
+* At handoff, state what changed, which automated checks ran, what the user should test, and any limitations.
 
 ## Architecture
 
