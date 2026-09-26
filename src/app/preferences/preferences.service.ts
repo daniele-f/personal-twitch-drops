@@ -1,20 +1,24 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BlacklistEntry } from './blacklist-entry';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
 
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
   private readonly storage = inject(PREFERENCES_STORAGE);
   readonly favoriteIds = signal<ReadonlySet<string>>(this.readFavoriteIds());
+  readonly favoriteNames = signal<ReadonlyMap<string, string>>(this.readFavoriteNames());
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
 
-  addFavorite(id: string): void {
-    if (!id || this.favoriteIds().has(id)) return;
+  addFavorite(id: string, gameName?: string): void {
+    if (!id) return;
 
-    const next = new Set(this.favoriteIds());
-    next.add(id);
-    this.favoriteIds.set(next);
-    this.persist(next);
+    if (!this.favoriteIds().has(id)) {
+      const next = new Set(this.favoriteIds());
+      next.add(id);
+      this.favoriteIds.set(next);
+      this.persist(next);
+    }
+    if (gameName) this.rememberFavoriteNames([{ id, gameName }]);
   }
 
   removeFavorite(id: string): void {
@@ -23,6 +27,26 @@ export class PreferencesService {
 
     this.favoriteIds.set(next);
     this.persist(next);
+    if (this.favoriteNames().has(id)) {
+      const names = new Map(this.favoriteNames());
+      names.delete(id);
+      this.favoriteNames.set(names);
+      this.persistFavoriteNames(names);
+    }
+  }
+
+  rememberFavoriteNames(games: readonly { id: string; gameName: string }[]): void {
+    const names = new Map(this.favoriteNames());
+    let changed = false;
+    for (const game of games) {
+      const name = game.gameName.trim();
+      if (!this.favoriteIds().has(game.id) || !name || names.get(game.id) === name) continue;
+      names.set(game.id, name);
+      changed = true;
+    }
+    if (!changed) return;
+    this.favoriteNames.set(names);
+    this.persistFavoriteNames(names);
   }
 
   addBlacklist(id: string, gameName: string): void {
@@ -39,6 +63,19 @@ export class PreferencesService {
 
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+  }
+
+  replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[]): void {
+    const favoriteIds = new Set(favorites.map((favorite) => favorite.id));
+    const favoriteNames = new Map(favorites.flatMap((favorite) => favorite.gameName ? [[favorite.id, favorite.gameName.trim()] as const] : []));
+    const blacklistEntries = [...blacklist].sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
+
+    this.favoriteIds.set(favoriteIds);
+    this.favoriteNames.set(favoriteNames);
+    this.blacklistEntries.set(blacklistEntries);
+    this.persist(favoriteIds);
+    this.persistFavoriteNames(favoriteNames);
+    this.persistBlacklist(blacklistEntries);
   }
 
   private readFavoriteIds(): ReadonlySet<string> {
@@ -75,6 +112,18 @@ export class PreferencesService {
     }
   }
 
+  private readFavoriteNames(): ReadonlyMap<string, string> {
+    if (!this.storage) return new Map();
+    try {
+      const value = this.storage.getItem(FAVORITE_NAMES_STORAGE_KEY);
+      const parsed: unknown = value === null ? {} : JSON.parse(value);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return new Map();
+      return new Map(Object.entries(parsed).filter(([id, name]) => this.favoriteIds().has(id) && typeof name === 'string' && name.trim()).map(([id, name]) => [id, name as string]));
+    } catch {
+      return new Map();
+    }
+  }
+
   private persist(favoriteIds: ReadonlySet<string>): void {
     if (!this.storage) return;
 
@@ -92,6 +141,16 @@ export class PreferencesService {
     try {
       if (entries.length === 0) this.storage.removeItem(BLACKLIST_ENTRIES_STORAGE_KEY);
       else this.storage.setItem(BLACKLIST_ENTRIES_STORAGE_KEY, JSON.stringify(entries));
+    } catch {
+      // Preferences remain available for this browser session.
+    }
+  }
+
+  private persistFavoriteNames(names: ReadonlyMap<string, string>): void {
+    if (!this.storage) return;
+    try {
+      if (names.size === 0) this.storage.removeItem(FAVORITE_NAMES_STORAGE_KEY);
+      else this.storage.setItem(FAVORITE_NAMES_STORAGE_KEY, JSON.stringify(Object.fromEntries(names)));
     } catch {
       // Preferences remain available for this browser session.
     }

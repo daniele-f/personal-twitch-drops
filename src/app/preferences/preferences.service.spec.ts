@@ -48,6 +48,28 @@ describe('PreferencesService', () => {
     expect(storage.getItem(FAVORITE_IDS_STORAGE_KEY)).toBeNull();
   });
 
+  it('saves a favorite name and restores it on a later visit', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+
+    service.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    expect(storage.getItem('personal-twitch-drops.favorite-names.v1')).toBe('{"/game/sea-of-thieves":"Sea of Thieves"}');
+
+    TestBed.resetTestingModule();
+    const restored = configure(storage);
+    expect(restored.favoriteNames().get('/game/sea-of-thieves')).toBe('Sea of Thieves');
+  });
+
+  it('removes a saved favorite name when its favorite is removed', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+
+    service.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    service.removeFavorite('/game/sea-of-thieves');
+
+    expect(storage.getItem('personal-twitch-drops.favorite-names.v1')).toBeNull();
+  });
+
   it('persists a dated blacklist entry and preserves its original timestamp', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-21T10:00:00.000Z'));
