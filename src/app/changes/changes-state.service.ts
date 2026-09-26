@@ -51,6 +51,8 @@ export class ChangesStateService {
 
   clear(): readonly DropChange[] { this.drops.set([]); this.changes.set([]); this.changedSinceLastRefreshIds.set(new Set()); return this.changes(); }
 
+  clearChangedSinceLastRefresh(): void { this.changedSinceLastRefreshIds.set(new Set()); }
+
   markChangesViewed(): void {
     const signature = this.changesSignature(this.changes());
     this.viewedChangesSignature.set(signature);

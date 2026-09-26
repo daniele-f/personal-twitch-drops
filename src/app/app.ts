@@ -8,6 +8,8 @@ import { PreferencesService } from './preferences/preferences.service';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { ButtonDirective } from './ui/button.directive';
 
+export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
+
 @Component({
   imports: [ButtonDirective, ConflictResolutionComponent, RouterLink, RouterOutlet],
   selector: 'app-root',
@@ -26,6 +28,7 @@ export class App {
   private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
   private readonly changesPanel = viewChild<ElementRef<HTMLElement>>('changesPanel');
   protected readonly changesOpen = signal(false);
+  protected readonly showHiddenChanges = signal(this.readShowHiddenChanges());
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
   protected readonly debugFavoritesInfo = signal<string | null>(null);
@@ -56,16 +59,34 @@ export class App {
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
   protected toggleChangesPanel(): void {
     const opening = !this.changesOpen();
-    this.changesOpen.set(opening);
-    if (opening) this.changesState.markChangesViewed();
+    if (opening) {
+      this.changesOpen.set(true);
+      this.changesState.markChangesViewed();
+    } else {
+      this.closeChangesPanel();
+    }
+  }
+  protected closeChangesPanel(): void {
+    this.changesState.clearChangedSinceLastRefresh();
+    this.changesOpen.set(false);
   }
   @HostListener('document:click', ['$event'])
   protected closeChangesOnOutsideClick(event: MouseEvent): void {
     if (!this.changesOpen() || !(event.target instanceof Node)) return;
     if (this.changesButton()?.nativeElement.contains(event.target) || this.changesPanel()?.nativeElement.contains(event.target)) return;
-    this.changesOpen.set(false);
+    this.closeChangesPanel();
   }
-  protected changesOf(type: DropChange['type']): readonly DropChange[] { return this.changesState.changes().filter((change) => change.type === type); }
+  protected changesOf(type: DropChange['type']): readonly DropChange[] {
+    const hiddenIds = new Set(this.preferences.blacklistEntries().map((entry) => entry.id));
+    return this.changesState.changes().filter((change) => change.type === type && (this.showHiddenChanges() || !hiddenIds.has(change.drop.id)));
+  }
+  protected isIgnoredChange(change: DropChange): boolean {
+    return this.showHiddenChanges() && this.preferences.blacklistEntries().some((entry) => entry.id === change.drop.id);
+  }
+  protected setShowHiddenChanges(showHidden: boolean): void {
+    this.showHiddenChanges.set(showHidden);
+    try { this.storage?.setItem(CHANGES_SHOW_HIDDEN_STORAGE_KEY, String(showHidden)); } catch { /* Storage is optional. */ }
+  }
   protected debugNewGame(): void { this.seed([], [this.drop('Game 01', ['Raider pack'])]); }
   protected debugRewardSwap(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]); }
   protected debugEndedGame(): void { this.seed([this.drop('Game 01', ['Supply crate'])], []); }
@@ -171,6 +192,9 @@ export class App {
     const raw = this.storage?.getItem(key);
     if (raw === null || raw === undefined) return emptyValue;
     try { return JSON.parse(raw); } catch { return raw; }
+  }
+  private readShowHiddenChanges(): boolean {
+    try { return this.storage?.getItem(CHANGES_SHOW_HIDDEN_STORAGE_KEY) === 'true'; } catch { return false; }
   }
   private seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly unknown[] { const changes = this.changesState.seed(previous, current); this.changesOpen.set(true); return changes; }
   private drop(gameName: string, rewards: readonly string[], endsAt = '2026-09-30T00:00:00.000Z'): ActiveDrop { return { id: `/game/${gameName.toLowerCase().replaceAll(' ', '-')}`, gameName, rewardCount: rewards.length, rewards, endsAt }; }

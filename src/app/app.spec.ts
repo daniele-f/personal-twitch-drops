@@ -85,16 +85,29 @@ describe('App', () => {
   });
 
   it('closes the Changes panel when a click lands outside it', () => {
+    vi.useFakeTimers();
+    const changes = TestBed.inject(ChangesStateService);
+    const existing = { id: '/game/existing', gameName: 'Existing Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const added = { id: '/game/added', gameName: 'Added Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    changes.updateDrops([existing]);
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
+    changes.updateDrops([existing]);
+    changes.updateDrops([existing, added]);
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
     const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')!;
 
     button.click();
     fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.change-since-refresh-dot')).toBeTruthy();
     document.body.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     fixture.detectChanges();
 
     expect(fixture.nativeElement.querySelector('.changes-popover')).toBeNull();
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.change-since-refresh-dot')).toBeNull();
   });
 
   it('groups new, updated, and ended games in the Changes panel', () => {
@@ -118,6 +131,67 @@ describe('App', () => {
     const groups = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.changes-group');
     expect([...groups].map((group) => group.querySelector('h3')?.textContent?.trim())).toEqual(['Newly added', 'Updated drops', 'Ended campaign']);
     expect([...groups].map((group) => group.querySelector('li')?.textContent?.trim())).toEqual(['New Game', 'Updated Game', 'Ended Game']);
+  });
+
+  it('hides ignored games until Show ignored games is enabled and persists the setting', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addBlacklist('/game/hidden', 'Hidden Game');
+    const changes = TestBed.inject(ChangesStateService);
+    changes.seed([], [
+      { id: '/game/visible', gameName: 'Visible Game', rewardCount: 1, rewards: ['Visible reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+      { id: '/game/hidden', gameName: 'Hidden Game', rewardCount: 1, rewards: ['Hidden reward'], endsAt: '2026-09-24T00:00:00.000Z' },
+    ]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    fixture.detectChanges();
+
+    const panel = fixture.nativeElement as HTMLElement;
+    const toggle = panel.querySelector<HTMLInputElement>('#changes-show-hidden')!;
+    expect(toggle.checked).toBe(false);
+    expect(panel.textContent).toContain('Show ignored games');
+    expect(panel.querySelector('.changes-show-hidden .toggle')).toBeTruthy();
+    expect([...panel.querySelectorAll('.changes-group li')].map((item) => item.textContent?.trim())).toEqual(['Visible Game']);
+
+    toggle.click();
+    fixture.detectChanges();
+
+    expect([...panel.querySelectorAll('.changes-group li')].map((item) => item.textContent?.trim())).toEqual(['Visible Game', 'Hidden Game']);
+    const ignoredGame = [...panel.querySelectorAll<HTMLElement>('.changes-group li')].find((item) => item.textContent?.includes('Hidden Game'))!;
+    expect(getComputedStyle(ignoredGame).opacity).toBe('0.65');
+    expect(localStorage.getItem('personal-twitch-drops.changes-show-hidden.v1')).toBe('true');
+
+    const reloadedFixture = TestBed.createComponent(App);
+    reloadedFixture.detectChanges();
+    (reloadedFixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')?.click();
+    reloadedFixture.detectChanges();
+    expect((reloadedFixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('#changes-show-hidden')?.checked).toBe(true);
+  });
+
+  it('clears newly added dots when the Changes panel is closed', () => {
+    vi.useFakeTimers();
+    const changes = TestBed.inject(ChangesStateService);
+    const existing = { id: '/game/existing', gameName: 'Existing Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    const added = { id: '/game/added', gameName: 'Added Game', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    vi.setSystemTime(new Date('2026-09-22T10:00:00'));
+    changes.updateDrops([existing]);
+    vi.setSystemTime(new Date('2026-09-23T10:00:00'));
+    changes.updateDrops([existing]);
+    changes.updateDrops([existing, added]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-button')!;
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.change-since-refresh-dot')).toBeTruthy();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.changes-close')?.click();
+    fixture.detectChanges();
+    button.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.change-since-refresh-dot')).toBeNull();
   });
 
   it('marks newly added games that arrived since the prior same-day refresh', () => {
