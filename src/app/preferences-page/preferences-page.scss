@@ -175,4 +175,19 @@
   .preferences-shell td {
     padding: 0.5rem 0.25rem;
   }
+  .preferences-shell th:first-child {
+    width: auto;
+  }
+  .preferences-shell th:nth-child(2) {
+    width: 4.2rem;
+  }
+  .preferences-shell th:nth-child(3) {
+    width: 5.25rem;
+  }
+  .preferences-shell td:nth-child(2),
+  .preferences-shell td:nth-child(3),
+  .remove-favorite,
+  .remove-blacklist {
+    white-space: nowrap;
+  }
 }
