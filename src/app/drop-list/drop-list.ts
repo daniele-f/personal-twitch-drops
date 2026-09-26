@@ -22,6 +22,8 @@ export class DropListComponent {
   readonly loading = input.required<boolean>();
   readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly updatedDropIds = input<ReadonlySet<string>>(new Set());
+  readonly searchActive = input(false);
+  readonly ignoredDropIds = input<ReadonlySet<string>>(new Set());
   readonly favoriteRequested = output<ActiveDrop>();
   readonly unfavoriteRequested = output<ActiveDrop>();
   readonly blacklistRequested = output<ActiveDrop>();
@@ -168,6 +170,10 @@ export class DropListComponent {
   }
 
   private isDropVisible(drop: ActiveDrop): boolean {
+    return this.searchActive() || this.isVisibleUnderRewardFilters(drop);
+  }
+
+  private isVisibleUnderRewardFilters(drop: ActiveDrop): boolean {
     return !drop.rewards?.length || !this.detailsFor(drop) || this.visibleRewards(drop).length > 0;
   }
 
@@ -195,6 +201,14 @@ export class DropListComponent {
 
   private restoreToggleFocus(id: string): void {
     afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
+  }
+
+  protected isIgnored(drop: ActiveDrop): boolean {
+    return this.ignoredDropIds().has(drop.id);
+  }
+
+  protected isHiddenByRewardFilter(drop: ActiveDrop): boolean {
+    return !this.isVisibleUnderRewardFilters(drop);
   }
 
   private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean } {
@@ -232,12 +246,14 @@ export class DropListComponent {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(drop.endsAt));
   }
 
-  protected summary(drop: ActiveDrop): string {
+  protected rewardSummary(drop: ActiveDrop): string {
     const rewardLabel = drop.rewardCount === 1 ? 'reward' : 'rewards';
-    const endDate = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
+    return `${drop.rewardCount} ${rewardLabel}`;
+  }
+
+  protected endDate(drop: ActiveDrop): string {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
       new Date(drop.endsAt),
     );
-
-    return `${drop.rewardCount} ${rewardLabel} · Ends ${endDate}`;
   }
 }

@@ -202,6 +202,19 @@ describe('DropListComponent', () => {
     expect(page.querySelector('.active-section .section-heading')?.textContent).toContain('Manage');
   });
 
+  it('shows a search result hidden by reward filters with an explanatory state', () => {
+    const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({ requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }));
+    fixture.componentRef.setInput('searchActive', true);
+    fixture.componentRef.setInput('ignoredDropIds', new Set([subscriptionOnly.id]));
+    render([], [subscriptionOnly]);
+
+    const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/subscription-only"]');
+    expect(row?.textContent).toContain('Subscription Only');
+    expect(row?.textContent).toContain('Ignored');
+    expect(row?.textContent).toContain('Hidden by reward filter');
+  });
+
   it('reports how many games are hidden by the reward filters', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
@@ -410,6 +423,28 @@ describe('DropListComponent', () => {
     expect(details.textContent).toContain('1h–4h watch');
     expect(endTime?.getAttribute('datetime')).toBe(sea.endsAt);
     expect(endTime?.title).toContain('2026');
+  });
+
+  it('shows the remaining time in the card summary and the end date in expanded details', () => {
+    vi.spyOn(Date, 'now').mockReturnValue(Date.parse('2026-09-26T12:00:00.000Z'));
+    render([sea], []);
+
+    const card = fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"]') as HTMLElement;
+    expect(card.querySelector('.drop-copy p')?.textContent?.trim()).toBe('8 rewards · 2d left');
+
+    card.querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+
+    expect(card.querySelector('.drop-end-time')?.textContent?.trim()).toBe('Ends Sep 28');
+  });
+
+  it('shows the exact end time as a tooltip for the card countdown', () => {
+    render([sea], []);
+
+    const countdown = (fixture.nativeElement as HTMLElement).querySelector<HTMLTimeElement>('[data-drop-id="/game/sea-of-thieves"] .drop-copy time');
+    expect(countdown?.textContent?.trim()).toMatch(/\d+[dh] left/);
+    expect(countdown?.getAttribute('datetime')).toBe(sea.endsAt);
+    expect(countdown?.title).toContain('2026');
   });
 
   it('shows a subscription requirement and labels badge rewards after loading drop details', () => {

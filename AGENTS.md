@@ -33,8 +33,8 @@
   * For template or style-only changes, run lint and a production build; add or run a component test only when behavior changes.
   * For documentation or configuration-only changes, run only the relevant checks.
 * Automate deterministic logic; use fixtures or mocks for external-provider tests instead of repeatedly calling real services.
-* Use browser checks only when a change affects visual layout, responsiveness, navigation, persistence, or user interaction. Use real external data only for provider/parser or refresh behavior changes.
-* At handoff, state what changed, which checks ran, what the user should test, and any limitations.
+* Do not run browser or UI checks. The user performs manual UI testing; at handoff, provide a focused list of UI behaviors for them to test when relevant. Use real external data only for provider/parser or refresh behavior changes.
+* At handoff, state what changed, which automated checks ran, what the user should test, and any limitations.
 
 ## Architecture
 
