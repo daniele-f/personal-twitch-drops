@@ -234,7 +234,7 @@ export class DropListComponent {
   }
 
   private celebrateIfNewlyCompleted(drop: ActiveDrop): void {
-    if (this.allRewardsCollected(drop) && this.celebrations.markCelebrated(drop.id)) {
+    if (this.allRewardsCollected(drop) && this.celebrations.markCelebrated(drop.id, drop.rewards ?? [])) {
       this.confetti.launch();
     }
   }
