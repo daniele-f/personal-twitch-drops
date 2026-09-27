@@ -6,6 +6,8 @@ import { DropDetails } from '../drops/drop-details';
 import { DropsProvider } from '../drops/drops-provider';
 import { DISPLAY_PREFERENCES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
+import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
+import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
 
 @Component({
   selector: 'app-drop-list',
@@ -19,6 +21,8 @@ export class DropListComponent {
   private readonly injector = inject(Injector);
   private readonly storage = inject(PREFERENCES_STORAGE);
   private readonly collectedRewards = inject(CollectedRewardsService);
+  private readonly celebrations = inject(CampaignCelebrationsService);
+  private readonly confetti = inject(CelebrationConfettiService);
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
@@ -209,6 +213,7 @@ export class DropListComponent {
 
   protected setRewardCollected(drop: ActiveDrop, rewardName: string, collected: boolean): void {
     this.collectedRewards.setCollected(drop.id, rewardName, collected);
+    this.celebrateIfNewlyCompleted(drop);
   }
 
   protected toggleRewardCollected(drop: ActiveDrop, rewardName: string): void {
@@ -222,7 +227,16 @@ export class DropListComponent {
   protected toggleAllCollected(drop: ActiveDrop): void {
     const rewardNames = drop.rewards ?? [];
     if (this.allRewardsCollected(drop)) this.collectedRewards.markNoneCollected(drop.id, rewardNames);
-    else this.collectedRewards.markAllCollected(drop.id, rewardNames);
+    else {
+      this.collectedRewards.markAllCollected(drop.id, rewardNames);
+      this.celebrateIfNewlyCompleted(drop);
+    }
+  }
+
+  private celebrateIfNewlyCompleted(drop: ActiveDrop): void {
+    if (this.allRewardsCollected(drop) && this.celebrations.markCelebrated(drop.id)) {
+      this.confetti.launch();
+    }
   }
 
   private isDropVisible(drop: ActiveDrop): boolean {

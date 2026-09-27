@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
+import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { DropListComponent } from './drop-list';
 
@@ -18,7 +19,7 @@ describe('DropListComponent', () => {
     loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [] }));
     await TestBed.configureTestingModule({
       imports: [DropListComponent],
-      providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadDropDetails } }],
+      providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadDropDetails } }, { provide: CelebrationConfettiService, useValue: { launch: vi.fn() } }],
     }).compileComponents();
     fixture = TestBed.createComponent(DropListComponent);
   });
@@ -135,6 +136,18 @@ describe('DropListComponent', () => {
 
     expect([...((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.reward-collection-checkbox'))].every((checkbox) => !checkbox.checked)).toBe(true);
     expect(button.textContent?.trim()).toBe('Mark all collected');
+  });
+
+  it('launches confetti when a campaign is collected for the first time', () => {
+    const launch = vi.spyOn(TestBed.inject(CelebrationConfettiService), 'launch');
+    render([sea], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
+    fixture.detectChanges();
+
+    expect(launch).toHaveBeenCalledOnce();
   });
 
   it('shows the visible drop total beside each section heading', () => {

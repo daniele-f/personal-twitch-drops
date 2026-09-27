@@ -6,6 +6,7 @@ import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
 import { appConfig } from './app.config';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
+import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -308,7 +309,7 @@ describe('App', () => {
     fixture.detectChanges();
 
     const groups = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details');
-    expect([...groups].map((group) => group.querySelector('summary')?.textContent?.trim())).toEqual(['Changes', 'Storage']);
+    expect([...groups].map((group) => group.querySelector('summary')?.textContent?.trim())).toEqual(['Changes', 'Storage', 'Celebration']);
     expect([...groups].every((group) => !group.open)).toBe(true);
     groups[0].querySelector('summary')?.click();
     expect(groups[0].open).toBe(true);
@@ -401,6 +402,23 @@ describe('App', () => {
     const ignoredOutput = storageGroup.querySelector<HTMLElement>('[data-storage-view="ignored"] pre')?.textContent ?? '';
     expect(ignoredOutput).toContain('VALORANT');
     expect(ignoredOutput).not.toContain('Sea of Thieves');
+  });
+
+  it('resets persisted confetti celebrations from the Storage debug menu', () => {
+    localStorage.setItem('personal-twitch-drops.celebrated-campaigns.v1', JSON.stringify(['/game/caliber']));
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const celebrationGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[2];
+    celebrationGroup.querySelector('summary')?.click();
+    const reset = [...celebrationGroup.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Reset confetti celebrations');
+    expect(reset).toBeTruthy();
+
+    reset!.click();
+
+    expect(localStorage.getItem('personal-twitch-drops.celebrated-campaigns.v1')).toBeNull();
+    expect(TestBed.inject(CampaignCelebrationsService).markCelebrated('/game/caliber')).toBe(true);
   });
 
   it('shows previous-day and today snapshots separately in the Storage menu', () => {

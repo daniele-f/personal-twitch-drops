@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
+import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { DropsProvider } from '../drops/drops-provider';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
@@ -27,6 +28,20 @@ describe('DropsPageComponent', () => {
 
     expect(TestBed.inject(CollectedRewardsService).isCollected('/game/ended', 'Reward')).toBe(false);
     expect(TestBed.inject(CollectedRewardsService).isCollected('/game/current', 'Reward')).toBe(true);
+  });
+
+  it('removes celebration state when a refreshed campaign is no longer active', async () => {
+    localStorage.clear();
+    localStorage.setItem('personal-twitch-drops.celebrated-campaigns.v1', JSON.stringify(['/game/ended', '/game/current']));
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/current', gameName: 'Current', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    expect(TestBed.inject(CampaignCelebrationsService).markCelebrated('/game/ended')).toBe(true);
+    expect(TestBed.inject(CampaignCelebrationsService).markCelebrated('/game/current')).toBe(false);
   });
 
   it('announces an indeterminate source fetch while Drops are loading', async () => {

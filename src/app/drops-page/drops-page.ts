@@ -5,12 +5,14 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { ChangesStateService } from '../changes/changes-state.service';
 import { ActiveDrop } from '../drops/active-drop';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
+import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 
 @Component({ imports: [DropListComponent], selector: 'app-drops-page', templateUrl: './drops-page.html', styleUrl: './drops-page.scss' })
 export class DropsPageComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly changesState = inject(ChangesStateService);
   private readonly collectedRewards = inject(CollectedRewardsService);
+  private readonly celebrations = inject(CampaignCelebrationsService);
   protected readonly preferences = inject(PreferencesService);
   protected readonly drops = this.changesState.drops;
   protected readonly searchTerm = signal('');
@@ -33,7 +35,7 @@ export class DropsPageComponent {
   protected readonly updatedDropIds = computed(() => new Set(this.changesState.changes().filter((change) => change.type === 'updated').map((change) => change.drop.id)));
   private requestVersion = 0;
   constructor() { this.loadDrops(); }
-  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.collectedRewards.retainActiveCampaigns(drops.map((drop) => drop.id)); this.changesState.updateDrops(drops); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); } }); }
+  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.collectedRewards.retainActiveCampaigns(drops.map((drop) => drop.id)); this.celebrations.retainActiveCampaigns(drops.map((drop) => drop.id)); this.changesState.updateDrops(drops); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); } }); }
   protected updatedLabel(): string { const updatedAt = this.updatedAt(); const count = this.drops().length; return updatedAt ? `✓ Loaded ${count} active Drop${count === 1 ? '' : 's'} at ${new Intl.DateTimeFormat('en-US', { timeStyle: 'short' }).format(updatedAt)}` : 'Loading active Drops'; }
   private filterBySearchTerm(drops: readonly ActiveDrop[]): readonly ActiveDrop[] {
     const searchTerm = this.searchTerm().trim().toLocaleLowerCase();

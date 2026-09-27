@@ -7,6 +7,7 @@ import { ConflictResolutionComponent } from './conflict-resolution/conflict-reso
 import { PreferencesService } from './preferences/preferences.service';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { ButtonDirective } from './ui/button.directive';
+import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 
@@ -20,6 +21,7 @@ export class App {
   protected readonly preferences = inject(PreferencesService);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);
+  private readonly celebrations = inject(CampaignCelebrationsService);
   protected readonly changeGroups: readonly { readonly type: DropChange['type']; readonly label: string }[] = [
     { type: 'new', label: 'Newly added' },
     { type: 'updated', label: 'Updated drops' },
@@ -98,6 +100,7 @@ export class App {
   protected debugShowIgnored(): void { this.debugIgnoredInfo.set(JSON.stringify(this.showIgnored(), null, 2)); }
   protected debugShowPreviousDay(): void { this.debugPreviousDayInfo.set(JSON.stringify(this.readSnapshots().baseline, null, 2)); }
   protected debugShowToday(): void { this.debugTodayInfo.set(JSON.stringify(this.readSnapshots().current, null, 2)); }
+  protected debugResetConfettiCelebrations(): void { this.celebrations.clearCelebrations(); }
   protected debugAdjustPrevious(mode: 'add' | 'replace'): void { this.adjustSnapshot('previous', mode); }
   protected debugAdjustToday(mode: 'add' | 'replace'): void { this.adjustSnapshot('today', mode); }
   private showFavorites(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown } {
