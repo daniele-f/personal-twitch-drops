@@ -24,6 +24,21 @@ describe('App', () => {
     expect(link?.getAttribute('href')).toBe('#/preferences');
   });
 
+  it('renders My Twitch inventory as a safely opened external link', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.twitch-inventory-link');
+    expect(link?.querySelector('.twitch-inventory-label')?.textContent).toBe('My Twitch inventory');
+    expect(link?.href).toBe('https://www.twitch.tv/drops/inventory');
+    expect(link?.target).toBe('_blank');
+    expect(link?.rel).toBe('noopener noreferrer');
+    const icon = link?.querySelector<SVGElement>('.external-link-icon');
+    expect(icon?.tagName).toBe('svg');
+    expect(icon?.getAttribute('aria-hidden')).toBe('true');
+    expect(icon?.querySelector('path')).toBeTruthy();
+  });
+
   it('does not render a placeholder Changes control', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
