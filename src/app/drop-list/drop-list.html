@@ -59,7 +59,9 @@
                 }
               </span>
               <span class="reward-copy"><span class="reward-name">{{ reward.name }}</span></span>
-              @if (rewardRequirement(drop, reward.name); as requirement) {
+              @if (isRewardCollected(drop, reward.name)) {
+                <span class="reward-requirement reward-requirement--collected">Collected</span>
+              } @else if (rewardRequirement(drop, reward.name); as requirement) {
                 <span class="reward-requirement" [class.reward-requirement--watch]="requirement.startsWith('Watch')" [class.reward-requirement--subscription]="!requirement.startsWith('Watch')">{{ requirement }}</span>
               }
             </li>

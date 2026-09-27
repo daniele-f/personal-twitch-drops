@@ -107,6 +107,29 @@ describe('DropListComponent', () => {
     expect(localStorage.getItem('personal-twitch-drops.collected-rewards.v1')).toBe(JSON.stringify({ '/game/sea-of-thieves': ['Coral Crown'] }));
   });
 
+  it('replaces a collected reward requirement with a green pill and restores it when uncollected', () => {
+    loadDropDetails.mockReturnValue(of({ requirementByReward: { 'Coral Crown': 'Watch 2h' }, badgeRewardNames: [] }));
+    render([sea], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    const reward = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-card')!;
+    expect(reward.querySelector('.reward-requirement')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Watch 2h');
+
+    reward.click();
+    fixture.detectChanges();
+
+    const collected = reward.querySelector<HTMLElement>('.reward-requirement')!;
+    expect(collected.textContent?.trim()).toBe('Collected');
+    expect(collected.classList).toContain('reward-requirement--collected');
+    expect(getComputedStyle(collected).color).toBe('rgb(75, 216, 101)');
+
+    reward.click();
+    fixture.detectChanges();
+
+    expect(reward.querySelector('.reward-requirement')?.textContent?.replace(/\s+/g, ' ').trim()).toBe('Watch 2h');
+  });
+
   it('shows collected progress in the campaign subtitle', () => {
     render([sea], []);
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
