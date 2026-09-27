@@ -27,6 +27,7 @@
           @if (details.primaryLink; as primaryLink) {
             <a [href]="primaryLink.url" target="_blank" rel="noopener noreferrer">{{ primaryLink.label }}</a>
           }
+          <button class="mark-all-collected" type="button" (click)="toggleAllCollected(drop)">{{ allRewardsCollected(drop) ? 'Clear collected' : 'Mark all collected' }}</button>
         </nav>
       }
       @if (isLoadingDetails(drop)) {
@@ -34,7 +35,19 @@
       } @else if (drop.rewards?.length && detailsFor(drop)) {
         <ol class="reward-grid">
           @for (reward of visibleRewards(drop); track reward.name; let index = $index) {
-            <li class="reward-card" [class.reward-card--badge]="isBadgeReward(drop, reward.name)">
+            <li class="reward-card" [class.reward-card--badge]="isBadgeReward(drop, reward.name)" [class.reward-card--collected]="isRewardCollected(drop, reward.name)" (click)="toggleRewardCollected(drop, reward.name)">
+              <label class="reward-collection-control">
+                <input
+                  #rewardCollected
+                  class="reward-collection-checkbox"
+                  type="checkbox"
+                  [checked]="isRewardCollected(drop, reward.name)"
+                  [attr.aria-label]="'Mark ' + reward.name + ' as collected'"
+                  (click)="$event.stopPropagation()"
+                  (change)="setRewardCollected(drop, reward.name, rewardCollected.checked)"
+                />
+                <span class="reward-collection-indicator" aria-hidden="true">✓</span>
+              </label>
               <span class="reward-media">
                 @if (reward.imageUrl) {
                   <img class="reward-image" [src]="reward.imageUrl" [alt]="reward.name" />

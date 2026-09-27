@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { of, Subject } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
+import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { DropsProvider } from '../drops/drops-provider';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
@@ -14,6 +15,20 @@ class TestDropsProvider extends DropsProvider {
 }
 
 describe('DropsPageComponent', () => {
+  it('removes collected reward state when a refreshed campaign is no longer active', async () => {
+    localStorage.clear();
+    localStorage.setItem('personal-twitch-drops.collected-rewards.v1', JSON.stringify({ '/game/ended': ['Reward'], '/game/current': ['Reward'] }));
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/current', gameName: 'Current', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    expect(TestBed.inject(CollectedRewardsService).isCollected('/game/ended', 'Reward')).toBe(false);
+    expect(TestBed.inject(CollectedRewardsService).isCollected('/game/current', 'Reward')).toBe(true);
+  });
+
   it('announces an indeterminate source fetch while Drops are loading', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();

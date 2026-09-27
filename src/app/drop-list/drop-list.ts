@@ -5,6 +5,7 @@ import { ActiveDrop } from '../drops/active-drop';
 import { DropDetails } from '../drops/drop-details';
 import { DropsProvider } from '../drops/drops-provider';
 import { DISPLAY_PREFERENCES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { CollectedRewardsService } from '../drops/collected-rewards.service';
 
 @Component({
   selector: 'app-drop-list',
@@ -17,6 +18,7 @@ export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly injector = inject(Injector);
   private readonly storage = inject(PREFERENCES_STORAGE);
+  private readonly collectedRewards = inject(CollectedRewardsService);
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly loading = input.required<boolean>();
@@ -201,6 +203,28 @@ export class DropListComponent {
     );
   }
 
+  protected isRewardCollected(drop: ActiveDrop, rewardName: string): boolean {
+    return this.collectedRewards.isCollected(drop.id, rewardName);
+  }
+
+  protected setRewardCollected(drop: ActiveDrop, rewardName: string, collected: boolean): void {
+    this.collectedRewards.setCollected(drop.id, rewardName, collected);
+  }
+
+  protected toggleRewardCollected(drop: ActiveDrop, rewardName: string): void {
+    this.setRewardCollected(drop, rewardName, !this.isRewardCollected(drop, rewardName));
+  }
+
+  protected allRewardsCollected(drop: ActiveDrop): boolean {
+    return !!drop.rewards?.length && drop.rewards.every((rewardName) => this.isRewardCollected(drop, rewardName));
+  }
+
+  protected toggleAllCollected(drop: ActiveDrop): void {
+    const rewardNames = drop.rewards ?? [];
+    if (this.allRewardsCollected(drop)) this.collectedRewards.markNoneCollected(drop.id, rewardNames);
+    else this.collectedRewards.markAllCollected(drop.id, rewardNames);
+  }
+
   private isDropVisible(drop: ActiveDrop): boolean {
     return this.searchActive() || this.isVisibleUnderRewardFilters(drop);
   }
@@ -280,6 +304,8 @@ export class DropListComponent {
 
   protected rewardSummary(drop: ActiveDrop): string {
     const rewardLabel = drop.rewardCount === 1 ? 'reward' : 'rewards';
+    const collectedCount = (drop.rewards ?? []).filter((rewardName) => this.isRewardCollected(drop, rewardName)).length;
+    if (collectedCount) return `${collectedCount}/${drop.rewardCount} ${rewardLabel}`;
     return `${drop.rewardCount} ${rewardLabel}`;
   }
 

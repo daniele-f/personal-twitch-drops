@@ -91,6 +91,52 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelectorAll('[data-drop-id="/game/sea-of-thieves"]')).toHaveLength(1);
   });
 
+  it('marks an individual reward collected when its card is clicked', () => {
+    render([sea], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    const reward = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-card')!;
+    const checkbox = reward.querySelector<HTMLInputElement>('input[aria-label="Mark Coral Crown as collected"]')!;
+    reward.click();
+    fixture.detectChanges();
+
+    expect(checkbox.checked).toBe(true);
+    expect(reward.classList).toContain('reward-card--collected');
+    expect(localStorage.getItem('personal-twitch-drops.collected-rewards.v1')).toBe(JSON.stringify({ '/game/sea-of-thieves': ['Coral Crown'] }));
+  });
+
+  it('shows collected progress in the campaign subtitle', () => {
+    render([sea], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-card')!.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"] .drop-copy p')?.textContent).toContain('1/8 rewards');
+  });
+
+  it('marks all rewards for the expanded campaign collected from the game-links row', () => {
+    render([sea], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!;
+    button.click();
+    fixture.detectChanges();
+
+    expect([...((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.reward-collection-checkbox'))].every((checkbox) => checkbox.checked)).toBe(true);
+    expect(fixture.nativeElement.querySelectorAll('.reward-card--collected')).toHaveLength(2);
+    expect(button.textContent?.trim()).toBe('Clear collected');
+
+    button.click();
+    fixture.detectChanges();
+
+    expect([...((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.reward-collection-checkbox'))].every((checkbox) => !checkbox.checked)).toBe(true);
+    expect(button.textContent?.trim()).toBe('Mark all collected');
+  });
+
   it('shows the visible drop total beside each section heading', () => {
     const secondActiveDrop = { ...valorant, id: '/game/apex-legends', gameName: 'Apex Legends' } as ActiveDrop;
     render([sea], [valorant, secondActiveDrop]);
