@@ -186,7 +186,7 @@ describe('PreferencesPageComponent', () => {
     const fileInput = root.querySelector<HTMLInputElement>('.import-file-input');
     expect(importButton?.getAttribute('aria-label')).toBe('Import');
     expect(importButton?.title).toBe('Import');
-    expect(importButton?.querySelector('path')?.getAttribute('d')).toBe('M12 17V6m0 0 4 4m-4-4-4 4M4 17v3h16v-3');
+    expect(importButton?.querySelector('path')?.getAttribute('d')).toBe('M12 15V4m0 0 4 4m-4-4-4 4M4 17v3h16v-3');
     const actions = root.querySelector('.import-actions');
     expect(actions?.firstElementChild).toBe(root.querySelector('.import-button'));
     expect(importButton?.parentElement).toBe(actions);
