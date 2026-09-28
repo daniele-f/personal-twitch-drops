@@ -1,8 +1,15 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable, InjectionToken } from '@angular/core';
 import confetti from '@hiseb/confetti';
+
+export const CONFETTI_LAUNCHER = new InjectionToken<typeof confetti>('CONFETTI_LAUNCHER', {
+  providedIn: 'root',
+  factory: () => confetti,
+});
 
 @Injectable({ providedIn: 'root' })
 export class CelebrationConfettiService {
+  private readonly launchConfetti = inject(CONFETTI_LAUNCHER);
+
   launch(): void {
     if (globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -13,7 +20,7 @@ export class CelebrationConfettiService {
       fade: true,
       color: ['#9147ff', '#4bd865', '#f5c542', '#5ba8ff', '#f06daa'],
     };
-    confetti({ ...options, position: { x: 0, y: window.innerHeight } });
-    confetti({ ...options, position: { x: window.innerWidth, y: window.innerHeight } });
+    this.launchConfetti({ ...options, position: { x: 0, y: window.innerHeight } });
+    this.launchConfetti({ ...options, position: { x: window.innerWidth, y: window.innerHeight } });
   }
 }
