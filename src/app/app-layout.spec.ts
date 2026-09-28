@@ -24,4 +24,15 @@ describe('App layout', () => {
 
     expect(fixture.nativeElement.querySelector('.app-header')).toBeTruthy();
   });
+
+  it('provides a main content region that can grow and keep the footer at the viewport bottom', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const main = fixture.nativeElement.querySelector('main.app-main');
+    const footer = fixture.nativeElement.querySelector('footer.data-attribution');
+
+    expect(main).toBeTruthy();
+    expect(main?.compareDocumentPosition(footer!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
 });

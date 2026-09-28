@@ -1,3 +1,5 @@
+:host { display:flex; flex-direction:column; min-height:100dvh; }
+.app-main { flex:1 0 auto; }
 .app-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; min-height:4rem; padding:0 1.5rem; border-bottom:1px solid #303036; background:#18181b; }
 .wordmark { display:inline-flex; align-items:center; gap:.55rem; color:var(--color-text); font-weight:800; text-decoration:none; }.wordmark__icon { width:2.5rem; height:2.5rem; flex:0 0 auto; }.wordmark b { color:var(--color-accent); }
 .external-link-icon { width:1em; height:1em; margin-left:.15rem; vertical-align:-.15em; }
