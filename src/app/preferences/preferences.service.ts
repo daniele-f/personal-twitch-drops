@@ -35,6 +35,17 @@ export class PreferencesService {
     }
   }
 
+  clearFavorites(): void {
+    if (!this.favoriteIds().size && !this.favoriteNames().size) return;
+
+    const favoriteIds = new Set<string>();
+    const favoriteNames = new Map<string, string>();
+    this.favoriteIds.set(favoriteIds);
+    this.favoriteNames.set(favoriteNames);
+    this.persist(favoriteIds);
+    this.persistFavoriteNames(favoriteNames);
+  }
+
   rememberFavoriteNames(games: readonly { id: string; gameName: string }[]): void {
     const names = new Map(this.favoriteNames());
     let changed = false;
@@ -63,6 +74,14 @@ export class PreferencesService {
 
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+  }
+
+  clearBlacklist(): void {
+    if (!this.blacklistEntries().length) return;
+
+    const entries: readonly BlacklistEntry[] = [];
+    this.blacklistEntries.set(entries);
+    this.persistBlacklist(entries);
   }
 
   replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[]): void {

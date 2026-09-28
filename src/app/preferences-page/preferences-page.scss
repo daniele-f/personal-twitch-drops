@@ -79,7 +79,8 @@
   align-items: center;
   gap: 0.55rem;
   box-sizing: border-box;
-  width: 11rem;
+  width: max-content;
+  min-width: 11rem;
   padding: 0.5rem 0.7rem;
   border: 1px solid var(--color-accent);
   border-radius: 0.55rem;
@@ -87,6 +88,7 @@
   color: var(--color-text);
   font-size: 0.9rem;
   text-align: left;
+  white-space: nowrap;
 }
 .favorites-disclosure:hover,
 .favorites-disclosure:focus-visible,

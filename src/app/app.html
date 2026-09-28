@@ -17,6 +17,10 @@
     <details>
       <summary>Storage</summary>
       <div class="debug-menu__actions">
+        <button type="button" (click)="debugFavoriteAllGames()">Favorite all games</button>
+        <button type="button" (click)="debugIgnoreAllGames()">Ignore all games</button>
+        <button type="button" (click)="debugRemoveAllFavorites()">Remove all favorites</button>
+        <button type="button" (click)="debugRemoveAllIgnored()">Remove all ignored</button>
         <div class="debug-menu__storage-view" data-storage-view="favorites">
           <button type="button" (click)="debugShowFavorites()">Show favorites</button>
           @if (debugFavoritesInfo() !== null) { <pre class="debug-menu__output">{{ debugFavoritesInfo() }}</pre> }

@@ -37,6 +37,15 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
   });
 
+  it('shows a No active Drops heading with right-aligned controls when no drops are visible', () => {
+    render([], []);
+
+    const heading = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.active-section .section-heading');
+    expect(heading?.querySelector('h2')?.textContent?.trim()).toBe('No active Drops');
+    expect(getComputedStyle(heading!).display).toBe('flex');
+    expect(getComputedStyle(heading!).justifyContent).toBe('space-between');
+  });
+
   it('marks a newly active game with a New pill', () => {
     fixture.componentRef.setInput('newDropIds', new Set(['/game/sea-of-thieves']));
     render();

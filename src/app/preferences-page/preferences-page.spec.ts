@@ -57,6 +57,21 @@ describe('PreferencesPageComponent', () => {
     expect(getComputedStyle(chevron!.querySelector<HTMLElement>('i:last-child')!).right).toBe('0px');
   });
 
+  it('keeps two-digit disclosure counts on one line', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    for (let index = 1; index <= 10; index++) {
+      preferences.addFavorite(`/game/favorite-${index}`, `Favorite ${index}`);
+      preferences.addBlacklist(`/game/ignored-${index}`, `Ignored ${index}`);
+    }
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure > span:nth-child(2), .blacklist-disclosure > span:nth-child(2)')];
+    expect(labels.map((label) => label.textContent?.trim())).toEqual(['Favorites (10)', 'Ignore List (10)']);
+    const disclosures = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure, .blacklist-disclosure')];
+    expect(disclosures.every((disclosure) => getComputedStyle(disclosure).whiteSpace === 'nowrap')).toBe(true);
+  });
+
   it('lists active and inactive favorites above the ignore list', () => {
     localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, '["/game/sea-of-thieves","/game/valorant"]');
     localStorage.setItem('personal-twitch-drops.favorite-names.v1', '{"/game/sea-of-thieves":"Sea of Thieves","/game/valorant":"VALORANT"}');

@@ -96,6 +96,10 @@ export class App {
   protected debugNewAndUpdated(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]); }
   protected debugMockYesterday(): void { this.mockYesterday(); }
   protected debugClear(): void { this.changesState.clear(); this.changesOpen.set(false); }
+  protected debugFavoriteAllGames(): void { for (const drop of this.debugActiveDrops()) this.preferences.addFavorite(drop.id, drop.gameName); }
+  protected debugIgnoreAllGames(): void { for (const drop of this.debugActiveDrops()) this.preferences.addBlacklist(drop.id, drop.gameName); }
+  protected debugRemoveAllFavorites(): void { this.preferences.clearFavorites(); }
+  protected debugRemoveAllIgnored(): void { this.preferences.clearBlacklist(); }
   protected debugShowFavorites(): void { this.debugFavoritesInfo.set(JSON.stringify(this.showFavorites(), null, 2)); }
   protected debugShowIgnored(): void { this.debugIgnoredInfo.set(JSON.stringify(this.showIgnored(), null, 2)); }
   protected debugShowPreviousDay(): void { this.debugPreviousDayInfo.set(JSON.stringify(this.readSnapshots().baseline, null, 2)); }
@@ -103,6 +107,11 @@ export class App {
   protected debugResetConfettiCelebrations(): void { this.celebrations.clearCelebrations(); }
   protected debugAdjustPrevious(mode: 'add' | 'replace'): void { this.adjustSnapshot('previous', mode); }
   protected debugAdjustToday(mode: 'add' | 'replace'): void { this.adjustSnapshot('today', mode); }
+  private debugActiveDrops(): readonly ActiveDrop[] {
+    const favorites = this.preferences.favoriteIds();
+    const ignored = new Set(this.preferences.blacklistEntries().map((entry) => entry.id));
+    return this.changesState.drops().filter((drop) => !favorites.has(drop.id) && !ignored.has(drop.id));
+  }
   private showFavorites(): { available: boolean; favoriteIds: unknown; favoriteNames: unknown } {
     if (!this.storage) return { available: false, favoriteIds: [], favoriteNames: {} };
     try {

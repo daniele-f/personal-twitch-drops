@@ -404,6 +404,86 @@ describe('App', () => {
     expect(ignoredOutput).not.toContain('Sea of Thieves');
   });
 
+  it('favorites every visible active game from the Storage debug menu', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+    changes.updateDrops([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-30T00:00:00.000Z' },
+      { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-30T00:00:00.000Z' },
+    ]);
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Favorite all games')?.click();
+
+    expect(preferences.favoriteIds()).toEqual(new Set(['/game/valorant']));
+    expect(preferences.favoriteNames()).toEqual(new Map([['/game/valorant', 'VALORANT']]));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.conflict-dialog')).toBeNull();
+  });
+
+  it('ignores every visible active game from the Storage debug menu without removing favorites', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    changes.updateDrops([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-30T00:00:00.000Z' },
+      { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-30T00:00:00.000Z' },
+    ]);
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Ignore all games')?.click();
+
+    expect(preferences.blacklistEntries().map((entry) => [entry.id, entry.gameName])).toEqual([['/game/valorant', 'VALORANT']]);
+    expect(preferences.favoriteIds()).toEqual(new Set(['/game/sea-of-thieves']));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.conflict-dialog')).toBeNull();
+  });
+
+  it('removes every saved favorite from the Storage debug menu while retaining ignored games', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    preferences.addFavorite('/game/valorant', 'VALORANT');
+    preferences.addBlacklist('/game/hidden', 'Hidden Game');
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Remove all favorites')?.click();
+
+    expect(preferences.favoriteIds()).toEqual(new Set());
+    expect(preferences.favoriteNames()).toEqual(new Map());
+    expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/hidden']);
+  });
+
+  it('removes every saved ignored game from the Storage debug menu while retaining favorites', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    preferences.addBlacklist('/game/hidden', 'Hidden Game');
+    preferences.addBlacklist('/game/another-hidden', 'Another Hidden Game');
+    const fixture = TestBed.createComponent(App);
+    (window as unknown as { twitchDropsDebug: { openMenu(): void } }).twitchDropsDebug.openMenu();
+    fixture.detectChanges();
+
+    const storageGroup = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLDetailsElement>('.debug-menu details')[1];
+    storageGroup.querySelector('summary')?.click();
+    [...storageGroup.querySelectorAll<HTMLButtonElement>('button')].find((button) => button.textContent?.trim() === 'Remove all ignored')?.click();
+
+    expect(preferences.blacklistEntries()).toEqual([]);
+    expect(preferences.favoriteIds()).toEqual(new Set(['/game/sea-of-thieves']));
+    expect(preferences.favoriteNames()).toEqual(new Map([['/game/sea-of-thieves', 'Sea of Thieves']]));
+  });
+
   it('resets persisted confetti celebrations from the Storage debug menu', () => {
     localStorage.setItem('personal-twitch-drops.celebrated-campaigns.v1', JSON.stringify(['/game/caliber']));
     const fixture = TestBed.createComponent(App);

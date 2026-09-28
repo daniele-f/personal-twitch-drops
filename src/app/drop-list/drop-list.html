@@ -202,7 +202,11 @@
   }
   <section class="active-section">
     <div class="section-heading">
-      <h2>Active Drops ({{ visibleActiveDrops().length }})</h2>
+      @if (visibleActiveDrops().length) {
+        <h2>Active Drops ({{ visibleActiveDrops().length }})</h2>
+      } @else if (!visibleFavoriteDrops().length) {
+        <h2>No active Drops</h2>
+      }
       @if (!visibleFavoriteDrops().length) {
         @if (hiddenGameCount(); as hiddenCount) {
           <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
