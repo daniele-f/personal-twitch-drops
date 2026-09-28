@@ -150,16 +150,24 @@ describe('PreferencesPageComponent', () => {
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
   });
 
-  it('shows a generated share code outside a text field with copy and save buttons', async () => {
+  it('shows generated share code in a vertically resizable text field that selects all code when clicked', async () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
     await (fixture.componentInstance as unknown as { generateShareCode(): Promise<void> }).generateShareCode();
     fixture.detectChanges();
 
-    const code = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.share-code');
-    expect(code?.tagName).not.toBe('TEXTAREA');
-    expect(code?.textContent?.trim()).toBeTruthy();
+    const code = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('.share-code');
+    expect(code?.tagName).toBe('TEXTAREA');
+    expect(code?.readOnly).toBe(true);
+    expect(code?.value).toBeTruthy();
+    expect(code?.classList).toContain('share-code--resizable');
+    const label = (fixture.nativeElement as HTMLElement).querySelector<HTMLLabelElement>('label[for="export-code"]');
+    expect(label?.textContent?.trim()).toBe('Share code');
+    expect(label?.htmlFor).toBe(code?.id);
+    code?.click();
+    expect(code?.selectionStart).toBe(0);
+    expect(code?.selectionEnd).toBe(code?.value.length);
     expect((fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.copy-share-code')?.textContent?.trim()).toBe('Copy to clipboard');
     const actions = (fixture.nativeElement as HTMLElement).querySelector('.share-code-actions')!;
     expect([...actions.children].map((action) => action.className)).toEqual(['copy-share-code', 'save-share-code']);

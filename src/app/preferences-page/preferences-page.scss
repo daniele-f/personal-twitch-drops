@@ -54,7 +54,7 @@
 .share-code-label { font-weight: 600; }
 .share-code,
 .import-code { box-sizing: border-box; border: 1px solid #5f3b91; border-radius: .45rem; padding: .6rem; background: #111114; color: var(--color-text); font-family: monospace; }
-.share-code { display: block; overflow-wrap: anywhere; }
+.share-code { width: 100%; min-height: 4.5rem; resize: vertical; }
 .import-code { width: 100%; min-height: 4.5rem; resize: vertical; }
 .share-code-actions { display: flex; gap: .5rem; }
 .download-icon { display: block; width: 1.1rem; height: 1.1rem; }

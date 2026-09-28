@@ -39,6 +39,7 @@ export class PreferencesPageComponent {
   protected remove(id: string): void { if (this.armedForId() === id) { this.preferences.removeBlacklist(id); this.armedForId.set(null); } else this.armedForId.set(id); }
   protected cancelRemove(id: string): void { if (this.armedForId() === id) this.armedForId.set(null); }
   protected generateShareCode(): void { this.exportCode.set(this.importExport.export()); }
+  protected selectShareCode(event: Event): void { (event.currentTarget as HTMLTextAreaElement).select(); }
   protected async copyShareCode(): Promise<void> {
     try {
       await navigator.clipboard.writeText(this.exportCode());
