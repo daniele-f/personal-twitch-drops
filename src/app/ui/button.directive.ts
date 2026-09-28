@@ -1,6 +1,6 @@
 import { Directive, input } from '@angular/core';
 
-export type ButtonVariant = 'default' | 'primary' | 'neutral' | 'icon';
+export type ButtonVariant = 'default' | 'primary' | 'neutral' | 'icon' | 'destructive';
 
 @Directive({
   selector: '[appButton]',
@@ -10,6 +10,7 @@ export type ButtonVariant = 'default' | 'primary' | 'neutral' | 'icon';
     '[class.app-button--primary]': "appButton() === 'primary'",
     '[class.app-button--neutral]': "appButton() === 'neutral'",
     '[class.app-button--icon]': "appButton() === 'icon'",
+    '[class.app-button--destructive]': "appButton() === 'destructive'",
   },
 })
 export class ButtonDirective {

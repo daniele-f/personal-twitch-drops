@@ -9,11 +9,12 @@ import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES
 import { ButtonDirective } from './ui/button.directive';
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 import { PreferenceNotificationsComponent } from './ui/preference-notifications';
+import { ToggleComponent } from './ui/toggle';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 
 @Component({
-  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet],
+  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent],
   selector: 'app-root',
   templateUrl: './app.html',
 })

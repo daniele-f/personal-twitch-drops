@@ -835,4 +835,11 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(4);
   });
+
+  it('keeps campaign cards as semantic articles while applying the shared card behavior', () => {
+    render([sea], []);
+    const card = (fixture.nativeElement as HTMLElement).querySelector('.drop-row--favorite');
+    expect(card?.tagName).toBe('ARTICLE');
+    expect(card?.hasAttribute('appGameCard')).toBe(true);
+  });
 });

@@ -25,7 +25,7 @@ describe('PreferencesPageComponent', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.blacklist-disclosure')?.click();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.blacklist-disclosure button')?.click();
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('Ignored on');
     const remove = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-blacklist-id="/game/sea-of-thieves"] .remove-blacklist');
@@ -64,7 +64,7 @@ describe('PreferencesPageComponent', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
 
-    const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure > span:nth-child(2), .blacklist-disclosure > span:nth-child(2)')];
+    const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure .app-disclosure__label, .blacklist-disclosure .app-disclosure__label')];
     expect(labels.map((label) => label.textContent?.trim())).toEqual(['Favorites (10)', 'Ignore List (10)']);
   });
 

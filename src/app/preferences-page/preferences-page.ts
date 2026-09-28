@@ -3,8 +3,10 @@ import { RouterLink } from '@angular/router';
 import { DropsProvider } from '../drops/drops-provider';
 import { PreferencesService } from '../preferences/preferences.service';
 import { ImportExportService } from '../preferences/import-export.service';
+import { DisclosureComponent } from '../ui/disclosure';
+import { StatusBadgeComponent } from '../ui/status-badge';
 
-@Component({ imports: [RouterLink], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
+@Component({ imports: [RouterLink, DisclosureComponent, StatusBadgeComponent], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   private readonly importExport = inject(ImportExportService);
