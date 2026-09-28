@@ -10,8 +10,8 @@ actions; these primitives only render state and emit user interaction.
 | `appDisclosure` | `src/app/ui/disclosure.{ts,html,scss}` | Expandable sections with an icon, label, count, and animated chevron | `expanded`, `icon`, `count`, `toggled` | Preferences Favorites and Ignore List |
 | `appToggle` | `src/app/ui/toggle.{ts,html,scss}` | Accessible labelled on/off switches | `controlId`, `label`, `checked`, `checkedChange` | Changes popover; drop filters |
 | `appStatusBadge` | `src/app/ui/status-badge.{ts,html,scss}` | Short availability/state labels | `active`, `inactive`, `unavailable`, `pending` | Preferences tables |
-| `appGameCard` | `src/app/ui/game-card.{ts,html,scss}` | Projected game-level card content | `title`, `imageUrl`, `expanded` | Available for future game summaries |
-| `appDropCard` | `src/app/ui/drop-card.{ts,html,scss}` | Projected campaign/drop card content | `title`, `timeLabel`, `rewardSummary`, `imageUrl`, `expanded` | Available for future campaign summaries |
+| `appGameCard` | `src/app/ui/game-card.{ts,html,scss}` | Projected game-level card content on a semantic `<article>` | `title`, `imageUrl`, `expanded` | Favorite campaign rows in `DropListComponent` |
+| `appDropCard` | `src/app/ui/drop-card.{ts,html,scss}` | Projected campaign/drop card content on a semantic `<article>` | `title`, `timeLabel`, `rewardSummary`, `imageUrl`, `expanded` | Active campaign rows in `DropListComponent` |
 
 Use a feature-local element instead when it belongs to just one feature
 (for example reward cards, toasts, and the conflict dialog). When a new

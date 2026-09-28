@@ -108,7 +108,7 @@
       <ul class="drop-list">
         @for (drop of visibleFavoriteDrops(); track drop.id) {
           <li [attr.data-drop-id]="drop.id">
-            <app-game-card
+            <article appGameCard
               class="drop-row drop-row--favorite"
               [title]="drop.gameName"
               [imageUrl]="drop.imageUrl"
@@ -169,7 +169,7 @@
                   ><app-collapse-chevron [expanded]="expandedFavoriteId() === drop.id" /></button>
                 </div>
               </div>
-            </app-game-card>
+            </article>
             <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
           </li>
         }
@@ -199,7 +199,7 @@
     <ul class="drop-list">
       @for (drop of visibleActiveDrops(); track drop.id) {
         <li [attr.data-drop-id]="drop.id">
-          <app-drop-card class="drop-row drop-row--active" [title]="drop.gameName" [timeLabel]="remainingTime(drop)" [rewardSummary]="rewardSummary(drop)" [imageUrl]="drop.imageUrl" [expanded]="expandedFavoriteId() === drop.id" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
+          <article appDropCard class="drop-row drop-row--active" [title]="drop.gameName" [timeLabel]="remainingTime(drop)" [rewardSummary]="rewardSummary(drop)" [imageUrl]="drop.imageUrl" [expanded]="expandedFavoriteId() === drop.id" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
             <button
               class="favorite-details-toggle active-details-toggle--card"
               type="button"
@@ -256,7 +256,7 @@
                 ><app-collapse-chevron [expanded]="expandedFavoriteId() === drop.id" /></button>
               </div>
             </div>
-          </app-drop-card>
+          </article>
           <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
         </li>
       }
