@@ -40,6 +40,20 @@ describe('App', () => {
     expect(icon?.querySelector('path')).toBeTruthy();
   });
 
+  it('renders the TwitchDrops.app attribution and data disclaimer in the footer', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const footer = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.data-attribution');
+    const link = footer?.querySelector<HTMLAnchorElement>('a');
+    expect(footer?.textContent).toContain('All data is from');
+    expect(footer?.textContent).toContain('Information could be wrong or incomplete.');
+    expect(link?.textContent).toBe('twitchdrops.app');
+    expect(link?.href).toBe('https://twitchdrops.app/');
+    expect(link?.target).toBe('_blank');
+    expect(link?.rel).toBe('noopener noreferrer');
+  });
+
   it('does not render a placeholder Changes control', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

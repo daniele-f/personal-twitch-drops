@@ -83,3 +83,4 @@
     <button class="changes-close" type="button" (click)="closeChangesPanel()">Close</button>
   </aside>
 } @if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }
+<footer class="data-attribution">All data is from <a href="https://twitchdrops.app/" target="_blank" rel="noopener noreferrer">twitchdrops.app</a>. Information could be wrong or incomplete.</footer>
