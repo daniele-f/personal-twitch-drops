@@ -114,6 +114,17 @@ describe('App', () => {
     expect(componentStyles).toMatch(/\.changes-button--active\[[^\]]+\]:hover:not\(:disabled\)/);
   });
 
+  it('keeps the header sticky only above the mobile breakpoint', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const componentStyles = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
+      .join('');
+    expect(componentStyles).toMatch(/@media \(min-width: 521px\)[\s\S]*?\.app-header[^}]*position: sticky[^}]*top: 0[^}]*z-index:/);
+    expect(componentStyles).not.toMatch(/@media \(max-width: 520px\)[\s\S]*?\.app-header[^}]*position: sticky/);
+  });
+
   it('closes the Changes panel when a click lands outside it', () => {
     vi.useFakeTimers();
     const changes = TestBed.inject(ChangesStateService);
