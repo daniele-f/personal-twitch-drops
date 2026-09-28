@@ -70,6 +70,10 @@ export class DropListComponent {
     if (this.unfavoriteConfirmationId() === drop.id) this.unfavoriteConfirmationId.set(null);
   }
 
+  protected cancelUnfavoriteOnPointerLeave(drop: ActiveDrop, event: PointerEvent): void {
+    if (event.pointerType !== 'touch') this.cancelUnfavoriteConfirmation(drop);
+  }
+
   protected blacklist(drop: ActiveDrop): void {
     this.blacklistRequested.emit(drop);
   }

@@ -782,6 +782,21 @@ describe('DropListComponent', () => {
     expect(star.textContent?.trim()).toBe('★');
   });
 
+  it('keeps unfavorite confirmation armed after a touch pointer leaves the star', () => {
+    const unfavoriteRequested = vi.fn();
+    fixture.componentInstance.unfavoriteRequested.subscribe(unfavoriteRequested);
+    render([sea], []);
+    const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorites-section .favorite-star')!;
+
+    star.click();
+    star.dispatchEvent(new PointerEvent('pointerleave', { pointerType: 'touch' }));
+    fixture.detectChanges();
+
+    expect(star.textContent?.trim()).toBe('Confirm');
+    star.click();
+    expect(unfavoriteRequested).toHaveBeenCalledWith(sea);
+  });
+
   it('shows four decorative skeleton rows while Drops are loading', () => {
     fixture.componentRef.setInput('favoriteDrops', []);
     fixture.componentRef.setInput('activeDrops', []);

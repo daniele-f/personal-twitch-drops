@@ -171,7 +171,7 @@
                     "
                     [attr.title]="unfavoriteConfirmationId() === drop.id ? 'Confirm unfavorite' : 'Remove from Favorites'"
                     (click)="requestUnfavorite(drop)"
-                    (pointerleave)="cancelUnfavoriteConfirmation(drop)"
+                    (pointerleave)="cancelUnfavoriteOnPointerLeave(drop, $event)"
                     (focusout)="cancelUnfavoriteConfirmation(drop)"
                   >{{ unfavoriteConfirmationId() === drop.id ? 'Confirm' : '★' }}</button>
                   <button
