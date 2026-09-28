@@ -25,6 +25,107 @@ describe('App', () => {
     expect(link?.getAttribute('href')).toBe('#/preferences');
   });
 
+  it('shows stacked preference notifications for three seconds and expires the oldest first', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(App);
+    const preferences = TestBed.inject(PreferencesService);
+
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    vi.advanceTimersByTime(1000);
+    preferences.addBlacklist('/game/valorant', 'VALORANT');
+    fixture.detectChanges();
+
+    const notificationRegion = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Preference notifications"]');
+    expect(notificationRegion?.textContent).toContain('Sea of Thieves added to Favorites');
+    expect(notificationRegion?.textContent).toContain('VALORANT added to Ignore List');
+    expect(notificationRegion?.querySelectorAll('.preference-toast')).toHaveLength(2);
+
+    vi.advanceTimersByTime(2000);
+    fixture.detectChanges();
+
+    expect(notificationRegion?.textContent).not.toContain('Sea of Thieves added to Favorites');
+    expect(notificationRegion?.textContent).toContain('VALORANT added to Ignore List');
+    expect(notificationRegion?.querySelectorAll('.preference-toast')).toHaveLength(1);
+  });
+
+  it('dismisses only the selected preference notification', () => {
+    const fixture = TestBed.createComponent(App);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    preferences.addBlacklist('/game/valorant', 'VALORANT');
+    fixture.detectChanges();
+
+    const notificationRegion = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Preference notifications"]')!;
+    const dismissButtons = notificationRegion.querySelectorAll<HTMLButtonElement>('.preference-toast__dismiss');
+    expect(dismissButtons[0]?.getAttribute('aria-label')).toBe('Dismiss notification');
+
+    dismissButtons[0]?.click();
+    fixture.detectChanges();
+
+    expect(notificationRegion.textContent).not.toContain('Sea of Thieves added to Favorites');
+    expect(notificationRegion.textContent).toContain('VALORANT added to Ignore List');
+    expect(notificationRegion.querySelectorAll('.preference-toast')).toHaveLength(1);
+  });
+
+  it('keeps later preference notifications queued until one of six visible toasts leaves', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(App);
+    const preferences = TestBed.inject(PreferencesService);
+    for (let index = 1; index <= 7; index++) {
+      preferences.addFavorite(`/game/game-${index}`, `Game ${index}`);
+      if (index < 7) vi.advanceTimersByTime(100);
+    }
+    fixture.detectChanges();
+
+    const notificationRegion = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Preference notifications"]')!;
+    expect(notificationRegion.querySelectorAll('.preference-toast')).toHaveLength(6);
+    expect(notificationRegion.textContent).not.toContain('Game 7 added to Favorites');
+
+    vi.advanceTimersByTime(2400);
+    fixture.detectChanges();
+
+    expect(notificationRegion.textContent).toContain('Game 7 added to Favorites');
+  });
+
+  it('starts a queued notification’s exact three-second lifetime when it enters the stack', () => {
+    vi.useFakeTimers();
+    const fixture = TestBed.createComponent(App);
+    const preferences = TestBed.inject(PreferencesService);
+    for (let index = 1; index <= 7; index++) preferences.addFavorite(`/game/game-${index}`, `Game ${index}`);
+    fixture.detectChanges();
+
+    const notificationRegion = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Preference notifications"]')!;
+    vi.advanceTimersByTime(3000);
+    fixture.detectChanges();
+    expect(notificationRegion.textContent).toContain('Game 7 added to Favorites');
+
+    vi.advanceTimersByTime(2999);
+    fixture.detectChanges();
+    expect(notificationRegion.textContent).toContain('Game 7 added to Favorites');
+
+    vi.advanceTimersByTime(1);
+    fixture.detectChanges();
+    expect(notificationRegion.textContent).not.toContain('Game 7 added to Favorites');
+  });
+
+  it('clears the visible notification slots and their queued backlog together', () => {
+    const fixture = TestBed.createComponent(App);
+    const preferences = TestBed.inject(PreferencesService);
+    for (let index = 1; index <= 7; index++) preferences.addFavorite(`/game/game-${index}`, `Game ${index}`);
+    fixture.detectChanges();
+
+    const notificationRegion = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[aria-label="Preference notifications"]')!;
+    const clearAll = notificationRegion.querySelector<HTMLButtonElement>('.preference-notifications__clear');
+    expect(clearAll?.textContent?.trim()).toBe('Clear all');
+    expect(notificationRegion.querySelectorAll('.preference-toast')).toHaveLength(6);
+
+    clearAll?.click();
+    fixture.detectChanges();
+
+    expect(notificationRegion.querySelectorAll('.preference-toast')).toHaveLength(0);
+    expect(notificationRegion.querySelector('.preference-notifications__clear')).toBeNull();
+  });
+
   it('renders My Twitch inventory as a safely opened external link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();

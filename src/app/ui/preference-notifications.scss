@@ -1,0 +1,17 @@
+.preference-notifications { position:fixed; z-index:30; top:4.75rem; right:1rem; display:grid; gap:.75rem; width:min(24rem,calc(100vw - 2rem)); pointer-events:none; }
+.preference-toast { position:relative; display:grid; grid-template-columns:2.5rem minmax(0,1fr) 2.5rem; align-items:stretch; overflow:hidden; border:1px solid #34333a; border-radius:.5rem; background:#18181b; box-shadow:0 .75rem 2rem rgba(0,0,0,.45); color:#f6f2fb; pointer-events:auto; }
+.preference-toast__icon { display:grid; place-items:center; color:#70eb9c; font-size:1.25rem; }
+.preference-toast--removed .preference-toast__icon { color:#ff7887; }
+.preference-toast--ignored-added .preference-toast__icon { color:#f4c94e; }
+.preference-toast p { align-self:center; min-width:0; margin:.75rem 0; font-size:.875rem; font-weight:700; line-height:1.25; }
+.preference-toast__dismiss { width:2.5rem; min-height:2.5rem; padding:0; border:0; border-left:1px solid #34333a; border-radius:0 .5rem .5rem 0; background:#18181b; color:#d8b7ff; font:inherit; font-size:1.25rem; line-height:1; }
+.preference-toast__dismiss:hover { background:#303036; }
+.preference-toast__dismiss:focus-visible { position:relative; z-index:1; outline:2px solid var(--color-accent); outline-offset:-2px; }
+.preference-toast__progress { grid-column:1 / -1; height:.2rem; background:#70eb9c; transform:scaleX(0); transform-origin:left; animation:preference-toast-progress 3s linear forwards; }
+.preference-toast--removed .preference-toast__progress { background:#ff7887; }
+.preference-toast--ignored-added .preference-toast__progress { background:#f4c94e; }
+.preference-notifications__clear { justify-self:end; padding:.35rem .6rem; border:1px solid #4a4750; border-radius:.35rem; background:#222126; color:#d8b7ff; font:inherit; font-size:.75rem; font-weight:700; cursor:pointer; pointer-events:auto; }
+.preference-notifications__clear:hover { background:#303036; }
+.preference-notifications__clear:focus-visible { outline:2px solid var(--color-accent); outline-offset:2px; }
+@keyframes preference-toast-progress { to { transform:scaleX(1); } }
+@media (max-width:520px) { .preference-notifications { top:6.75rem; right:.75rem; width:calc(100vw - 1.5rem); } }

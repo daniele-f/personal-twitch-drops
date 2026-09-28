@@ -8,11 +8,12 @@ import { PreferencesService } from './preferences/preferences.service';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
 import { ButtonDirective } from './ui/button.directive';
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
+import { PreferenceNotificationsComponent } from './ui/preference-notifications';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 
 @Component({
-  imports: [ButtonDirective, ConflictResolutionComponent, RouterLink, RouterOutlet],
+  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet],
   selector: 'app-root',
   styleUrl: './app.scss',
   templateUrl: './app.html',
