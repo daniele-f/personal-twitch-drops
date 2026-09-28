@@ -37,6 +37,47 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
   });
 
+  it('labels an upcoming campaign with its start countdown', () => {
+    const startsAt = new Date(Date.now() + 90 * 60_000).toISOString();
+    const endsAt = new Date(Date.now() + 10 * 24 * 60 * 60_000).toISOString();
+    const upcoming = {
+      id: '/game/hitman-world-of-assassination',
+      gameName: 'HITMAN World of Assassination',
+      rewardCount: 1,
+      startsAt,
+      endsAt,
+    } as ActiveDrop;
+    render([], [upcoming]);
+
+    const countdown = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/hitman-world-of-assassination"] time');
+    expect(countdown?.textContent?.trim()).toBe('Starts in 1h 30m — Ends in 10d');
+    expect(countdown?.getAttribute('datetime')).toBe(startsAt);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.active-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    const campaignDate = (fixture.nativeElement as HTMLElement).querySelector<HTMLTimeElement>('.drop-end-time');
+    expect(campaignDate?.textContent?.trim()).toMatch(/^Ends /);
+    expect(campaignDate?.getAttribute('datetime')).toBe(endsAt);
+    expect(campaignDate?.title).toBeTruthy();
+  });
+
+  it('places upcoming campaigns before active campaigns in both lists', () => {
+    const startsSoon = new Date(Date.now() + 60 * 60_000).toISOString();
+    const startsLater = new Date(Date.now() + 2 * 60 * 60_000).toISOString();
+    const endsLater = new Date(Date.now() + 3 * 24 * 60 * 60_000).toISOString();
+    const upcomingSoon = { ...sea, id: '/game/upcoming-soon', gameName: 'Upcoming Soon', startsAt: startsSoon, endsAt: endsLater } as ActiveDrop;
+    const upcomingLater = { ...sea, id: '/game/upcoming-later', gameName: 'Upcoming Later', startsAt: startsLater, endsAt: endsLater } as ActiveDrop;
+    const active = { ...sea, id: '/game/active', gameName: 'Active', endsAt: endsLater } as ActiveDrop;
+    const expectedOrder = ['/game/upcoming-soon', '/game/upcoming-later', '/game/active'];
+
+    render([active, upcomingLater, upcomingSoon], [active, upcomingLater, upcomingSoon]);
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect([...page.querySelectorAll('.favorites-section [data-drop-id]')].map((row) => row.getAttribute('data-drop-id'))).toEqual(expectedOrder);
+    expect([...page.querySelectorAll('.active-section [data-drop-id]')].map((row) => row.getAttribute('data-drop-id'))).toEqual(expectedOrder);
+  });
+
   it('shows a No active Drops heading with right-aligned controls when no drops are visible', () => {
     render([], []);
 
