@@ -44,8 +44,9 @@ export class TwitchDropsAppProvider extends DropsProvider {
     const sourceName = card.dataset['game']?.trim();
     const rewardCount = Number(card.dataset['drops']);
     const endDate = new Date(card.dataset['end'] ?? '');
+    const startDate = card.dataset['start'] ? new Date(card.dataset['start']) : undefined;
 
-    if (!id || !sourceName || !Number.isSafeInteger(rewardCount) || rewardCount <= 0 || Number.isNaN(endDate.getTime())) {
+    if (!id || !sourceName || !Number.isSafeInteger(rewardCount) || rewardCount <= 0 || Number.isNaN(endDate.getTime()) || (startDate && (Number.isNaN(startDate.getTime()) || startDate.getTime() > endDate.getTime()))) {
       return null;
     }
 
@@ -67,6 +68,7 @@ export class TwitchDropsAppProvider extends DropsProvider {
       ...(rewardImages.length ? { rewardImages } : {}),
       ...(publisher ? { publisher } : {}),
       ...(watchDuration ? { watchDuration } : {}),
+      ...(startDate ? { startsAt: startDate.toISOString() } : {}),
       endsAt: endDate.toISOString(),
       ...(image ? { imageUrl: image.src } : {}),
     };

@@ -45,6 +45,15 @@ describe('TwitchDropsAppProvider', () => {
         rewards: [],
         endsAt: '2026-10-01T00:00:00.000Z',
       },
+      {
+        id: '/game/hitman-world-of-assassination',
+        gameName: 'HITMAN World of Assassination',
+        rewardCount: 1,
+        rewards: [],
+        startsAt: '2026-10-01T10:00:00.000Z',
+        endsAt: '2026-10-08T10:00:00.000Z',
+        imageUrl: 'https://cdn.example.test/hitman.png',
+      },
     ]);
   });
 

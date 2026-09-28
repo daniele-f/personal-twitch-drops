@@ -6,6 +6,7 @@ export interface ActiveDrop {
   readonly rewardImages?: readonly string[];
   readonly publisher?: string;
   readonly watchDuration?: string;
+  readonly startsAt?: string;
   readonly endsAt: string;
   readonly imageUrl?: string;
 }

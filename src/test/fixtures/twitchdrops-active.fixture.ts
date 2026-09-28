@@ -12,10 +12,14 @@ export const ACTIVE_DROPS_FIXTURE = `
       </div>
     </a>
     <a class="game-card" href="/game/no-image" data-game="no image game" data-drops="1" data-end="2026-10-01T00:00:00.000Z"></a>
+    <a class="game-card" href="/game/hitman-world-of-assassination" data-game="hitman world of assassination" data-drops="1" data-start="2026-10-01T10:00:00.000Z" data-end="2026-10-08T10:00:00.000Z">
+      <img src="https://cdn.example.test/hitman.png" alt="HITMAN World of Assassination">
+    </a>
     <a class="game-card" href="/game/no-name" data-drops="2" data-end="2026-10-02T00:00:00.000Z"></a>
     <a class="game-card" href="/game/no-rewards" data-game="no rewards game" data-end="2026-10-03T00:00:00.000Z"></a>
     <a class="game-card" href="/game/no-end" data-game="no end game" data-drops="3"></a>
     <a class="game-card" href="/game/zero-rewards" data-game="zero rewards game" data-drops="0" data-end="2026-10-04T00:00:00.000Z"></a>
+    <a class="game-card" href="/game/invalid-dates" data-game="invalid dates" data-drops="1" data-start="2026-10-08T00:00:00.000Z" data-end="2026-10-01T00:00:00.000Z"></a>
   </main>
 `;
 

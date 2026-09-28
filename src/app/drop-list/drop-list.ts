@@ -104,11 +104,11 @@ export class DropListComponent {
   }
 
   protected visibleFavoriteDrops(): readonly ActiveDrop[] {
-    return this.favoriteDrops().filter((drop) => this.isDropVisible(drop));
+    return this.favoriteDrops().filter((drop) => this.isDropVisible(drop)).sort((left, right) => this.compareCampaigns(left, right));
   }
 
   protected visibleActiveDrops(): readonly ActiveDrop[] {
-    return this.activeDrops().filter((drop) => this.isDropVisible(drop));
+    return this.activeDrops().filter((drop) => this.isDropVisible(drop)).sort((left, right) => this.compareCampaigns(left, right));
   }
 
   protected hiddenGameCount(): number {
@@ -270,7 +270,7 @@ export class DropListComponent {
   }
 
   private detailsSignature(drop: ActiveDrop): string {
-    return `${drop.endsAt}\u0000${(drop.rewards ?? []).join('\u0000')}`;
+    return `${drop.startsAt ?? ''}\u0000${drop.endsAt}\u0000${(drop.rewards ?? []).join('\u0000')}`;
   }
 
   private restoreToggleFocus(id: string): void {
@@ -310,14 +310,52 @@ export class DropListComponent {
   }
 
   protected remainingTime(drop: ActiveDrop): string {
+    if (this.isUpcoming(drop)) return `${this.startingTime(drop)} — Ends in ${this.endingCountdown(drop)}`;
     const remainingMs = new Date(drop.endsAt).getTime() - Date.now();
     if (remainingMs <= 0) return 'Ended';
     const hours = Math.ceil(remainingMs / 3_600_000);
     return hours > 24 ? `${Math.ceil(hours / 24)}d left` : `${hours}h left`;
   }
 
-  protected exactEndTime(drop: ActiveDrop): string {
+  protected isUpcoming(drop: ActiveDrop): boolean {
+    return !!drop.startsAt && new Date(drop.startsAt).getTime() > Date.now();
+  }
+
+  protected campaignDateTime(drop: ActiveDrop): string {
+    return this.isUpcoming(drop) ? drop.startsAt! : drop.endsAt;
+  }
+
+  protected campaignTimeTitle(drop: ActiveDrop): string {
+    return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(this.campaignDateTime(drop)));
+  }
+
+  protected endTimeTitle(drop: ActiveDrop): string {
     return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(drop.endsAt));
+  }
+
+  protected endDateLabel(drop: ActiveDrop): string {
+    const date = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(drop.endsAt));
+    return `Ends ${date}`;
+  }
+
+  private startingTime(drop: ActiveDrop): string {
+    const remainingMinutes = Math.ceil((new Date(drop.startsAt!).getTime() - Date.now()) / 60_000);
+    if (remainingMinutes <= 0) return 'Starting now';
+    const hours = Math.floor(remainingMinutes / 60);
+    const minutes = remainingMinutes % 60;
+    return `Starts in ${hours ? `${hours}h ` : ''}${minutes}m`.trim();
+  }
+
+  private endingCountdown(drop: ActiveDrop): string {
+    const hours = Math.ceil((new Date(drop.endsAt).getTime() - Date.now()) / 3_600_000);
+    return hours > 24 ? `${Math.ceil(hours / 24)}d` : `${Math.max(hours, 0)}h`;
+  }
+
+  private compareCampaigns(left: ActiveDrop, right: ActiveDrop): number {
+    const leftUpcoming = this.isUpcoming(left);
+    const rightUpcoming = this.isUpcoming(right);
+    if (leftUpcoming !== rightUpcoming) return leftUpcoming ? -1 : 1;
+    return Date.parse(leftUpcoming ? left.startsAt! : left.endsAt) - Date.parse(rightUpcoming ? right.startsAt! : right.endsAt);
   }
 
   protected rewardSummary(drop: ActiveDrop): string {
@@ -327,9 +365,4 @@ export class DropListComponent {
     return `${drop.rewardCount} ${rewardLabel}`;
   }
 
-  protected endDate(drop: ActiveDrop): string {
-    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(
-      new Date(drop.endsAt),
-    );
-  }
 }
