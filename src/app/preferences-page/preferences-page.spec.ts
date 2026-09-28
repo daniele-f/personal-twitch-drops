@@ -65,7 +65,7 @@ describe('PreferencesPageComponent', () => {
     fixture.detectChanges();
 
     const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure .app-disclosure__label, .blacklist-disclosure .app-disclosure__label')];
-    expect(labels.map((label) => label.textContent?.trim())).toEqual(['Favorites (10)', 'Ignore List (10)']);
+    expect(labels.map((label) => label.textContent?.trim())).toEqual(['Favorites List (10)', 'Ignore List (10)']);
   });
 
   it('lists active and inactive favorites above the ignore list', () => {
@@ -77,7 +77,7 @@ describe('PreferencesPageComponent', () => {
     fixture.detectChanges();
 
     const sections = (fixture.nativeElement as HTMLElement).querySelectorAll('main section');
-    expect(sections[0].textContent).toContain('Favorites (2)');
+    expect(sections[0].textContent).toContain('Favorites List (2)');
     expect(sections[1].textContent).toContain('Ignore List');
     sections[0].querySelector('button')?.click();
     fixture.detectChanges();

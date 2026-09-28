@@ -16,7 +16,7 @@
     @if (exportCode()) { <label class="share-code-label" for="export-code">Share code</label><textarea id="export-code" class="share-code share-code--resizable" readonly [value]="exportCode()" (click)="selectShareCode($event)"></textarea><div class="share-code-actions"><button class="copy-share-code" type="button" (click)="copyShareCode()">Copy to clipboard</button><button class="save-share-code" type="button" aria-label="Download" title="Download" (click)="saveShareCode()"><svg class="download-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M4 17v3h16v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></button></div>@if (copyMessage()) { <p class="copy-message" role="status">{{ copyMessage() }}</p> } }
   </div>
   <section id="favorites" class="favorites-preferences">
-    <app-disclosure class="favorites-disclosure" icon="★" [count]="favoriteRows().length" [expanded]="favoritesExpanded()" (toggled)="favoritesExpanded.set(!favoritesExpanded())">Favorites</app-disclosure>
+    <app-disclosure class="favorites-disclosure" icon="★" [count]="favoriteRows().length" [expanded]="favoritesExpanded()" (toggled)="favoritesExpanded.set(!favoritesExpanded())">Favorites List</app-disclosure>
     @if (favoritesExpanded()) {
       @if (favoriteRows().length) {
         <table><thead><tr><th>Game</th><th>Status</th><th>Action</th></tr></thead><tbody>
