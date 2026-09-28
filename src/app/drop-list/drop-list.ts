@@ -12,7 +12,6 @@ import { CelebrationConfettiService } from '../drops/celebration-confetti.servic
 @Component({
   selector: 'app-drop-list',
   templateUrl: './drop-list.html',
-  styleUrl: './drop-list.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, NgTemplateOutlet],
 })

@@ -1,7 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { PreferenceNotification, PreferenceNotificationsService } from '../preferences/preference-notifications.service';
 
-@Component({ selector: 'app-preference-notifications', templateUrl: './preference-notifications.html', styleUrl: './preference-notifications.scss' })
+@Component({ selector: 'app-preference-notifications', templateUrl: './preference-notifications.html' })
 export class PreferenceNotificationsComponent {
   private readonly preferenceNotifications = inject(PreferenceNotificationsService);
   protected readonly notifications = this.preferenceNotifications.notifications;

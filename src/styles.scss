@@ -1,4 +1,11 @@
 /* You can add global styles to this file, and also import other style files */
+@use './app/app';
+@use './app/conflict-resolution/conflict-resolution';
+@use './app/drop-list/drop-list';
+@use './app/drops-page/drops-page';
+@use './app/preferences-page/preferences-page';
+@use './app/ui/preference-notifications';
+
 :root {
   color-scheme: dark;
   --color-background: #0e0e10;

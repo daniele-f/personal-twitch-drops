@@ -4,7 +4,7 @@ import { DropsProvider } from '../drops/drops-provider';
 import { PreferencesService } from '../preferences/preferences.service';
 import { ImportExportService } from '../preferences/import-export.service';
 
-@Component({ imports: [RouterLink], selector: 'app-preferences-page', templateUrl: './preferences-page.html', styleUrl: './preferences-page.scss' })
+@Component({ imports: [RouterLink], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   private readonly importExport = inject(ImportExportService);

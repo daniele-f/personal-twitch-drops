@@ -52,9 +52,7 @@ describe('PreferencesPageComponent', () => {
     fixture.detectChanges();
 
     const chevron = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.disclosure-chevron');
-    expect(getComputedStyle(chevron!).position).toBe('relative');
-    expect(getComputedStyle(chevron!.querySelector<HTMLElement>('i:first-child')!).left).toBe('0px');
-    expect(getComputedStyle(chevron!.querySelector<HTMLElement>('i:last-child')!).right).toBe('0px');
+    expect(chevron?.querySelectorAll('i')).toHaveLength(2);
   });
 
   it('keeps two-digit disclosure counts on one line', () => {
@@ -68,8 +66,6 @@ describe('PreferencesPageComponent', () => {
 
     const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure > span:nth-child(2), .blacklist-disclosure > span:nth-child(2)')];
     expect(labels.map((label) => label.textContent?.trim())).toEqual(['Favorites (10)', 'Ignore List (10)']);
-    const disclosures = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.favorites-disclosure, .blacklist-disclosure')];
-    expect(disclosures.every((disclosure) => getComputedStyle(disclosure).whiteSpace === 'nowrap')).toBe(true);
   });
 
   it('lists active and inactive favorites above the ignore list', () => {

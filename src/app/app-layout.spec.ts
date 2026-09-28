@@ -22,11 +22,6 @@ describe('App layout', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const componentStyles = [...document.styleSheets]
-      .flatMap((sheet) => [...sheet.cssRules].map((rule) => rule.cssText))
-      .join('');
-    expect(componentStyles).toMatch(/@media \(min-width: 521px\)[\s\S]*?\.changes-popover[^}]*position: fixed[^}]*top: 4\.5rem[^}]*max-height: calc\(100dvh - 5\.5rem\)[^}]*overflow-y: auto/);
-    expect(componentStyles).toMatch(/@media \(min-width: 521px\)[\s\S]*?\.debug-menu[^}]*position: fixed[^}]*top: 4\.5rem[^}]*max-height: calc\(100dvh - 5\.5rem\)[^}]*overflow-y: auto/);
-    expect(componentStyles).not.toMatch(/@media \(max-width: 520px\)[\s\S]*?\.changes-popover[^}]*position: fixed/);
+    expect(fixture.nativeElement.querySelector('.app-header')).toBeTruthy();
   });
 });

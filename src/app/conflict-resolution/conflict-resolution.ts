@@ -1,7 +1,7 @@
 import { AfterViewInit, Component, ElementRef, HostListener, input, output } from '@angular/core';
 import { BlacklistEntry } from '../preferences/blacklist-entry';
 
-@Component({ selector: 'app-conflict-resolution', templateUrl: './conflict-resolution.html', styleUrl: './conflict-resolution.scss' })
+@Component({ selector: 'app-conflict-resolution', templateUrl: './conflict-resolution.html' })
 export class ConflictResolutionComponent implements AfterViewInit {
   readonly conflicts = input.required<readonly BlacklistEntry[]>();
   readonly keepFavoriteRequested = output<string>();

@@ -7,7 +7,7 @@ import { ActiveDrop } from '../drops/active-drop';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 
-@Component({ imports: [DropListComponent], selector: 'app-drops-page', templateUrl: './drops-page.html', styleUrl: './drops-page.scss' })
+@Component({ imports: [DropListComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
 export class DropsPageComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly changesState = inject(ChangesStateService);
