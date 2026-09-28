@@ -3,6 +3,8 @@
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
 }
+.preferences-shell--file-dragging { position: relative; }
+.file-drag-overlay { position: fixed; z-index: 10; inset: 0; background: rgb(0 0 0 / 78%); pointer-events: none; }
 .breadcrumbs {
   display: flex;
   align-items: center;
@@ -56,16 +58,26 @@
 .import-code { box-sizing: border-box; border: 1px solid #5f3b91; border-radius: .45rem; padding: .6rem; background: #111114; color: var(--color-text); font-family: monospace; }
 .share-code { width: 100%; min-height: 4.5rem; resize: vertical; }
 .import-code { width: 100%; min-height: 4.5rem; resize: vertical; }
+.import-drop-zone { position: relative; }
+.import-drop-zone--active { z-index: 11; }
+.import-code--drop-target { border-color: #d19cff; box-shadow: 0 0 0 2px rgb(209 156 255 / 45%); }
+.import-drop-hint { position: absolute; inset: 0; display: grid; place-items: center; border-radius: .45rem; background: #111114; color: #e6cfff; font-weight: 700; pointer-events: none; }
 .share-code-actions { display: flex; gap: .5rem; }
-.download-icon { display: block; width: 1.1rem; height: 1.1rem; }
+.import-actions { display: flex; align-items: center; gap: .5rem; }
+.import-file-input { display: none; }
+.download-icon,
+.import-icon { display: block; width: 1.1rem; height: 1.1rem; }
 .export-button,
 .import-button,
+.import-file-button,
 .copy-share-code,
 .save-share-code { width: fit-content; border: 1px solid var(--color-accent); border-radius: .45rem; padding: .5rem .75rem; background: #2d1b44; color: var(--color-text); cursor: pointer; }
 .export-button:hover,
 .export-button:focus-visible,
 .import-button:hover,
 .import-button:focus-visible,
+.import-file-button:hover,
+.import-file-button:focus-visible,
 .copy-share-code:hover,
 .copy-share-code:focus-visible,
 .save-share-code:hover,

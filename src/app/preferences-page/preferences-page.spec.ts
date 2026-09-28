@@ -172,9 +172,69 @@ describe('PreferencesPageComponent', () => {
     const actions = (fixture.nativeElement as HTMLElement).querySelector('.share-code-actions')!;
     expect([...actions.children].map((action) => action.className)).toEqual(['copy-share-code', 'save-share-code']);
     const save = actions.querySelector<HTMLButtonElement>('.save-share-code');
-    expect(save?.getAttribute('aria-label')).toBe('Download as file');
-    expect(save?.title).toBe('Download as file');
+    expect(save?.getAttribute('aria-label')).toBe('Download');
+    expect(save?.title).toBe('Download');
     expect(save?.querySelector('.download-icon')).toBeTruthy();
+  });
+
+  it('loads an import file into the share-code text area from the adjacent Import control', async () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const importButton = root.querySelector<HTMLButtonElement>('.import-file-button');
+    const fileInput = root.querySelector<HTMLInputElement>('.import-file-input');
+    expect(importButton?.getAttribute('aria-label')).toBe('Import');
+    expect(importButton?.title).toBe('Import');
+    expect(importButton?.querySelector('path')?.getAttribute('d')).toBe('M12 17V6m0 0 4 4m-4-4-4 4M4 17v3h16v-3');
+    const actions = root.querySelector('.import-actions');
+    expect(actions?.firstElementChild).toBe(root.querySelector('.import-button'));
+    expect(importButton?.parentElement).toBe(actions);
+    expect(fileInput?.type).toBe('file');
+
+    const file = { text: () => Promise.resolve('share-code-from-file') } as File;
+    await (fixture.componentInstance as unknown as { loadImportFile(file: File): Promise<void> }).loadImportFile(file);
+    fixture.detectChanges();
+
+    expect(root.querySelector<HTMLTextAreaElement>('.import-code')?.value).toBe('share-code-from-file');
+  });
+
+  it('loads a dropped file into the paste-code text area', async () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    const textArea = (fixture.nativeElement as HTMLElement).querySelector<HTMLTextAreaElement>('.import-code')!;
+    const file = { text: () => Promise.resolve('share-code-from-drop') } as File;
+    const drop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(drop, 'dataTransfer', { value: { files: { item: () => file } } });
+
+    textArea.dispatchEvent(drop);
+    await Promise.resolve();
+    fixture.detectChanges();
+
+    expect(drop.defaultPrevented).toBe(true);
+    expect(textArea.value).toBe('share-code-from-drop');
+  });
+
+  it('highlights the paste-code field and blocks file drops elsewhere while dragging over Preferences', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    const dragEnter = new Event('dragenter', { bubbles: true, cancelable: true });
+    Object.defineProperty(dragEnter, 'dataTransfer', { value: { types: ['Files'] } });
+
+    document.dispatchEvent(dragEnter);
+    fixture.detectChanges();
+
+    expect(root.querySelector('.file-drag-overlay')).toBeTruthy();
+    expect(root.querySelector('.import-drop-hint')?.textContent?.trim()).toBe('Release the file here');
+    expect(root.querySelector('.import-code')?.classList).toContain('import-code--drop-target');
+
+    const outsideDrop = new Event('drop', { bubbles: true, cancelable: true });
+    Object.defineProperty(outsideDrop, 'dataTransfer', { value: { files: { item: () => ({ text: () => Promise.resolve('should-not-import') }) } } });
+    root.dispatchEvent(outsideDrop);
+
+    expect(outsideDrop.defaultPrevented).toBe(true);
+    expect(root.querySelector<HTMLTextAreaElement>('.import-code')?.value).toBe('');
   });
 
   it('downloads the generated share code in a timestamped text file', async () => {

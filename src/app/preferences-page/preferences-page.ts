@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DropsProvider } from '../drops/drops-provider';
 import { PreferencesService } from '../preferences/preferences.service';
@@ -22,6 +22,7 @@ export class PreferencesPageComponent {
   protected readonly importCode = signal('');
   protected readonly importMessage = signal('');
   protected readonly copyMessage = signal('');
+  protected readonly fileDragActive = signal(false);
   constructor() {
     if (this.preferences.favoriteIds().size || this.preferences.blacklistEntries().length) {
       this.dropsProvider.loadActiveDrops().subscribe({
@@ -64,6 +65,52 @@ export class PreferencesPageComponent {
       this.importCode.set('');
     } else this.importMessage.set('That share code is not valid.');
   }
+  protected importFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.item(0);
+    if (file) void this.loadImportFile(file);
+    input.value = '';
+  }
+  protected allowImportDrop(event: DragEvent): void { event.preventDefault(); }
+  protected importDroppedFile(event: DragEvent): void {
+    event.preventDefault();
+    this.fileDragActive.set(false);
+    const file = event.dataTransfer?.files.item(0);
+    if (file) void this.loadImportFile(file);
+  }
+  protected async loadImportFile(file: File): Promise<void> {
+    try {
+      this.importCode.set(await file.text());
+      this.importMessage.set('');
+    } catch {
+      this.importMessage.set('Unable to read that file.');
+    }
+  }
+  @HostListener('document:dragenter', ['$event'])
+  protected startFileDrag(event: DragEvent): void {
+    if (!this.hasFiles(event)) return;
+    event.preventDefault();
+    this.fileDragActive.set(true);
+  }
+  @HostListener('document:dragover', ['$event'])
+  protected constrainFileDrag(event: DragEvent): void {
+    if (!this.fileDragActive()) return;
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = (event.target as Element | null)?.closest?.('.import-code') ? 'copy' : 'none';
+  }
+  @HostListener('document:dragleave', ['$event'])
+  protected endFileDragWhenLeavingPage(event: DragEvent): void {
+    if (event.relatedTarget === null) this.fileDragActive.set(false);
+  }
+  @HostListener('document:dragend')
+  protected endFileDrag(): void { this.fileDragActive.set(false); }
+  @HostListener('document:drop', ['$event'])
+  protected cancelOutsideFileDrop(event: DragEvent): void {
+    if (!this.fileDragActive()) return;
+    if (!(event.target as Element | null)?.closest?.('.import-code')) event.preventDefault();
+    this.fileDragActive.set(false);
+  }
+  private hasFiles(event: DragEvent): boolean { return Array.from(event.dataTransfer?.types ?? []).includes('Files'); }
   private shareCodeFileName(): string {
     const now = new Date();
     const pad = (value: number) => String(value).padStart(2, '0');
