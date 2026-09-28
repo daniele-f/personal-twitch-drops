@@ -8,12 +8,16 @@ import { DISPLAY_PREFERENCES_STORAGE_KEY, PREFERENCES_STORAGE } from '../prefere
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
+import { ToggleComponent } from '../ui/toggle';
+import { CollapseChevronComponent } from '../ui/collapse-chevron';
+import { GameCardComponent } from '../ui/game-card';
+import { DropCardComponent } from '../ui/drop-card';
 
 @Component({
   selector: 'app-drop-list',
   templateUrl: './drop-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet],
+  imports: [RouterLink, NgTemplateOutlet, ToggleComponent, CollapseChevronComponent, GameCardComponent, DropCardComponent],
 })
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);

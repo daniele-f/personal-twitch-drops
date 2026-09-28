@@ -66,7 +66,7 @@
   <aside #changesPanel class="changes-popover">
     <div class="changes-popover__header">
       <h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>
-      <span class="changes-show-hidden toggle-control"><label for="changes-show-hidden">Show ignored games</label><div class="toggle"><input #changesShowHiddenToggle id="changes-show-hidden" type="checkbox" [checked]="showHiddenChanges()" (change)="setShowHiddenChanges(changesShowHiddenToggle.checked)" /><label for="changes-show-hidden"></label></div></span>
+      <app-toggle class="changes-show-hidden" controlId="changes-show-hidden" label="Show ignored games" [checked]="showHiddenChanges()" (checkedChange)="setShowHiddenChanges($event)" />
     </div>
     @if (changesState.changes().length) {
       @for (group of changeGroups; track group.type) {

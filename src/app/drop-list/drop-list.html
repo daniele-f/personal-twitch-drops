@@ -99,30 +99,8 @@
         }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            <span class="toggle-control"
-              ><label for="show-subs">Subs</label>
-              <div class="toggle">
-                <input
-                  #favoriteSubscriptionToggle
-                  id="show-subs"
-                  type="checkbox"
-                  aria-label="Show subscription Drops"
-                  [checked]="showSubscriptions()"
-                  (change)="setShowSubscriptions(favoriteSubscriptionToggle.checked)"
-                /><label for="show-subs"></label></div
-            ></span>
-            <span class="toggle-control"
-              ><label for="show-badges">Badges</label>
-              <div class="toggle">
-                <input
-                  #favoriteBadgeToggle
-                  id="show-badges"
-                  type="checkbox"
-                  aria-label="Show badge Drops"
-                  [checked]="showBadges()"
-                (change)="setShowBadges(favoriteBadgeToggle.checked)"
-                /><label for="show-badges"></label></div
-            ></span>
+            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
+            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
           </div>
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
@@ -130,8 +108,11 @@
       <ul class="drop-list">
         @for (drop of visibleFavoriteDrops(); track drop.id) {
           <li [attr.data-drop-id]="drop.id">
-            <article
+            <app-game-card
               class="drop-row drop-row--favorite"
+              [title]="drop.gameName"
+              [imageUrl]="drop.imageUrl"
+              [expanded]="expandedFavoriteId() === drop.id"
               [class.drop-row--expanded]="expandedFavoriteId() === drop.id"
             >
               <button
@@ -185,15 +166,10 @@
                       drop.gameName
                     "
                     (click)="toggleFavoriteDetails(drop)"
-                  ><span
-                    class="disclosure-chevron"
-                    [class.disclosure-chevron--expanded]="expandedFavoriteId() === drop.id"
-                    aria-hidden="true"
-                    ><i></i><i></i
-                  ></span></button>
+                  ><app-collapse-chevron [expanded]="expandedFavoriteId() === drop.id" /></button>
                 </div>
               </div>
-            </article>
+            </app-game-card>
             <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
           </li>
         }
@@ -213,30 +189,8 @@
         }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            <span class="toggle-control"
-              ><label for="show-subs">Subs</label>
-              <div class="toggle">
-                <input
-                  #activeSubscriptionToggle
-                  id="show-subs"
-                  type="checkbox"
-                  aria-label="Show subscription Drops"
-                  [checked]="showSubscriptions()"
-                  (change)="setShowSubscriptions(activeSubscriptionToggle.checked)"
-                /><label for="show-subs"></label></div
-            ></span>
-            <span class="toggle-control"
-              ><label for="show-badges">Badges</label>
-              <div class="toggle">
-                <input
-                  #activeBadgeToggle
-                  id="show-badges"
-                  type="checkbox"
-                  aria-label="Show badge Drops"
-                  [checked]="showBadges()"
-                (change)="setShowBadges(activeBadgeToggle.checked)"
-                /><label for="show-badges"></label></div
-            ></span>
+            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
+            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
           </div>
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
@@ -245,7 +199,7 @@
     <ul class="drop-list">
       @for (drop of visibleActiveDrops(); track drop.id) {
         <li [attr.data-drop-id]="drop.id">
-          <article class="drop-row drop-row--active" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
+          <app-drop-card class="drop-row drop-row--active" [title]="drop.gameName" [timeLabel]="remainingTime(drop)" [rewardSummary]="rewardSummary(drop)" [imageUrl]="drop.imageUrl" [expanded]="expandedFavoriteId() === drop.id" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
             <button
               class="favorite-details-toggle active-details-toggle--card"
               type="button"
@@ -299,15 +253,10 @@
                     drop.gameName
                   "
                   (click)="toggleFavoriteDetails(drop)"
-                ><span
-                  class="disclosure-chevron"
-                  [class.disclosure-chevron--expanded]="expandedFavoriteId() === drop.id"
-                  aria-hidden="true"
-                  ><i></i><i></i
-                ></span></button>
+                ><app-collapse-chevron [expanded]="expandedFavoriteId() === drop.id" /></button>
               </div>
             </div>
-          </article>
+          </app-drop-card>
           <ng-container [ngTemplateOutlet]="dropDetails" [ngTemplateOutletContext]="{ $implicit: drop }" />
         </li>
       }

@@ -1,0 +1,1 @@
+<span class="app-toggle"><label [for]="controlId()">{{ label() }}</label><span class="app-toggle__track toggle"><input [id]="controlId()" type="checkbox" [attr.aria-label]="ariaLabel()" [checked]="checked()" (change)="change($any($event.target).checked)" /><label [for]="controlId()"></label></span></span>
