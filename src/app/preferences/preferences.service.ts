@@ -1,10 +1,12 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { BlacklistEntry } from './blacklist-entry';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
+import { PreferenceNotificationKind, PreferenceNotificationsService } from './preference-notifications.service';
 
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
   private readonly storage = inject(PREFERENCES_STORAGE);
+  private readonly notifications = inject(PreferenceNotificationsService);
   readonly favoriteIds = signal<ReadonlySet<string>>(this.readFavoriteIds());
   readonly favoriteNames = signal<ReadonlyMap<string, string>>(this.readFavoriteNames());
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
@@ -17,11 +19,13 @@ export class PreferencesService {
       next.add(id);
       this.favoriteIds.set(next);
       this.persist(next);
+      this.notify('favorite-added', gameName ?? this.nameFromId(id));
     }
     if (gameName) this.rememberFavoriteNames([{ id, gameName }]);
   }
 
   removeFavorite(id: string): void {
+    const gameName = this.favoriteNames().get(id) ?? this.nameFromId(id);
     const next = new Set(this.favoriteIds());
     if (!next.delete(id)) return;
 
@@ -33,17 +37,20 @@ export class PreferencesService {
       this.favoriteNames.set(names);
       this.persistFavoriteNames(names);
     }
+    this.notify('favorite-removed', gameName);
   }
 
   clearFavorites(): void {
     if (!this.favoriteIds().size && !this.favoriteNames().size) return;
 
+    const removed = [...this.favoriteIds()].map((id) => this.favoriteNames().get(id) ?? this.nameFromId(id));
     const favoriteIds = new Set<string>();
     const favoriteNames = new Map<string, string>();
     this.favoriteIds.set(favoriteIds);
     this.favoriteNames.set(favoriteNames);
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
+    for (const gameName of removed) this.notify('favorite-removed', gameName);
   }
 
   rememberFavoriteNames(games: readonly { id: string; gameName: string }[]): void {
@@ -66,25 +73,33 @@ export class PreferencesService {
     const next = [{ id, gameName, blacklistedAt: new Date().toISOString() }, ...this.blacklistEntries()];
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+    this.notify('ignored-added', gameName);
   }
 
   removeBlacklist(id: string): void {
+    const gameName = this.blacklistEntries().find((entry) => entry.id === id)?.gameName;
     const next = this.blacklistEntries().filter((entry) => entry.id !== id);
     if (next.length === this.blacklistEntries().length) return;
 
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+    if (gameName) this.notify('ignored-removed', gameName);
   }
 
   clearBlacklist(): void {
     if (!this.blacklistEntries().length) return;
 
+    const removed = this.blacklistEntries().map((entry) => entry.gameName);
     const entries: readonly BlacklistEntry[] = [];
     this.blacklistEntries.set(entries);
     this.persistBlacklist(entries);
+    for (const gameName of removed) this.notify('ignored-removed', gameName);
   }
 
   replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[]): void {
+    const previousFavoriteIds = this.favoriteIds();
+    const previousFavoriteNames = this.favoriteNames();
+    const previousBlacklist = this.blacklistEntries();
     const favoriteIds = new Set(favorites.map((favorite) => favorite.id));
     const favoriteNames = new Map(favorites.flatMap((favorite) => favorite.gameName ? [[favorite.id, favorite.gameName.trim()] as const] : []));
     const blacklistEntries = [...blacklist].sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
@@ -95,6 +110,7 @@ export class PreferencesService {
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
     this.persistBlacklist(blacklistEntries);
+    this.notifyListReplacement(previousFavoriteIds, previousFavoriteNames, previousBlacklist, favoriteIds, favoriteNames, blacklistEntries);
   }
 
   private readFavoriteIds(): ReadonlySet<string> {
@@ -183,4 +199,16 @@ export class PreferencesService {
     const date = new Date(blacklistedAt);
     return !Number.isNaN(date.valueOf()) && date.toISOString() === blacklistedAt;
   }
+
+  private notifyListReplacement(previousFavoriteIds: ReadonlySet<string>, previousFavoriteNames: ReadonlyMap<string, string>, previousBlacklist: readonly BlacklistEntry[], favoriteIds: ReadonlySet<string>, favoriteNames: ReadonlyMap<string, string>, blacklistEntries: readonly BlacklistEntry[]): void {
+    const previousBlacklistById = new Map(previousBlacklist.map((entry) => [entry.id, entry]));
+    const blacklistById = new Map(blacklistEntries.map((entry) => [entry.id, entry]));
+    for (const id of previousFavoriteIds) if (!favoriteIds.has(id)) this.notify('favorite-removed', previousFavoriteNames.get(id) ?? this.nameFromId(id));
+    for (const id of favoriteIds) if (!previousFavoriteIds.has(id)) this.notify('favorite-added', favoriteNames.get(id) ?? this.nameFromId(id));
+    for (const [id, entry] of previousBlacklistById) if (!blacklistById.has(id)) this.notify('ignored-removed', entry.gameName);
+    for (const [id, entry] of blacklistById) if (!previousBlacklistById.has(id)) this.notify('ignored-added', entry.gameName);
+  }
+
+  private notify(kind: PreferenceNotificationKind, gameName: string): void { this.notifications.show(kind, gameName); }
+  private nameFromId(id: string): string { return (id.split('/').filter(Boolean).at(-1) || id).replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (letter) => letter.toUpperCase()); }
 }

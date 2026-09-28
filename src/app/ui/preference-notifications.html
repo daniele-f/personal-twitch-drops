@@ -1,0 +1,11 @@
+<section class="preference-notifications" aria-label="Preference notifications" aria-live="polite">
+  @for (notification of notifications(); track notification.id) {
+    <article class="preference-toast" [class.preference-toast--ignored-added]="notification.kind === 'ignored-added'" [class.preference-toast--removed]="notification.kind.endsWith('removed')">
+      <span class="preference-toast__icon" aria-hidden="true">{{ icon(notification) }}</span>
+      <p>{{ message(notification) }}</p>
+      <button class="preference-toast__dismiss" type="button" aria-label="Dismiss notification" (click)="dismiss(notification.id)">×</button>
+      <span class="preference-toast__progress" aria-hidden="true"></span>
+    </article>
+  }
+  @if (queuedCount()) { <button class="preference-notifications__clear" type="button" (click)="clearAll()">Clear all</button> }
+</section>
