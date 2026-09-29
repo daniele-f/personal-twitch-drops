@@ -55,8 +55,12 @@ export class DropListComponent {
   constructor() {
     effect(() => {
       const favoriteDrops = this.favoriteDrops();
+      const activeDrops = this.activeDrops();
       const requestId = this.favoritePreloadRequestId();
-      untracked(() => this.refreshFavoriteDetailsFor(favoriteDrops, requestId));
+      untracked(() => {
+        this.ensureDetailsFor(activeDrops);
+        this.refreshFavoriteDetailsFor(favoriteDrops, requestId);
+      });
     });
   }
 
