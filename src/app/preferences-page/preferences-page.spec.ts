@@ -47,6 +47,16 @@ describe('PreferencesPageComponent', () => {
     expect(home?.getAttribute('href')).toBe('/');
   });
 
+  it('groups sharing controls and list management into their own layout cards', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.import-share-card .import-code')).toBeTruthy();
+    expect(root.querySelector('.export-share-card .export-button')).toBeTruthy();
+    expect(root.querySelectorAll('.list-summary-card')).toHaveLength(2);
+  });
+
   it('anchors the animated chevron strokes inside their icon wrapper', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();
@@ -175,6 +185,17 @@ describe('PreferencesPageComponent', () => {
     expect(save?.getAttribute('aria-label')).toBe('Download');
     expect(save?.title).toBe('Download');
     expect(save?.querySelector('.download-icon')).toBeTruthy();
+    expect(code?.closest('.export-code-result')?.classList).toContain('export-code-result--enter');
+  });
+
+  it('animates expanded list content into view', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorites-disclosure button')?.click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.favorites-list-content')).toBeTruthy();
   });
 
   it('loads an import file into the share-code text area from the adjacent Import control', async () => {
