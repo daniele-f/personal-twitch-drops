@@ -309,7 +309,7 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('.reward-details')?.textContent).not.toContain('Current reward details are unavailable.');
   });
 
-  it('removes favorites with hidden rewards but leaves unloaded active games visible', () => {
+  it('removes favorite and active games when every reward is hidden by the default filters', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
     const watchOnly = { ...sea, id: '/game/watch-only', gameName: 'Watch Only', rewards: ['Watch Reward'] } as ActiveDrop;
@@ -325,7 +325,7 @@ describe('DropListComponent', () => {
 
     const page = fixture.nativeElement as HTMLElement;
     expect(page.querySelector('[data-drop-id="/game/subscription-only"]')).toBeNull();
-    expect(page.querySelector('[data-drop-id="/game/badge-only"]')?.textContent).toContain('Badge Only');
+    expect(page.querySelector('[data-drop-id="/game/badge-only"]')).toBeNull();
     expect(page.querySelector('[data-drop-id="/game/watch-only"]')?.textContent).toContain('Watch Only');
     expect(page.querySelector('.favorites-section')).toBeNull();
     expect(page.querySelector('.active-section .section-heading')?.textContent).toContain('Manage');
@@ -341,7 +341,7 @@ describe('DropListComponent', () => {
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/subscription-only"]');
     expect(row?.textContent).toContain('Subscription Only');
     expect(row?.textContent).toContain('Ignored');
-    expect(row?.textContent).not.toContain('Hidden by reward filter');
+    expect(row?.textContent).toContain('Hidden by reward filter');
   });
 
   it('reports how many games are hidden by the reward filters', () => {
@@ -355,7 +355,7 @@ describe('DropListComponent', () => {
     render([subscriptionOnly], [badgeOnly]);
 
     const page = fixture.nativeElement as HTMLElement;
-    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('1 game hidden');
+    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
     const toggles = page.querySelector('.active-section .display-toggles')!;
     expect([...toggles.children].map((element) => element.className)).toEqual([
       'toggle-control', 'toggle-control',
@@ -484,18 +484,18 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
   });
 
-  it('preloads complete details only for favorites', () => {
+  it('preloads reward classifications for every campaign but links only for favorites', () => {
     render([sea], [valorant]);
 
     expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
-    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id);
+    expect(loadDropDetails).toHaveBeenCalledWith(valorant.id);
     expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
   });
 
   it('preloads complete details when an active game becomes a favorite', () => {
     render([], [sea]);
 
-    expect(loadDropDetails).not.toHaveBeenCalled();
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id);
     fixture.componentRef.setInput('favoriteDrops', [sea]);
     fixture.componentRef.setInput('activeDrops', []);
     fixture.detectChanges();
@@ -510,7 +510,7 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
 
     expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
-    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id);
+    expect(loadDropDetails).toHaveBeenCalledWith(valorant.id);
     expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
   });
 
