@@ -50,8 +50,8 @@ export class DropListComponent {
 
   constructor() {
     effect(() => {
-      const drops = [...this.favoriteDrops(), ...this.activeDrops()];
-      untracked(() => this.refreshDetailsFor(drops));
+      const favoriteDrops = this.favoriteDrops();
+      untracked(() => this.refreshFavoriteDetailsFor(favoriteDrops));
     });
   }
 
@@ -140,9 +140,9 @@ export class DropListComponent {
     }
   }
 
-  private refreshDetailsFor(drops: readonly ActiveDrop[]): void {
+  private refreshFavoriteDetailsFor(drops: readonly ActiveDrop[]): void {
     this.failedDetailIds.set(new Set());
-    this.ensureDetailsFor(drops);
+    this.ensureDetailsFor(drops, true);
   }
 
   private loadDetails(drop: ActiveDrop, signature: string, includeGameLinks = false): void {
