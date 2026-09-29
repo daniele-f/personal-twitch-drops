@@ -13,3 +13,4 @@ button.debug-button--active,button.debug-button--active:hover:not(:disabled),but
 @media (min-width: 521px) { .app-header { position:sticky; top:0; z-index:20; } }
 @media (min-width: 521px) { .changes-popover,.debug-menu { position:fixed; top:4.5rem; max-height:calc(100dvh - 5.5rem); overflow-y:auto; } }
 @media (max-width: 520px) { .app-header { align-items:flex-start; flex-direction:column; min-height:6rem; box-sizing:border-box; padding:.8rem 1rem; }.debug-button { display:none; }.changes-popover,.debug-menu { top:6.5rem; right:1rem; left:1rem; width:auto; max-height:calc(100dvh - 7.5rem); overflow-y:auto; }.app-shell { padding:1.5rem 1rem 3rem; }.page-heading { align-items:flex-start; flex-direction:column; } }
+.app-header .preferences-link.app-button--default.preferences-link--active,.app-header .preferences-link.app-button--default.preferences-link--active:hover { border-color:var(--color-accent); background:var(--color-accent); color:#fff; }

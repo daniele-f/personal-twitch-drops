@@ -21,6 +21,7 @@ export class PreferencesPageComponent {
   protected readonly exportCode = signal('');
   protected readonly importCode = signal('');
   protected readonly importMessage = signal('');
+  protected readonly importSucceeded = signal<boolean | null>(null);
   protected readonly copyMessage = signal('');
   protected readonly fileDragActive = signal(false);
   constructor() {
@@ -62,8 +63,12 @@ export class PreferencesPageComponent {
   protected importLists(): void {
     if (this.importExport.import(this.importCode())) {
       this.importMessage.set('Lists replaced successfully.');
+      this.importSucceeded.set(true);
       this.importCode.set('');
-    } else this.importMessage.set('That share code is not valid.');
+    } else {
+      this.importMessage.set('That share code is not valid.');
+      this.importSucceeded.set(false);
+    }
   }
   protected importFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -81,9 +86,10 @@ export class PreferencesPageComponent {
   protected async loadImportFile(file: File): Promise<void> {
     try {
       this.importCode.set(await file.text());
-      this.importMessage.set('');
+      this.importLists();
     } catch {
       this.importMessage.set('Unable to read that file.');
+      this.importSucceeded.set(false);
     }
   }
   @HostListener('document:dragenter', ['$event'])

@@ -158,6 +158,8 @@ describe('PreferencesPageComponent', () => {
 
     expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/valorant']);
+    expect((fixture.nativeElement as HTMLElement).querySelector('.import-message')?.classList).toContain('import-message--success');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.import-feedback-row .import-message')).toBeTruthy();
   });
 
   it('shows generated share code in a vertically resizable text field that selects all code when clicked', async () => {
@@ -218,6 +220,24 @@ describe('PreferencesPageComponent', () => {
     fixture.detectChanges();
 
     expect(root.querySelector<HTMLTextAreaElement>('.import-code')?.value).toBe('share-code-from-file');
+  });
+
+  it('imports a valid selected file as soon as it has been read', async () => {
+    const preferences = TestBed.inject(PreferencesService);
+    const importExport = TestBed.inject(ImportExportService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    const shareCode = await importExport.export();
+    preferences.removeFavorite('/game/sea-of-thieves');
+    preferences.addBlacklist('/game/old-game', 'Old Game');
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    await (fixture.componentInstance as unknown as { loadImportFile(file: File): Promise<void> }).loadImportFile({ text: () => Promise.resolve(shareCode) } as File);
+    fixture.detectChanges();
+
+    expect([...preferences.favoriteIds()]).toEqual(['/game/sea-of-thieves']);
+    expect(preferences.blacklistEntries()).toEqual([]);
+    expect(fixture.nativeElement.textContent).toContain('Lists replaced successfully.');
   });
 
   it('loads a dropped file into the paste-code text area', async () => {

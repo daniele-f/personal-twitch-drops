@@ -2,7 +2,7 @@ import { Component, computed, ElementRef, HostListener, inject, isDevMode, signa
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { DropChange } from './changes/change-detection';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { ConflictResolutionComponent } from './conflict-resolution/conflict-resolution';
 import { PreferencesService } from './preferences/preferences.service';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences/preferences-storage';
@@ -19,6 +19,7 @@ export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-sh
   templateUrl: './app.html',
 })
 export class App {
+  protected readonly router = inject(Router);
   protected readonly preferences = inject(PreferencesService);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);

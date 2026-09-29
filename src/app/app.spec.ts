@@ -7,6 +7,7 @@ import { App } from './app';
 import { appConfig } from './app.config';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
+import { Router } from '@angular/router';
 
 describe('App', () => {
   beforeEach(async () => {
@@ -23,6 +24,24 @@ describe('App', () => {
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
     expect(link?.classList).toContain('app-button');
     expect(link?.getAttribute('href')).toBe('#/preferences');
+  });
+
+  it('orders header actions with Twitch inventory last', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.app-header nav > a, .app-header nav > button')].map((control) => control.textContent?.trim());
+    expect(labels.slice(-3)).toEqual(['No Changes', 'Preferences', 'Twitch inventory']);
+  });
+
+  it('marks Preferences active and hides Changes on the Preferences route', async () => {
+    const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/preferences');
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.preferences-link')?.classList).toContain('preferences-link--active');
+    expect(root.querySelector('.changes-button')).toBeNull();
   });
 
   it('shows stacked preference notifications for three seconds and expires the oldest first', () => {
@@ -126,12 +145,12 @@ describe('App', () => {
     expect(notificationRegion.querySelector('.preference-notifications__clear')).toBeNull();
   });
 
-  it('renders My Twitch inventory as a safely opened external link', () => {
+  it('renders Twitch inventory as a safely opened external link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.twitch-inventory-link');
-    expect(link?.querySelector('.twitch-inventory-label')?.textContent).toBe('My Twitch inventory');
+    expect(link?.querySelector('.twitch-inventory-label')?.textContent).toBe('Twitch inventory');
     expect(link?.href).toBe('https://www.twitch.tv/drops/inventory');
     expect(link?.target).toBe('_blank');
     expect(link?.rel).toBe('noopener noreferrer');
@@ -401,13 +420,13 @@ describe('App', () => {
     expect(fixture.nativeElement.querySelector('.debug-menu')).toBeTruthy();
   });
 
-  it('toggles the developer menu from a header button before Preferences', () => {
+  it('toggles the developer menu from a header button before Changes', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const header = fixture.nativeElement as HTMLElement;
     const button = header.querySelector<HTMLButtonElement>('.debug-button');
-    expect(button?.nextElementSibling?.classList).toContain('preferences-link');
+    expect(button?.nextElementSibling?.classList).toContain('changes-button');
     expect(button?.getAttribute('aria-expanded')).toBe('false');
 
     button?.click();
