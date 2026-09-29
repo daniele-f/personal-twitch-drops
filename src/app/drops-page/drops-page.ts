@@ -18,6 +18,8 @@ export class DropsPageComponent {
   protected readonly searchTerm = signal('');
   protected readonly searchActive = computed(() => this.searchTerm().trim().length > 0);
   protected readonly loading = signal(true);
+  protected readonly refreshing = signal(true);
+  protected readonly favoritePreloadRequestId = signal(0);
   protected readonly updatedAt = signal<Date | null>(null);
   protected readonly loadFailed = signal(false);
   protected readonly blacklistedIds = computed(() => new Set(this.preferences.blacklistEntries().map((entry) => entry.id)));
@@ -35,7 +37,8 @@ export class DropsPageComponent {
   protected readonly updatedDropIds = computed(() => new Set(this.changesState.changes().filter((change) => change.type === 'updated').map((change) => change.drop.id)));
   private requestVersion = 0;
   constructor() { this.loadDrops(); }
-  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.collectedRewards.retainActiveCampaigns(drops.map((drop) => drop.id)); this.celebrations.reconcileActiveCampaigns(drops); this.changesState.updateDrops(drops); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); } }); }
+  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.collectedRewards.retainActiveCampaigns(drops.map((drop) => drop.id)); this.celebrations.reconcileActiveCampaigns(drops); this.changesState.updateDrops(drops); this.favoritePreloadRequestId.set(requestVersion); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
+  protected finishRefreshing(requestId: number): void { if (requestId === this.requestVersion) this.refreshing.set(false); }
   protected updatedLabel(): string { const updatedAt = this.updatedAt(); const count = this.drops().length; return updatedAt ? `✓ Loaded ${count} active Drop${count === 1 ? '' : 's'} at ${new Intl.DateTimeFormat('en-US', { timeStyle: 'short' }).format(updatedAt)}` : 'Loading active Drops'; }
   private filterBySearchTerm(drops: readonly ActiveDrop[]): readonly ActiveDrop[] {
     const searchTerm = this.searchTerm().trim().toLocaleLowerCase();

@@ -1,21 +1,54 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { DropsProvider } from '../drops/drops-provider';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
+import { DropDetails } from '../drops/drop-details';
 import { DropsPageComponent } from './drops-page';
 
 class TestDropsProvider extends DropsProvider {
   readonly requests: Subject<readonly ActiveDrop[]>[] = [];
+  readonly detailRequests: Subject<DropDetails>[] = [];
   loadActiveDrops(): Subject<readonly ActiveDrop[]> { const request = new Subject<readonly ActiveDrop[]>(); this.requests.push(request); return request; }
-  loadDropDetails() { return of({ requirementByReward: {}, badgeRewardNames: [] }); }
+  loadDropDetails(): Subject<DropDetails> { const request = new Subject<DropDetails>(); this.detailRequests.push(request); return request; }
 }
 
 describe('DropsPageComponent', () => {
+  it('stops Refresh spinning after the active list loads when there are no favorites', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.refresh')?.classList).not.toContain('refresh--spinning');
+  });
+
+  it('keeps Refresh spinning until favorite details finish preloading', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    const refresh = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.refresh')!;
+    expect(refresh.classList).toContain('refresh--spinning');
+
+    provider.detailRequests[0].next({ requirementByReward: {}, badgeRewardNames: [] });
+    provider.detailRequests[0].complete();
+    fixture.detectChanges();
+
+    expect(refresh.classList).not.toContain('refresh--spinning');
+  });
+
   it('removes collected reward state when a refreshed campaign is no longer active', async () => {
     localStorage.clear();
     localStorage.setItem('personal-twitch-drops.collected-rewards.v1', JSON.stringify({ '/game/ended': ['Reward'], '/game/current': ['Reward'] }));

@@ -28,6 +28,7 @@ export class DropListComponent {
   private readonly confetti = inject(CelebrationConfettiService);
   readonly favoriteDrops = input.required<readonly ActiveDrop[]>();
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
+  readonly favoritePreloadRequestId = input(1);
   readonly loading = input.required<boolean>();
   readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly updatedDropIds = input<ReadonlySet<string>>(new Set());
@@ -36,6 +37,7 @@ export class DropListComponent {
   readonly favoriteRequested = output<ActiveDrop>();
   readonly unfavoriteRequested = output<ActiveDrop>();
   readonly blacklistRequested = output<ActiveDrop>();
+  readonly favoritePreloadComplete = output<number>();
   protected readonly expandedFavoriteId = signal<string | null>(null);
   protected readonly unfavoriteConfirmationId = signal<string | null>(null);
   protected readonly detailsByDropId = signal<ReadonlyMap<string, DropDetails>>(new Map());
@@ -44,6 +46,8 @@ export class DropListComponent {
   private readonly detailSignaturesById = signal<ReadonlyMap<string, string>>(new Map());
   private readonly enrichedGameLinkIds = new Set<string>();
   private readonly pendingGameLinkDropsById = new Map<string, ActiveDrop>();
+  private activeFavoritePreload: { readonly requestId: number; readonly pendingIds: Set<string> } | null = null;
+  private lastFavoritePreloadRequestId = 0;
   private readonly displayPreferences = this.readDisplayPreferences();
   protected readonly showSubscriptions = signal(this.displayPreferences.showSubscriptions);
   protected readonly showBadges = signal(this.displayPreferences.showBadges);
@@ -51,7 +55,8 @@ export class DropListComponent {
   constructor() {
     effect(() => {
       const favoriteDrops = this.favoriteDrops();
-      untracked(() => this.refreshFavoriteDetailsFor(favoriteDrops));
+      const requestId = this.favoritePreloadRequestId();
+      untracked(() => this.refreshFavoriteDetailsFor(favoriteDrops, requestId));
     });
   }
 
@@ -118,7 +123,7 @@ export class DropListComponent {
     return [...this.favoriteDrops(), ...this.activeDrops()].filter((drop) => !this.isDropVisible(drop)).length;
   }
 
-  private ensureDetailsFor(drops: readonly ActiveDrop[], includeGameLinks = false): void {
+  private ensureDetailsFor(drops: readonly ActiveDrop[], includeGameLinks = false, favoritePreloadRequestId?: number): void {
     const detailsById = this.detailsByDropId();
     const loadingIds = this.loadingDetailIds();
     const failedIds = this.failedDetailIds();
@@ -136,16 +141,35 @@ export class DropListComponent {
         continue;
       }
       if ((detailsById.has(drop.id) && isCurrent && !needsGameLinks) || loadingIds.has(drop.id) || (failedIds.has(drop.id) && isCurrent)) continue;
-      this.loadDetails(drop, signature, needsGameLinks);
+      this.loadDetails(drop, signature, needsGameLinks, favoritePreloadRequestId);
     }
   }
 
-  private refreshFavoriteDetailsFor(drops: readonly ActiveDrop[]): void {
+  private refreshFavoriteDetailsFor(drops: readonly ActiveDrop[], requestId: number): void {
+    if (requestId === 0) return;
+    const reloadDetails = requestId !== this.lastFavoritePreloadRequestId;
+    if (reloadDetails) {
+      this.lastFavoritePreloadRequestId = requestId;
+      this.detailsByDropId.update((details) => {
+        const next = new Map(details);
+        drops.forEach((drop) => next.delete(drop.id));
+        return next;
+      });
+    }
     this.failedDetailIds.set(new Set());
-    this.ensureDetailsFor(drops, true);
+    this.activeFavoritePreload = { requestId, pendingIds: new Set(drops.map((drop) => drop.id)) };
+    if (this.activeFavoritePreload.pendingIds.size === 0) {
+      this.favoritePreloadComplete.emit(requestId);
+      this.activeFavoritePreload = null;
+      return;
+    }
+    this.ensureDetailsFor(drops, true, requestId);
+    for (const drop of drops) {
+      if (!this.loadingDetailIds().has(drop.id)) this.completeFavoritePreload(drop.id, requestId);
+    }
   }
 
-  private loadDetails(drop: ActiveDrop, signature: string, includeGameLinks = false): void {
+  private loadDetails(drop: ActiveDrop, signature: string, includeGameLinks = false, favoritePreloadRequestId?: number): void {
 
     this.loadingDetailIds.update((ids) => new Set(ids).add(drop.id));
     this.detailSignaturesById.update((signatures) => new Map(signatures).set(drop.id, signature));
@@ -161,9 +185,9 @@ export class DropListComponent {
       error: () => {
         if (includeGameLinks) this.enrichedGameLinkIds.delete(drop.id);
         this.failedDetailIds.update((ids) => new Set(ids).add(drop.id));
-        this.finishLoadingDetails(drop.id, false);
+        this.finishLoadingDetails(drop.id, false, favoritePreloadRequestId);
       },
-      complete: () => this.finishLoadingDetails(drop.id),
+      complete: () => this.finishLoadingDetails(drop.id, true, favoritePreloadRequestId),
     });
   }
 
@@ -172,18 +196,28 @@ export class DropListComponent {
     console.log(`[Game links] ${drop.gameName}: ${link ? `${link.label} — ${link.url}` : 'None'}`);
   }
 
-  private finishLoadingDetails(id: string, startPendingGameLinkLookup = true): void {
+  private finishLoadingDetails(id: string, startPendingGameLinkLookup = true, favoritePreloadRequestId?: number): void {
     this.loadingDetailIds.update((ids) => {
       const nextIds = new Set(ids);
       nextIds.delete(id);
       return nextIds;
     });
+    this.completeFavoritePreload(id, favoritePreloadRequestId);
     if (!startPendingGameLinkLookup) return;
 
     const pendingDrop = this.pendingGameLinkDropsById.get(id);
     if (!pendingDrop) return;
     this.pendingGameLinkDropsById.delete(id);
     this.ensureDetailsFor([pendingDrop], true);
+  }
+
+  private completeFavoritePreload(id: string, requestId: number | undefined): void {
+    if (requestId === undefined || this.activeFavoritePreload?.requestId !== requestId) return;
+    this.activeFavoritePreload.pendingIds.delete(id);
+    if (this.activeFavoritePreload.pendingIds.size === 0) {
+      this.favoritePreloadComplete.emit(requestId);
+      this.activeFavoritePreload = null;
+    }
   }
 
   protected detailsFor(drop: ActiveDrop): DropDetails | undefined {
