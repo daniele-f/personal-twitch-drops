@@ -309,7 +309,7 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('.reward-details')?.textContent).not.toContain('Current reward details are unavailable.');
   });
 
-  it('removes favorite and active games when every reward is hidden by the default filters', () => {
+  it('removes favorites with hidden rewards but leaves unloaded active games visible', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
     const watchOnly = { ...sea, id: '/game/watch-only', gameName: 'Watch Only', rewards: ['Watch Reward'] } as ActiveDrop;
@@ -325,7 +325,7 @@ describe('DropListComponent', () => {
 
     const page = fixture.nativeElement as HTMLElement;
     expect(page.querySelector('[data-drop-id="/game/subscription-only"]')).toBeNull();
-    expect(page.querySelector('[data-drop-id="/game/badge-only"]')).toBeNull();
+    expect(page.querySelector('[data-drop-id="/game/badge-only"]')?.textContent).toContain('Badge Only');
     expect(page.querySelector('[data-drop-id="/game/watch-only"]')?.textContent).toContain('Watch Only');
     expect(page.querySelector('.favorites-section')).toBeNull();
     expect(page.querySelector('.active-section .section-heading')?.textContent).toContain('Manage');
@@ -341,7 +341,7 @@ describe('DropListComponent', () => {
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/subscription-only"]');
     expect(row?.textContent).toContain('Subscription Only');
     expect(row?.textContent).toContain('Ignored');
-    expect(row?.textContent).toContain('Hidden by reward filter');
+    expect(row?.textContent).not.toContain('Hidden by reward filter');
   });
 
   it('reports how many games are hidden by the reward filters', () => {
@@ -355,7 +355,7 @@ describe('DropListComponent', () => {
     render([subscriptionOnly], [badgeOnly]);
 
     const page = fixture.nativeElement as HTMLElement;
-    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
+    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('1 game hidden');
     const toggles = page.querySelector('.active-section .display-toggles')!;
     expect([...toggles.children].map((element) => element.className)).toEqual([
       'toggle-control', 'toggle-control',
@@ -372,12 +372,12 @@ describe('DropListComponent', () => {
     const initial = { ...sea, id: '/game/changing-game', gameName: 'Changing Game', rewards: ['Watch Reward'] } as ActiveDrop;
     const changed = { ...initial, rewards: ['Subscription Reward'] } as ActiveDrop;
     loadDropDetails.mockImplementation((id: string) => of(
-      id === initial.id && fixture.componentInstance.activeDrops()[0]?.rewards?.[0] === 'Subscription Reward'
+      id === initial.id && fixture.componentInstance.favoriteDrops()[0]?.rewards?.[0] === 'Subscription Reward'
         ? { requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }
         : { requirementByReward: { 'Watch Reward': '1h watch' }, badgeRewardNames: [] },
     ));
-    render([], [initial]);
-    fixture.componentRef.setInput('activeDrops', [changed]);
+    render([initial], []);
+    fixture.componentRef.setInput('favoriteDrops', [changed]);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/changing-game"]')).toBeNull();
@@ -404,12 +404,12 @@ describe('DropListComponent', () => {
     const initial = { ...sea, id: '/game/changing-campaign', gameName: 'Changing Campaign', rewards: ['Reward'], endsAt: '2026-09-28T12:00:00.000Z' } as ActiveDrop;
     const changed = { ...initial, endsAt: '2026-09-29T12:00:00.000Z' } as ActiveDrop;
     loadDropDetails.mockImplementation(() => of(
-      fixture.componentInstance.activeDrops()[0]?.endsAt === changed.endsAt
+      fixture.componentInstance.favoriteDrops()[0]?.endsAt === changed.endsAt
         ? { requirementByReward: { Reward: '1 sub' }, badgeRewardNames: [] }
         : { requirementByReward: { Reward: '1h watch' }, badgeRewardNames: [] },
     ));
-    render([], [initial]);
-    fixture.componentRef.setInput('activeDrops', [changed]);
+    render([initial], []);
+    fixture.componentRef.setInput('favoriteDrops', [changed]);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/changing-campaign"]')).toBeNull();
@@ -420,8 +420,8 @@ describe('DropListComponent', () => {
     loadDropDetails.mockReturnValueOnce(throwError(() => new Error('Unavailable'))).mockReturnValueOnce(of({
       requirementByReward: { Reward: '1 sub' }, badgeRewardNames: [],
     }));
-    render([], [drop]);
-    fixture.componentRef.setInput('activeDrops', [{ ...drop }]);
+    render([drop], []);
+    fixture.componentRef.setInput('favoriteDrops', [{ ...drop }]);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/retry-game"]')).toBeNull();
@@ -484,55 +484,37 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
   });
 
-  it('defers game-link enrichment until a game is opened', () => {
-    render([], [sea, valorant]);
+  it('preloads complete details only for favorites', () => {
+    render([sea], [valorant]);
 
-    expect(loadDropDetails).toHaveBeenCalledWith(sea.id);
-    expect(loadDropDetails).toHaveBeenCalledWith(valorant.id);
-    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
+    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id);
     expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
+  });
+
+  it('preloads complete details when an active game becomes a favorite', () => {
+    render([], [sea]);
+
+    expect(loadDropDetails).not.toHaveBeenCalled();
+    fixture.componentRef.setInput('favoriteDrops', [sea]);
+    fixture.componentRef.setInput('activeDrops', []);
+    fixture.detectChanges();
+
+    expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
+  });
+
+  it('loads complete details for a non-favorite only when it is opened', () => {
+    render([], [sea, valorant]);
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--icon')!.click();
     fixture.detectChanges();
 
     expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
+    expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id);
     expect(loadDropDetails).not.toHaveBeenCalledWith(valorant.id, valorant.gameName);
   });
 
-  it('starts game-link enrichment after details finish loading for an opened game', () => {
-    const initialDetails = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();
-    loadDropDetails.mockImplementation((_id: string, gameName?: string) => gameName
-      ? of({ requirementByReward: {}, badgeRewardNames: [], primaryLink: { label: 'Official website', url: 'https://example-game.test/' } })
-      : initialDetails);
-    render([], [sea]);
-
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!.click();
-    fixture.detectChanges();
-    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
-
-    initialDetails.next({ requirementByReward: {}, badgeRewardNames: [] });
-    initialDetails.complete();
-    fixture.detectChanges();
-
-    expect(loadDropDetails).toHaveBeenCalledWith(sea.id, sea.gameName);
-  });
-
-  it('cancels queued game-link enrichment when the game is closed before details finish loading', () => {
-    const initialDetails = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();
-    loadDropDetails.mockReturnValue(initialDetails);
-    render([], [sea]);
-    const toggle = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle--icon')!;
-
-    toggle.click();
-    toggle.click();
-    initialDetails.next({ requirementByReward: {}, badgeRewardNames: [] });
-    initialDetails.complete();
-    fixture.detectChanges();
-
-    expect(loadDropDetails).not.toHaveBeenCalledWith(sea.id, sea.gameName);
-  });
-
-  it('retries game-link enrichment after its source request fails and details refresh', () => {
+  it('retries a failed detail lookup when the game becomes a favorite', () => {
     loadDropDetails.mockImplementation((_id: string, gameName?: string) => gameName
       ? throwError(() => new Error('Unavailable'))
       : of({ requirementByReward: {}, badgeRewardNames: [] }));
@@ -541,10 +523,8 @@ describe('DropListComponent', () => {
 
     toggle.click();
     fixture.detectChanges();
-    fixture.componentRef.setInput('activeDrops', [{ ...sea }]);
-    fixture.detectChanges();
-    toggle.click();
-    toggle.click();
+    fixture.componentRef.setInput('favoriteDrops', [{ ...sea }]);
+    fixture.componentRef.setInput('activeDrops', []);
     fixture.detectChanges();
 
     expect(loadDropDetails.mock.calls.filter((call) => call[0] === sea.id && call[1] === sea.gameName)).toHaveLength(2);

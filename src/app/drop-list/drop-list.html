@@ -1,10 +1,11 @@
 <ng-template #dropDetails let-drop>
   @if (expandedFavoriteId() === drop.id) {
-    <section
-      class="reward-details"
-      [id]="'reward-details-' + drop.id"
-      [attr.aria-label]="'Current rewards for ' + drop.gameName"
-    >
+    <div class="reward-details-container reward-details-container--enter" animate.leave="reward-details-container--leave">
+      <section
+        class="reward-details"
+        [id]="'reward-details-' + drop.id"
+        [attr.aria-label]="'Current rewards for ' + drop.gameName"
+      >
       <h3>Current rewards</h3>
       <div class="drop-metadata">
         @if (drop.publisher) {
@@ -70,7 +71,8 @@
       } @else {
         <p>Current reward details are unavailable.</p>
       }
-    </section>
+      </section>
+    </div>
   }
 </ng-template>
 
