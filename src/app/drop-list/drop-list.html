@@ -31,7 +31,7 @@
           @if (details.primaryLink; as primaryLink) {
             <a [href]="primaryLink.url" target="_blank" rel="noopener noreferrer">{{ primaryLink.label }}</a>
           }
-          <button class="mark-all-collected" type="button" (click)="toggleAllCollected(drop)">{{ allRewardsCollected(drop) ? 'Clear collected' : 'Mark all collected' }}</button>
+          <button class="mark-all-collected" type="button" (click)="toggleAllCollected(drop)">{{ allVisibleRewardsCollected(drop) ? 'Clear collected' : 'Mark all collected' }}</button>
         </nav>
       }
       @if (isLoadingDetails(drop)) {

@@ -265,13 +265,18 @@ export class DropListComponent {
     this.setRewardCollected(drop, rewardName, !this.isRewardCollected(drop, rewardName));
   }
 
-  protected allRewardsCollected(drop: ActiveDrop): boolean {
+  protected allVisibleRewardsCollected(drop: ActiveDrop): boolean {
+    const visibleRewardNames = this.visibleRewards(drop).map((reward) => reward.name);
+    return !!visibleRewardNames.length && visibleRewardNames.every((rewardName) => this.isRewardCollected(drop, rewardName));
+  }
+
+  private allRewardsCollected(drop: ActiveDrop): boolean {
     return !!drop.rewards?.length && drop.rewards.every((rewardName) => this.isRewardCollected(drop, rewardName));
   }
 
   protected toggleAllCollected(drop: ActiveDrop): void {
-    const rewardNames = drop.rewards ?? [];
-    if (this.allRewardsCollected(drop)) this.collectedRewards.markNoneCollected(drop.id, rewardNames);
+    const rewardNames = this.visibleRewards(drop).map((reward) => reward.name);
+    if (this.allVisibleRewardsCollected(drop)) this.collectedRewards.markNoneCollected(drop.id, rewardNames);
     else {
       this.collectedRewards.markAllCollected(drop.id, rewardNames);
       this.celebrateIfNewlyCompleted(drop);
