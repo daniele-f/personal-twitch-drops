@@ -596,7 +596,7 @@ describe('DropListComponent', () => {
     expect(endTime?.title).toContain('2026');
   });
 
-  it('renders the eligible-stream link before Steam without a TwitchDrops details link for an opened game', () => {
+  it('renders the TwitchDrops details link between eligible streams and Steam for an opened game', () => {
     loadDropDetails.mockReturnValue(of({
       requirementByReward: {},
       badgeRewardNames: [],
@@ -612,6 +612,7 @@ describe('DropListComponent', () => {
     const links = [...(fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.game-links a')];
     expect(links.map((link) => ({ label: link.textContent?.trim(), url: link.href }))).toEqual([
       { label: 'Watch eligible streams', url: 'https://www.twitch.tv/directory/category/apex-legends' },
+      { label: 'Drop details', url: 'https://twitchdrops.app/game/apex-legends' },
       { label: 'Steam', url: 'https://store.steampowered.com/app/1172470/Apex_Legends/' },
     ]);
     expect(links.every((link) => link.target === '_blank' && link.rel === 'noopener noreferrer')).toBe(true);
