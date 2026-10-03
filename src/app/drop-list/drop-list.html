@@ -159,7 +159,12 @@
                     (click)="requestUnfavorite(drop)"
                     (pointerleave)="cancelUnfavoriteOnPointerLeave(drop, $event)"
                     (focusout)="cancelUnfavoriteConfirmation(drop)"
-                  >{{ unfavoriteConfirmationId() === drop.id ? 'Confirm' : '★' }}</button>
+                  >@if (unfavoriteConfirmationId() === drop.id) {
+                    Confirm
+                  } @else {
+                    <svg class="favorite-star__fill" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z" /></svg>
+                    <svg class="favorite-star__outline" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z" /></svg>
+                  }</button>
                   <button
                     class="favorite-details-toggle favorite-details-toggle--icon"
                     type="button"
@@ -237,8 +242,8 @@
                   title="Add to Favorites"
                   [attr.aria-label]="'Favorite ' + drop.gameName"
                   (click)="activateStar(drop)"
-                >
-                  ☆</button
+                ><svg class="favorite-star__fill" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z" /></svg>
+                  <svg class="favorite-star__outline" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.9-6.2-3.3-6.2 3.3 1.2-6.9-5-4.9 6.9-1z" /></svg></button
                 ><button
                   class="blacklist-button"
                   type="button"

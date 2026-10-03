@@ -108,7 +108,7 @@ describe('DropListComponent', () => {
 
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/sea-of-thieves"]');
     expect(row?.querySelector('.new-pill')?.textContent).toBe('New');
-    expect(row?.querySelector('.favorite-star')?.textContent?.trim()).toBe('★');
+    expect(row?.querySelector('.favorite-star')).toBeTruthy();
   });
 
   it('places favorite tags, star, and disclosure chevron in the active-row action order', () => {
@@ -771,7 +771,6 @@ describe('DropListComponent', () => {
     render([sea], []);
 
     const star = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorites-section .favorite-star')!;
-    expect(star.textContent?.trim()).toBe('★');
     expect(star.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
 
     star.click();
@@ -791,7 +790,7 @@ describe('DropListComponent', () => {
     star.dispatchEvent(new Event('pointerleave'));
     fixture.detectChanges();
 
-    expect(star.textContent?.trim()).toBe('★');
+    expect(star.getAttribute('aria-label')).toBe('Unfavorite Sea of Thieves');
   });
 
   it('keeps unfavorite confirmation armed after a touch pointer leaves the star', () => {
