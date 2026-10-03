@@ -6,8 +6,9 @@ import { ChangesStateService } from '../changes/changes-state.service';
 import { ActiveDrop } from '../drops/active-drop';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
+import { RefreshLoaderComponent } from '../ui/refresh-loader';
 
-@Component({ imports: [DropListComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
+@Component({ imports: [DropListComponent, RefreshLoaderComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
 export class DropsPageComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly changesState = inject(ChangesStateService);

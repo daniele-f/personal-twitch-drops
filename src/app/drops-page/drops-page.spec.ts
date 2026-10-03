@@ -18,6 +18,17 @@ class TestDropsProvider extends DropsProvider {
 }
 
 describe('DropsPageComponent', () => {
+  it('places the refresh loader after the button label', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+
+    const refresh = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.refresh')!;
+    const childNodes = Array.from(refresh.childNodes);
+    expect(childNodes.findIndex((node) => node.nodeName === 'APP-REFRESH-LOADER')).toBeGreaterThan(childNodes.findIndex((node) => node.textContent?.trim() === 'Refresh'));
+  });
+
   it('stops Refresh spinning after the active list loads when there are no favorites', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();

@@ -6,11 +6,10 @@
 .search-clear:hover:not(:disabled) { background: #303036; }
 .search-empty { margin: 1rem 0 0; color: #d8b7ff; }
 .refresh-status { display:flex; flex-wrap:wrap; align-items:center; gap:.6rem; margin-top:1rem; }
-.refresh { display:inline-flex; align-items:center; gap:.35rem; }.refresh__icon { display:inline-block; font-size:1rem; line-height:1; }.refresh--spinning .refresh__icon { animation:refresh-spin .8s linear infinite; }
+.refresh { display:inline-flex; align-items:center; gap:.35rem; }
 .load-status { margin:0; padding:.45rem .7rem; color:#d8b7ff; font-size:.85rem; }
 .load-progress { display: grid; gap: .45rem; margin-top: 1rem; color: #d8b7ff; font-size: .85rem; }
 .load-progress__bar { height: .3rem; overflow: hidden; border-radius: 999px; background: #303036; }
 .load-progress__bar::after { content: ''; display: block; width: 40%; height: 100%; border-radius: inherit; background: #9147ff; animation: load-progress 1.2s ease-in-out infinite; }
 @keyframes load-progress { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
-@keyframes refresh-spin { to { transform:rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .load-progress__bar::after,.refresh--spinning .refresh__icon { animation: none; transform:translateX(75%); } .refresh--spinning .refresh__icon { transform:none; } }
+@media (prefers-reduced-motion: reduce) { .load-progress__bar::after { animation: none; transform:translateX(75%); } }
