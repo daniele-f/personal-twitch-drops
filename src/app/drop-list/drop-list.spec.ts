@@ -209,6 +209,23 @@ describe('DropListComponent', () => {
     expect(button.textContent?.trim()).toBe('Mark all collected');
   });
 
+  it('marks only rewards shown by the reward filters collected', () => {
+    const filteredCampaign = { ...sea, rewards: ['Visible Reward', 'Subscriber Reward', 'Badge Reward'] } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: { 'Subscriber Reward': '1 sub' },
+      badgeRewardNames: ['Badge Reward'],
+    }));
+    render([filteredCampaign], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelectorAll('.reward-card--collected')).toHaveLength(1);
+    expect(localStorage.getItem('personal-twitch-drops.collected-rewards.v1')).toBe(JSON.stringify({ '/game/sea-of-thieves': ['Visible Reward'] }));
+  });
+
   it('launches confetti when a campaign is collected for the first time', () => {
     const launch = vi.spyOn(TestBed.inject(CelebrationConfettiService), 'launch');
     render([sea], []);
