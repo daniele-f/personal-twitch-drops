@@ -104,8 +104,8 @@
         }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
+            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
+            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
           </div>
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
@@ -199,8 +199,8 @@
         }
         <div class="section-heading-actions">
           <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
+            <app-toggle controlId="show-subs" label="Subs" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
+            <app-toggle controlId="show-badges" label="Badges" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
           </div>
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>

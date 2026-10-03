@@ -6,6 +6,7 @@ export class ToggleComponent {
   readonly controlId = input.required<string>();
   readonly label = input.required<string>();
   readonly ariaLabel = input<string>();
+  readonly tooltip = input<string>();
   readonly checkedChange = output<boolean>();
   protected change(checked: boolean): void { this.checkedChange.emit(checked); }
 }

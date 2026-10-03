@@ -6,6 +6,33 @@ import { ToggleComponent } from './toggle';
 class HostComponent { changed: boolean | undefined; }
 
 describe('ToggleComponent', () => {
+  it('shows the supplied tooltip when the toggle is hovered', async () => {
+    await TestBed.configureTestingModule({
+      imports: [ToggleComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ToggleComponent);
+    fixture.componentRef.setInput('controlId', 'subscription-toggle');
+    fixture.componentRef.setInput('label', 'Subs');
+    fixture.componentRef.setInput('tooltip', 'Show/hide rewards requiring a subscription');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toggle')?.getAttribute('title')).toBe('Show/hide rewards requiring a subscription');
+    expect(fixture.nativeElement.querySelector('.app-toggle > label')?.getAttribute('title')).toBe('Show/hide rewards requiring a subscription');
+  });
+
+  it('uses a help cursor for a tooltip-bearing toggle', async () => {
+    await TestBed.configureTestingModule({
+      imports: [ToggleComponent],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(ToggleComponent);
+    fixture.componentRef.setInput('controlId', 'subscription-toggle');
+    fixture.componentRef.setInput('label', 'Subs');
+    fixture.componentRef.setInput('tooltip', 'Show/hide rewards requiring a subscription');
+    fixture.detectChanges();
+
+    expect(getComputedStyle(fixture.nativeElement.querySelector('.app-toggle > label')).cursor).toBe('help');
+  });
+
   it('associates its label with a native checkbox and emits the new value', async () => {
     await TestBed.configureTestingModule({ imports: [HostComponent] }).compileComponents();
     const fixture = TestBed.createComponent(HostComponent);
