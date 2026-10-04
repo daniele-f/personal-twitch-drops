@@ -1,6 +1,6 @@
 <ng-template #dropDetails let-drop>
   @if (expandedFavoriteId() === drop.id) {
-    <div class="reward-details-container reward-details-container--enter" animate.leave="reward-details-container--leave">
+    <div class="reward-details-container reward-details-container--enter" animate.leave="reward-details-container--leave" (animationend)="scrollExpandedCardAfterAnimation(drop.id, $event)">
       <section
         class="reward-details"
         [id]="'reward-details-' + drop.id"

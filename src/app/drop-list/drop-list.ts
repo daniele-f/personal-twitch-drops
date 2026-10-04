@@ -113,6 +113,27 @@ export class DropListComponent {
     if (previouslyExpandedId) this.pendingGameLinkDropsById.delete(previouslyExpandedId);
     this.expandedFavoriteId.set(drop.id);
     this.ensureDetailsFor([drop], true);
+    this.scrollExpandedCardIntoView(drop.id);
+  }
+
+  private scrollExpandedCardIntoView(dropId: string): void {
+    afterNextRender(() => this.scrollExpandedCardIntoViewNow(dropId), { injector: this.injector });
+  }
+
+  protected scrollExpandedCardAfterAnimation(dropId: string, event: AnimationEvent): void {
+    if (event.target !== event.currentTarget || this.expandedFavoriteId() !== dropId) return;
+    this.scrollExpandedCardIntoViewNow(dropId);
+  }
+
+  private scrollExpandedCardIntoViewNow(dropId: string): void {
+    const details = [...document.querySelectorAll<HTMLElement>('.reward-details')].reverse().find((element) => element.id === `reward-details-${dropId}`);
+    const card = details?.closest<HTMLElement>('li');
+    if (!card || this.expandedFavoriteId() !== dropId || card.getBoundingClientRect().bottom <= window.innerHeight) return;
+    const nextCard = card.nextElementSibling as HTMLElement | null;
+    const gapAfterCard = nextCard ? Math.max(nextCard.getBoundingClientRect().top - card.getBoundingClientRect().bottom, 0) : 0;
+    card.style.scrollMarginBottom = `${gapAfterCard}px`;
+    card.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    card.style.scrollMarginBottom = '';
   }
 
   protected visibleFavoriteDrops(): readonly ActiveDrop[] {
@@ -185,6 +206,7 @@ export class DropListComponent {
       next: (details) => {
         this.detailsByDropId.update((detailsById) => new Map(detailsById).set(drop.id, details));
         if (includeGameLinks) this.logGameLinkResult(drop, details);
+        if (this.expandedFavoriteId() === drop.id) this.scrollExpandedCardIntoView(drop.id);
       },
       error: () => {
         if (includeGameLinks) this.enrichedGameLinkIds.delete(drop.id);

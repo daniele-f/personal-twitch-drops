@@ -501,6 +501,110 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('[data-drop-id="/game/sea-of-thieves"] .reward-details')?.textContent).toContain('Coral Crown');
   });
 
+  it('scrolls an opened reward panel into view when its bottom falls below the viewport', async () => {
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ bottom: window.innerHeight + 1 } as DOMRect);
+    render([sea], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' });
+  });
+
+  it('scrolls to the expanded card bottom after its reward details load', async () => {
+    const details = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();
+    const scrollIntoView = vi.fn();
+    let detailsLoaded = false;
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { bottom: this.matches('[data-drop-id]') && detailsLoaded ? window.innerHeight + 1 : window.innerHeight } as DOMRect;
+    });
+    loadDropDetails.mockReturnValue(details);
+    render([], [sea]);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+    detailsLoaded = true;
+    details.next({ requirementByReward: {}, badgeRewardNames: [] });
+    details.complete();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' });
+  });
+
+  it('scrolls when reopening a card while its collapsed panel is leaving the DOM', async () => {
+    const page = fixture.nativeElement as HTMLElement;
+    const toggle = (): HTMLButtonElement => page.querySelector<HTMLButtonElement>('.favorite-details-toggle')!;
+    const scrollIntoView = vi.fn();
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    render([sea], []);
+
+    toggle().click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    toggle().click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const leavingCard = document.createElement('li');
+    const leavingDetails = document.createElement('section');
+    leavingDetails.id = `reward-details-${sea.id}`;
+    leavingCard.append(leavingDetails);
+    page.insertBefore(leavingCard, page.firstChild);
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { bottom: this === leavingCard ? window.innerHeight : window.innerHeight + 1 } as DOMRect;
+    });
+    scrollIntoView.mockClear();
+
+    toggle().click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' });
+  });
+
+  it('scrolls a favorite card after its expansion animation reaches its full height', async () => {
+    const scrollIntoView = vi.fn();
+    let expansionComplete = false;
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', { configurable: true, value: scrollIntoView });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      return { bottom: this.matches('[data-drop-id]') && expansionComplete ? window.innerHeight + 1 : window.innerHeight } as DOMRect;
+    });
+    render([sea], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expansionComplete = true;
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.reward-details-container')!.dispatchEvent(new Event('animationend'));
+
+    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'end' });
+  });
+
+  it('leaves the measured gap before the next card when scrolling an expanded card', async () => {
+    const scrollMargins: string[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement) { scrollMargins.push(this.style.scrollMarginBottom); },
+    });
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      if (this.matches('[data-drop-id="/game/sea-of-thieves"]')) return { bottom: window.innerHeight + 1 } as DOMRect;
+      if (this.matches('[data-drop-id="/game/valorant"]')) return { top: window.innerHeight + 13 } as DOMRect;
+      return {} as DOMRect;
+    });
+    render([sea, valorant], []);
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle')!.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(scrollMargins).toContain('12px');
+  });
+
   it('preloads reward classifications for every campaign but links only for favorites', () => {
     render([sea], [valorant]);
 
