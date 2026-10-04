@@ -112,6 +112,12 @@
       </div>
       <ul class="drop-list">
         @for (drop of visibleFavoriteDrops(); track drop.id) {
+          @if (startsUpcomingCampaignGroup(drop, visibleFavoriteDrops())) {
+            <li class="campaign-group-label campaign-group-label--upcoming"><svg class="campaign-group-label__calendar" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" /></svg>Upcoming</li>
+          }
+          @if (startsStartedCampaignGroup(drop, visibleFavoriteDrops())) {
+            <li class="campaign-group-label campaign-group-label--started"><span class="campaign-group-label__live-dot" aria-hidden="true"></span>Now live</li>
+          }
           <li [attr.data-drop-id]="drop.id">
             <article appGameCard
               class="drop-row drop-row--favorite"
@@ -208,6 +214,12 @@
     </div>
     <ul class="drop-list">
       @for (drop of visibleActiveDrops(); track drop.id) {
+        @if (startsUpcomingCampaignGroup(drop, visibleActiveDrops())) {
+          <li class="campaign-group-label campaign-group-label--upcoming"><svg class="campaign-group-label__calendar" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2v3m10-3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v13a1 1 0 0 1-1-1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" /></svg>Upcoming</li>
+        }
+        @if (startsStartedCampaignGroup(drop, visibleActiveDrops())) {
+          <li class="campaign-group-label campaign-group-label--started"><span class="campaign-group-label__live-dot" aria-hidden="true"></span>Now live</li>
+        }
         <li [attr.data-drop-id]="drop.id">
           <article appDropCard class="drop-row drop-row--active" [title]="drop.gameName" [timeLabel]="remainingTime(drop)" [rewardSummary]="rewardSummary(drop)" [imageUrl]="drop.imageUrl" [expanded]="expandedFavoriteId() === drop.id" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
             <button

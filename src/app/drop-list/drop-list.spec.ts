@@ -78,6 +78,23 @@ describe('DropListComponent', () => {
     expect([...page.querySelectorAll('.active-section [data-drop-id]')].map((row) => row.getAttribute('data-drop-id'))).toEqual(expectedOrder);
   });
 
+  it('labels the upcoming and started campaign groups in both lists only when both groups exist', () => {
+    const upcoming = { ...sea, id: '/game/upcoming', gameName: 'Upcoming', startsAt: new Date(Date.now() + 60 * 60_000).toISOString() } as ActiveDrop;
+    const started = { ...sea, id: '/game/started', gameName: 'Started' } as ActiveDrop;
+
+    render([started, upcoming], [started, upcoming]);
+
+    const page = fixture.nativeElement as HTMLElement;
+    expect(page.querySelector('.favorites-section .campaign-group-label--upcoming')?.textContent).toContain('Upcoming');
+    expect(page.querySelector('.favorites-section .campaign-group-label--started')?.textContent).toContain('Now live');
+    expect(page.querySelector('.active-section .campaign-group-label--upcoming')?.textContent).toContain('Upcoming');
+    expect(page.querySelector('.active-section .campaign-group-label--started')?.textContent).toContain('Now live');
+
+    render([started], [upcoming]);
+
+    expect(page.querySelectorAll('.campaign-group-label')).toHaveLength(0);
+  });
+
   it('shows a No active Drops heading with right-aligned controls when no drops are visible', () => {
     render([], []);
 

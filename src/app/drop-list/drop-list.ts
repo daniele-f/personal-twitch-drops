@@ -389,6 +389,16 @@ export class DropListComponent {
     return !!drop.startsAt && new Date(drop.startsAt).getTime() > Date.now();
   }
 
+  protected startsStartedCampaignGroup(drop: ActiveDrop, campaigns: readonly ActiveDrop[]): boolean {
+    return campaigns.some((campaign) => this.isUpcoming(campaign))
+      && campaigns.find((campaign) => !this.isUpcoming(campaign))?.id === drop.id;
+  }
+
+  protected startsUpcomingCampaignGroup(drop: ActiveDrop, campaigns: readonly ActiveDrop[]): boolean {
+    return campaigns.some((campaign) => !this.isUpcoming(campaign))
+      && campaigns.find((campaign) => this.isUpcoming(campaign))?.id === drop.id;
+  }
+
   protected campaignDateTime(drop: ActiveDrop): string {
     return this.isUpcoming(drop) ? drop.startsAt! : drop.endsAt;
   }
