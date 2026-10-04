@@ -34,6 +34,15 @@ describe('App', () => {
     expect(labels.slice(-3)).toEqual(['No Changes', 'Preferences', 'Twitch inventory']);
   });
 
+  it('uses the shared button styles for Debug and Changes', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelector('.debug-button')?.classList).toContain('app-button');
+    expect(root.querySelector('.changes-button')?.classList).toContain('app-button');
+  });
+
   it('marks Preferences active and hides Changes on the Preferences route', async () => {
     const fixture = TestBed.createComponent(App);
     await TestBed.inject(Router).navigateByUrl('/preferences');
@@ -42,6 +51,16 @@ describe('App', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.preferences-link')?.classList).toContain('preferences-link--active');
     expect(root.querySelector('.changes-button')).toBeNull();
+  });
+
+  it('makes the active Preferences control non-navigating', async () => {
+    const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/preferences');
+    fixture.detectChanges();
+
+    const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
+    expect(link?.getAttribute('aria-disabled')).toBe('true');
+    expect(link?.getAttribute('href')).toBeNull();
   });
 
   it('shows stacked preference notifications for three seconds and expires the oldest first', () => {

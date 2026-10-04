@@ -29,6 +29,17 @@ describe('DropsPageComponent', () => {
     expect(childNodes.findIndex((node) => node.nodeName === 'APP-REFRESH-LOADER')).toBeGreaterThan(childNodes.findIndex((node) => node.textContent?.trim() === 'Refresh'));
   });
 
+  it('uses the shared primary button styles for Refresh', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+
+    const refresh = (fixture.nativeElement as HTMLElement).querySelector('.refresh')?.classList;
+    expect(refresh).toContain('app-button');
+    expect(refresh).toContain('app-button--primary');
+  });
+
   it('stops Refresh spinning after the active list loads when there are no favorites', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
