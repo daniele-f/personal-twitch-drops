@@ -306,7 +306,10 @@ export class DropListComponent {
   }
 
   private celebrateIfNewlyCompleted(drop: ActiveDrop): void {
-    if (this.allRewardsCollected(drop) && this.celebrations.markCelebrated(drop.id, drop.rewards ?? [])) {
+    const visibleRewardNames = this.visibleRewards(drop).map((reward) => reward.name);
+    if (this.allRewardsCollected(drop) && this.celebrations.markCelebrated(drop.id, drop.rewards ?? [], 'complete')) {
+      this.confetti.launch();
+    } else if (visibleRewardNames.length && visibleRewardNames.every((rewardName) => this.isRewardCollected(drop, rewardName)) && this.celebrations.markCelebrated(drop.id, visibleRewardNames, 'visible')) {
       this.confetti.launch();
     }
   }

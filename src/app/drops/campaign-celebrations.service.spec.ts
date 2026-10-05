@@ -14,7 +14,7 @@ describe('CampaignCelebrationsService', () => {
   it('allows a campaign celebration only once and persists the result', () => {
     expect(service.markCelebrated('/game/caliber')).toBe(true);
     expect(service.markCelebrated('/game/caliber')).toBe(false);
-    expect(localStorage.getItem('personal-twitch-drops.celebrated-campaigns.v1')).toBe(JSON.stringify({ '/game/caliber': '' }));
+    expect(localStorage.getItem('personal-twitch-drops.celebrated-campaigns.v1')).toBe(JSON.stringify({ '/game/caliber': { complete: '' } }));
   });
 
   it('removes celebration markers for campaigns absent from the active refresh', () => {

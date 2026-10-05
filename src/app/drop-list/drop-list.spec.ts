@@ -243,6 +243,31 @@ describe('DropListComponent', () => {
     expect(localStorage.getItem('personal-twitch-drops.collected-rewards.v1')).toBe(JSON.stringify({ '/game/sea-of-thieves': ['Visible Reward'] }));
   });
 
+  it('launches confetti for visible reward completion and again when the full campaign is collected', () => {
+    const launch = vi.spyOn(TestBed.inject(CelebrationConfettiService), 'launch');
+    const filteredCampaign = { ...sea, rewards: ['Visible Reward', 'Subscriber Reward', 'Badge Reward'] } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: { 'Subscriber Reward': '1 sub' },
+      badgeRewardNames: ['Badge Reward'],
+    }));
+    render([filteredCampaign], []);
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
+    fixture.detectChanges();
+
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
+    fixture.detectChanges();
+    expect(launch).toHaveBeenCalledOnce();
+
+    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    switches[0].click();
+    switches[1].click();
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
+    fixture.detectChanges();
+
+    expect(launch).toHaveBeenCalledTimes(2);
+  });
+
   it('launches confetti when a campaign is collected for the first time', () => {
     const launch = vi.spyOn(TestBed.inject(CelebrationConfettiService), 'launch');
     render([sea], []);
