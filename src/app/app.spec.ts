@@ -29,7 +29,8 @@ describe('App', () => {
   it('applies the saved theme accent to the application root', () => {
     localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'electric-blue');
 
-    TestBed.createComponent(App);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
 
     expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
     expect(document.documentElement.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');

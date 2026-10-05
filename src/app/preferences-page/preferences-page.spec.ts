@@ -105,13 +105,15 @@ describe('PreferencesPageComponent', () => {
     dropsResponse.next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
     fixture.detectChanges();
 
-    const sections = (fixture.nativeElement as HTMLElement).querySelectorAll('main section');
-    expect(sections[0].textContent).toContain('Favorites List (2)');
-    expect(sections[1].textContent).toContain('Ignore List');
-    sections[0].querySelector('button')?.click();
+    const root = fixture.nativeElement as HTMLElement;
+    const favorites = root.querySelector<HTMLElement>('.favorites-preferences');
+    const ignore = root.querySelector<HTMLElement>('.list-summary-card:not(.favorites-preferences)');
+    expect(favorites?.textContent).toContain('Favorites List (2)');
+    expect(ignore?.textContent).toContain('Ignore List');
+    favorites?.querySelector('button')?.click();
     fixture.detectChanges();
-    expect(sections[0].querySelector('[data-favorite-id="/game/sea-of-thieves"]')?.textContent).toContain('Active');
-    expect(sections[0].querySelector('[data-favorite-id="/game/valorant"]')?.textContent).toContain('Inactive');
+    expect(favorites?.querySelector('[data-favorite-id="/game/sea-of-thieves"]')?.textContent).toContain('Active');
+    expect(favorites?.querySelector('[data-favorite-id="/game/valorant"]')?.textContent).toContain('Inactive');
   });
 
   it('keeps a legacy inactive favorite readable and removable', () => {
@@ -121,7 +123,7 @@ describe('PreferencesPageComponent', () => {
     dropsResponse.next([]);
     fixture.detectChanges();
 
-    const favorites = (fixture.nativeElement as HTMLElement).querySelector('main section');
+    const favorites = (fixture.nativeElement as HTMLElement).querySelector('.favorites-preferences');
     favorites?.querySelector('button')?.click();
     fixture.detectChanges();
     const row = favorites?.querySelector('[data-favorite-id="/game/sea-of-thieves"]');
@@ -145,7 +147,7 @@ describe('PreferencesPageComponent', () => {
     dropsResponse.error(new Error('Feed unavailable'));
     fixture.detectChanges();
 
-    const favorites = (fixture.nativeElement as HTMLElement).querySelector('main section');
+    const favorites = (fixture.nativeElement as HTMLElement).querySelector('.favorites-preferences');
     favorites?.querySelector('button')?.click();
     fixture.detectChanges();
     expect(favorites?.querySelector('[data-favorite-id="/game/sea-of-thieves"]')?.textContent).toContain('Status unavailable');
