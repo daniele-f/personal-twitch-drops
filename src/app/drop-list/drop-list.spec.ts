@@ -354,6 +354,25 @@ describe('DropListComponent', () => {
     ]);
   });
 
+  it('explains when a visible campaign has rewards hidden by the active filters', () => {
+    const mixedCampaign = {
+      ...sea,
+      id: '/game/control-resonant',
+      gameName: 'CONTROL Resonant',
+      rewardCount: 5,
+      rewards: ['Sierra Suit', 'Sierra Vest', 'Sierra Helmet', 'Sierra Mold', 'Subscriber Reward'],
+    } as ActiveDrop;
+    loadDropDetails.mockReturnValue(of({
+      requirementByReward: { 'Subscriber Reward': '1 sub' },
+      badgeRewardNames: [],
+    }));
+    render([], [mixedCampaign]);
+
+    const hiddenCount = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/control-resonant"] .hidden-reward-count');
+    expect(hiddenCount?.textContent?.trim()).toBe('1 hidden');
+    expect(hiddenCount?.getAttribute('title')).toBe('Hidden by active reward filters');
+  });
+
   it('withholds unclassified rewards while their details are loading', () => {
     const favorite = { ...sea, rewards: ['Subscription Reward'], watchDuration: undefined } as ActiveDrop;
     const details = new Subject<{ requirementByReward: Record<string, string>; badgeRewardNames: string[] }>();

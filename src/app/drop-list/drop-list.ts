@@ -274,6 +274,10 @@ export class DropListComponent {
     );
   }
 
+  protected hiddenRewardCount(drop: ActiveDrop): number {
+    return this.sortedRewards(drop).length - this.visibleRewards(drop).length;
+  }
+
   protected isRewardCollected(drop: ActiveDrop, rewardName: string): boolean {
     return this.collectedRewards.isCollected(drop.id, rewardName);
   }

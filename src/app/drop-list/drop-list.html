@@ -143,7 +143,7 @@
                 } @else {
                   <div class="cover-placeholder" aria-hidden="true"></div>
                 }
-                <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }} · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
+                <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }}@if (hiddenRewardCount(drop); as hiddenCount) { · <span class="hidden-reward-count" title="Hidden by active reward filters">{{ hiddenCount }} hidden</span> } · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
               </button>
               <div class="row-end">
                 @if (newDropIds().has(drop.id)) {
@@ -239,7 +239,7 @@
               } @else {
                 <div class="cover-placeholder" aria-hidden="true"></div>
               }
-              <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }} · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
+              <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }}@if (hiddenRewardCount(drop); as hiddenCount) { · <span class="hidden-reward-count" title="Hidden by active reward filters">{{ hiddenCount }} hidden</span> } · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
             </button>
             <div class="row-end">
               @if (newDropIds().has(drop.id)) {
