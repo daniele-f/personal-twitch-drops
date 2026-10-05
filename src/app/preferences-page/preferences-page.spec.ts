@@ -57,6 +57,25 @@ describe('PreferencesPageComponent', () => {
     expect(root.querySelectorAll('.list-summary-card')).toHaveLength(2);
   });
 
+  it('places the theme color choices above sharing controls and marks the selected color', () => {
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    const themeSetting = root.querySelector<HTMLElement>('.theme-color-setting');
+    const sharing = root.querySelector('.share-cards');
+    const electricBlue = root.querySelector<HTMLButtonElement>('button[aria-label="Electric Blue"]');
+
+    expect(themeSetting?.compareDocumentPosition(sharing!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(root.querySelector('.theme-color-selected')?.textContent?.trim()).toBe('Twitch Purple');
+
+    electricBlue?.click();
+    fixture.detectChanges();
+
+    expect(electricBlue?.getAttribute('aria-pressed')).toBe('true');
+    expect(root.querySelector('.theme-color-selected')?.textContent?.trim()).toBe('Electric Blue');
+  });
+
   it('anchors the animated chevron strokes inside their icon wrapper', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent);
     fixture.detectChanges();

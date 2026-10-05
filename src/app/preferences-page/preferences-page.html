@@ -2,6 +2,16 @@
   @if (fileDragActive()) { <div class="file-drag-overlay" aria-hidden="true"></div> }
   <nav class="breadcrumbs" aria-label="Breadcrumb"><a class="home-link" routerLink="/"><span class="home-icon" aria-hidden="true">⌂</span> Home</a><span class="breadcrumb-separator" aria-hidden="true">/</span><span>Preferences</span></nav>
   <header class="preferences-heading"><h1>Preferences</h1><p>Manage your lists and share them with a simple code.</p></header>
+  <section class="theme-color-setting" aria-labelledby="theme-color-heading">
+    <div class="theme-color-icon" aria-hidden="true">◐</div>
+    <div class="theme-color-copy"><h2 id="theme-color-heading">Theme color</h2><p>Accent for buttons, links, and highlights.</p></div>
+    <div class="theme-color-options" role="group" aria-label="Theme color">
+      @for (theme of preferences.themeOptions; track theme.id) {
+        <button class="theme-color-option" [class.theme-color-option--selected]="preferences.themeColor() === theme.id" [style.background]="theme.accent" [style.color]="theme.indicator" type="button" [attr.aria-label]="theme.label" [attr.aria-pressed]="preferences.themeColor() === theme.id" (click)="selectThemeColor(theme.id)">@if (preferences.themeColor() === theme.id) { <span aria-hidden="true">✓</span> }</button>
+      }
+      <span class="theme-color-selected" aria-live="polite">{{ preferences.selectedTheme().label }}</span>
+    </div>
+  </section>
   <div class="share-cards">
     <div class="import-export import-share-card" aria-labelledby="share-lists-heading">
       <div class="preference-card-icon preference-card-icon--import" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 15V3m0 0 4 4m-4-4-4 4M4 15v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></div>

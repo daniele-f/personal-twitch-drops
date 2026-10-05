@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferencesService } from './preferences.service';
 
 function createStorage(initialValues: Record<string, string> = {}): Storage {
@@ -116,5 +116,17 @@ describe('PreferencesService', () => {
     service.addFavorite('/game/sea-of-thieves');
 
     expect(service.favoriteIds().has('/game/sea-of-thieves')).toBe(true);
+  });
+
+  it('defaults invalid themes to Twitch Purple and persists a chosen theme', () => {
+    const storage = createStorage({ [THEME_COLOR_STORAGE_KEY]: 'not-a-theme' });
+    const service = configure(storage);
+
+    expect(service.themeColor()).toBe('twitch-purple');
+
+    service.setThemeColor('electric-blue');
+
+    expect(service.themeColor()).toBe('electric-blue');
+    expect(storage.getItem(THEME_COLOR_STORAGE_KEY)).toBe('electric-blue');
   });
 });

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { DropsProvider } from './drops/drops-provider';
-import { PREFERENCES_STORAGE } from './preferences/preferences-storage';
+import { PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences/preferences-storage';
 import { PreferencesService } from './preferences/preferences.service';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -24,6 +24,14 @@ describe('App', () => {
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
     expect(link?.classList).toContain('app-button');
     expect(link?.getAttribute('href')).toBe('#/preferences');
+  });
+
+  it('applies the saved theme accent to the application root', () => {
+    localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'electric-blue');
+
+    TestBed.createComponent(App);
+
+    expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
   });
 
   it('orders header actions with Twitch inventory last', () => {

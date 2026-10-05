@@ -1,7 +1,17 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { BlacklistEntry } from './blacklist-entry';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferenceNotificationKind, PreferenceNotificationsService } from './preference-notifications.service';
+
+export type ThemeColor = 'twitch-purple' | 'electric-blue' | 'neon-rose' | 'emerald-glow' | 'golden-amber';
+export interface ThemeColorOption { readonly id: ThemeColor; readonly label: string; readonly accent: string; readonly hover: string; readonly soft: string; readonly indicator: string; }
+const THEME_COLOR_OPTIONS: readonly ThemeColorOption[] = [
+  { id: 'twitch-purple', label: 'Twitch Purple', accent: '#9147ff', hover: '#a970ff', soft: '#2d1b44', indicator: '#fff' },
+  { id: 'electric-blue', label: 'Electric Blue', accent: '#3b82f6', hover: '#60a5fa', soft: '#172b4d', indicator: '#fff' },
+  { id: 'neon-rose', label: 'Neon Rose', accent: '#ec4899', hover: '#f472b6', soft: '#4a1934', indicator: '#fff' },
+  { id: 'emerald-glow', label: 'Emerald Glow', accent: '#22c55e', hover: '#4ade80', soft: '#143d27', indicator: '#18181b' },
+  { id: 'golden-amber', label: 'Golden Amber', accent: '#f59e0b', hover: '#fbbf24', soft: '#4a3212', indicator: '#18181b' },
+];
 
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
@@ -10,6 +20,15 @@ export class PreferencesService {
   readonly favoriteIds = signal<ReadonlySet<string>>(this.readFavoriteIds());
   readonly favoriteNames = signal<ReadonlyMap<string, string>>(this.readFavoriteNames());
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
+  readonly themeOptions = THEME_COLOR_OPTIONS;
+  readonly themeColor = signal<ThemeColor>(this.readThemeColor());
+  readonly selectedTheme = computed(() => this.themeOptions.find((theme) => theme.id === this.themeColor())!);
+
+  setThemeColor(theme: ThemeColor): void {
+    if (!this.themeOptions.some((option) => option.id === theme)) return;
+    this.themeColor.set(theme);
+    try { this.storage?.setItem(THEME_COLOR_STORAGE_KEY, theme); } catch { /* Theme remains available for this browser session. */ }
+  }
 
   addFavorite(id: string, gameName?: string): void {
     if (!id) return;
@@ -123,6 +142,15 @@ export class PreferencesService {
       return new Set(parsed);
     } catch {
       return new Set();
+    }
+  }
+
+  private readThemeColor(): ThemeColor {
+    try {
+      const stored = this.storage?.getItem(THEME_COLOR_STORAGE_KEY);
+      return this.themeOptions.some((theme) => theme.id === stored) ? stored as ThemeColor : 'twitch-purple';
+    } catch {
+      return 'twitch-purple';
     }
   }
 
