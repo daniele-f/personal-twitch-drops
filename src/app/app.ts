@@ -74,6 +74,14 @@ export class App {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
+  protected isPreferencesRoute(): boolean {
+    return this.router.isActive('/preferences', {
+      paths: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored',
+    });
+  }
   protected toggleChangesPanel(): void {
     const opening = !this.changesOpen();
     if (opening) {

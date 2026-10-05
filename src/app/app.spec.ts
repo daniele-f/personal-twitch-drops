@@ -65,6 +65,14 @@ describe('App', () => {
     expect(root.querySelector('.changes-button')).toBeNull();
   });
 
+  it('hides Changes when Preferences is opened at its favorites fragment', async () => {
+    const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/preferences#favorites');
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.changes-button')).toBeNull();
+  });
+
   it('makes the active Preferences control non-navigating', async () => {
     const fixture = TestBed.createComponent(App);
     await TestBed.inject(Router).navigateByUrl('/preferences');
