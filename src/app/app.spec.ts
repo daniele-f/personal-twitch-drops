@@ -32,6 +32,9 @@ describe('App', () => {
     TestBed.createComponent(App);
 
     expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
+    expect(document.documentElement.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');
+    expect(document.documentElement.style.getPropertyValue('--color-accent-action')).toBe('#3b82f6');
+    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#18181b');
   });
 
   it('orders header actions with Twitch inventory last', () => {

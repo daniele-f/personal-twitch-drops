@@ -61,6 +61,10 @@ export class App {
       const root = this.document.documentElement.style;
       root.setProperty('--color-accent', theme.accent);
       root.setProperty('--color-accent-hover', theme.hover);
+      root.setProperty('--color-accent-text', theme.text);
+      root.setProperty('--color-accent-action', theme.action);
+      root.setProperty('--color-accent-action-hover', theme.actionHover);
+      root.setProperty('--color-accent-foreground', theme.foreground);
       root.setProperty('--color-accent-soft', theme.soft);
     });
     if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.favorites() — Show saved favorites.', '- twitchDropsDebug.storage.ignored() — Show ignored games.', '- twitchDropsDebug.storage.previousDay() — Show the previous-day snapshot.', '- twitchDropsDebug.storage.today() — Show today\'s latest snapshot.'].join('\n'), storage: { favorites: () => this.showFavorites(), ignored: () => this.showIgnored(), previousDay: () => this.readSnapshots().baseline, today: () => this.readSnapshots().current }, changes: {
