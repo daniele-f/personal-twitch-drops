@@ -1,7 +1,7 @@
 import { Component, computed, HostListener, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { DropsProvider } from '../drops/drops-provider';
-import { PreferencesService } from '../preferences/preferences.service';
+import { PreferencesService, ThemeColor } from '../preferences/preferences.service';
 import { ImportExportService } from '../preferences/import-export.service';
 import { DisclosureComponent } from '../ui/disclosure';
 import { StatusBadgeComponent } from '../ui/status-badge';
@@ -35,6 +35,7 @@ export class PreferencesPageComponent {
       });
     }
   }
+  protected selectThemeColor(theme: ThemeColor): void { this.preferences.setThemeColor(theme); }
   protected removeFavorite(id: string): void { if (this.armedFavoriteId() === id) { this.preferences.removeFavorite(id); this.armedFavoriteId.set(null); } else this.armedFavoriteId.set(id); }
   protected cancelRemoveFavorite(id: string): void { if (this.armedFavoriteId() === id) this.armedFavoriteId.set(null); }
   private fallbackName(id: string): string { return (id.split('/').filter(Boolean).at(-1) || id).replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (letter) => letter.toUpperCase()); }

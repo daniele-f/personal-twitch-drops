@@ -1,4 +1,5 @@
-import { Component, computed, ElementRef, HostListener, inject, isDevMode, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, ElementRef, HostListener, inject, isDevMode, signal, viewChild } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { DropChange } from './changes/change-detection';
@@ -21,6 +22,7 @@ export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-sh
 export class App {
   protected readonly router = inject(Router);
   protected readonly preferences = inject(PreferencesService);
+  private readonly document = inject(DOCUMENT);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);
   private readonly celebrations = inject(CampaignCelebrationsService);
@@ -54,6 +56,17 @@ export class App {
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
   constructor() {
+    effect(() => {
+      const theme = this.preferences.selectedTheme();
+      const root = this.document.documentElement.style;
+      root.setProperty('--color-accent', theme.accent);
+      root.setProperty('--color-accent-hover', theme.hover);
+      root.setProperty('--color-accent-text', theme.text);
+      root.setProperty('--color-accent-action', theme.action);
+      root.setProperty('--color-accent-action-hover', theme.actionHover);
+      root.setProperty('--color-accent-foreground', theme.foreground);
+      root.setProperty('--color-accent-soft', theme.soft);
+    });
     if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.favorites() — Show saved favorites.', '- twitchDropsDebug.storage.ignored() — Show ignored games.', '- twitchDropsDebug.storage.previousDay() — Show the previous-day snapshot.', '- twitchDropsDebug.storage.today() — Show today\'s latest snapshot.'].join('\n'), storage: { favorites: () => this.showFavorites(), ignored: () => this.showIgnored(), previousDay: () => this.readSnapshots().baseline, today: () => this.readSnapshots().current }, changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.mockYesterday() — Compare live campaigns with a temporary mock of yesterday.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
       newGame: () => this.seed([], [this.drop('Game 01', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Game 01', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]), mockYesterday: () => this.mockYesterday(), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
