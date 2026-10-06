@@ -7,9 +7,9 @@ export type ThemeColor = 'twitch-purple' | 'electric-blue' | 'neon-rose' | 'emer
 export interface ThemeColorOption { readonly id: ThemeColor; readonly label: string; readonly accent: string; readonly hover: string; readonly text: string; readonly action: string; readonly actionHover: string; readonly foreground: string; readonly soft: string; readonly indicator: string; }
 const THEME_COLOR_OPTIONS: readonly ThemeColorOption[] = [
   { id: 'twitch-purple', label: 'Twitch Purple', accent: '#9147ff', hover: '#a970ff', text: '#c8a7ff', action: '#9147ff', actionHover: '#772ce8', foreground: '#fff', soft: '#2d1b44', indicator: '#fff' },
-  { id: 'electric-blue', label: 'Electric Blue', accent: '#3b82f6', hover: '#60a5fa', text: '#93c5fd', action: '#3b82f6', actionHover: '#60a5fa', foreground: '#18181b', soft: '#172b4d', indicator: '#fff' },
+  { id: 'electric-blue', label: 'Electric Blue', accent: '#3b82f6', hover: '#60a5fa', text: '#93c5fd', action: '#3b82f6', actionHover: '#60a5fa', foreground: '#172554', soft: '#172b4d', indicator: '#fff' },
   { id: 'neon-rose', label: 'Neon Rose', accent: '#ec4899', hover: '#f472b6', text: '#f9a8d4', action: '#be185d', actionHover: '#9d174d', foreground: '#fff', soft: '#4a1934', indicator: '#fff' },
-  { id: 'emerald-glow', label: 'Emerald Glow', accent: '#22c55e', hover: '#4ade80', text: '#86efac', action: '#22c55e', actionHover: '#4ade80', foreground: '#18181b', soft: '#143d27', indicator: '#18181b' },
+  { id: 'emerald-glow', label: 'Emerald Glow', accent: '#22c55e', hover: '#4ade80', text: '#86efac', action: '#22c55e', actionHover: '#4ade80', foreground: '#123524', soft: '#143d27', indicator: '#18181b' },
   { id: 'golden-amber', label: 'Golden Amber', accent: '#f59e0b', hover: '#fbbf24', text: '#fcd34d', action: '#f59e0b', actionHover: '#fbbf24', foreground: '#18181b', soft: '#4a3212', indicator: '#18181b' },
 ];
 

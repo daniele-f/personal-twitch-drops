@@ -35,7 +35,16 @@ describe('App', () => {
     expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
     expect(document.documentElement.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');
     expect(document.documentElement.style.getPropertyValue('--color-accent-action')).toBe('#3b82f6');
-    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#18181b');
+    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#172554');
+  });
+
+  it('uses forest-green foreground text for the Emerald Glow action color', () => {
+    localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'emerald-glow');
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#123524');
   });
 
   it('orders header actions with Twitch inventory last', () => {
