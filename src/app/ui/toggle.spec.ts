@@ -33,6 +33,43 @@ describe('ToggleComponent', () => {
     expect(getComputedStyle(fixture.nativeElement.querySelector('.app-toggle > label')).cursor).toBe('help');
   });
 
+  it('renders an eye icon for an icon-style display filter in both visibility states', async () => {
+    await TestBed.configureTestingModule({ imports: [ToggleComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(ToggleComponent);
+    fixture.componentRef.setInput('controlId', 'subscription-toggle');
+    fixture.componentRef.setInput('label', 'Subs');
+    fixture.componentRef.setInput('icon', 'eye');
+    fixture.componentRef.setInput('checked', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toggle__icon')?.getAttribute('aria-hidden')).toBe('true');
+    expect(fixture.nativeElement.querySelector('.app-toggle__icon path')?.getAttribute('d')).toContain('M2 12s3.5-7 10-7');
+
+    fixture.componentRef.setInput('checked', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toggle__icon path')?.getAttribute('d')).toContain('m3 3 18 18');
+    expect(fixture.nativeElement.querySelector('.app-toggle > label')?.textContent?.trim()).toBe('Subs');
+  });
+
+  it('uses the theme label treatment and marks only enabled eye icons as active', async () => {
+    await TestBed.configureTestingModule({ imports: [ToggleComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(ToggleComponent);
+    fixture.componentRef.setInput('controlId', 'subscription-toggle');
+    fixture.componentRef.setInput('label', 'Subs');
+    fixture.componentRef.setInput('icon', 'eye');
+    fixture.componentRef.setInput('checked', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toggle__label--theme')).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('.app-toggle__track--eye--enabled')).toBeTruthy();
+
+    fixture.componentRef.setInput('checked', false);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.app-toggle__track--eye--enabled')).toBeFalsy();
+  });
+
   it('associates its label with a native checkbox and emits the new value', async () => {
     await TestBed.configureTestingModule({ imports: [HostComponent] }).compileComponents();
     const fixture = TestBed.createComponent(HostComponent);
