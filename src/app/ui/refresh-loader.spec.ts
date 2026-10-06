@@ -23,6 +23,21 @@ describe('RefreshLoaderComponent', () => {
     expect(fixture.nativeElement.querySelector('.loader')?.classList).toContain('loader--spinning');
   });
 
+  it('uses the parent text color for its shaft and arrow', async () => {
+    await TestBed.configureTestingModule({ imports: [RefreshLoaderComponent] }).compileComponents();
+    const fixture = TestBed.createComponent(RefreshLoaderComponent);
+    fixture.detectChanges();
+
+    const element = fixture.nativeElement as HTMLElement;
+    element.style.color = 'rgb(12, 34, 56)';
+    const shaft = element.querySelector<SVGPathElement>('.loader__shaft')!;
+    const arrow = element.querySelector<SVGPolygonElement>('.loader__arrow')!;
+
+    expect(getComputedStyle(shaft).color).toBe('rgb(12, 34, 56)');
+    expect(getComputedStyle(shaft).stroke).toBe('currentcolor');
+    expect(getComputedStyle(arrow).fill).toBe('currentcolor');
+  });
+
   it('joins a wide arrowhead to the clockwise end of the shaft', async () => {
     await TestBed.configureTestingModule({ imports: [RefreshLoaderComponent] }).compileComponents();
     const fixture = TestBed.createComponent(RefreshLoaderComponent);
