@@ -111,15 +111,29 @@ describe('DropsPageComponent', () => {
   });
 
   it('confirms the loaded Drop count after a successful fetch', async () => {
-    const provider = new TestDropsProvider();
-    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
-    const fixture = TestBed.createComponent(DropsPageComponent);
-    fixture.detectChanges();
-    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
-    fixture.detectChanges();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 3, 20));
+    try {
+      const provider = new TestDropsProvider();
+      await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+      const fixture = TestBed.createComponent(DropsPageComponent);
+      fixture.detectChanges();
+      provider.requests[0].next([
+        { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' },
+        { id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' },
+      ]);
+      fixture.detectChanges();
 
-    const status = (fixture.nativeElement as HTMLElement).querySelector('.load-status');
-    expect(status?.textContent).toMatch(/^✓ Loaded 1 active Drop at /);
+      const status = (fixture.nativeElement as HTMLElement).querySelector('.load-status');
+      expect(status?.textContent).toBe(`✓ Loaded 2 drops just now, at ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(2026, 0, 1, 3, 20))}`);
+
+      vi.advanceTimersByTime(10 * 60 * 1000);
+      fixture.detectChanges();
+
+      expect(status?.textContent).toBe(`✓ Loaded 2 drops 10 mins ago, at ${new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(new Date(2026, 0, 1, 3, 20))}`);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('keeps the completion confirmation beside Refresh without a duplicate count', async () => {
@@ -131,7 +145,7 @@ describe('DropsPageComponent', () => {
     fixture.detectChanges();
 
     const refreshStatus = (fixture.nativeElement as HTMLElement).querySelector('.refresh-status');
-    expect(refreshStatus?.textContent ?? '').toMatch(/✓ Loaded 1 active Drop at /);
+    expect(refreshStatus?.textContent ?? '').toMatch(/✓ Loaded 1 drop just now, at /);
     expect((fixture.nativeElement as HTMLElement).querySelector('.page-heading > p')).toBeNull();
   });
 
@@ -289,5 +303,6 @@ describe('DropsPageComponent', () => {
 
     const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input[type="search"]');
     expect(search?.getAttribute('aria-label')).toBe('Search games');
+    expect(search?.getAttribute('placeholder')).toBe('Search Game');
   });
 });
