@@ -29,8 +29,8 @@
 .copy-message { margin:0; align-self:center; color:#83d7ad; font-weight:650; }
 .list-summary-card .app-disclosure__count { display:inline; min-width:0; margin-left:.25rem; padding:0; border-radius:0; background:transparent; color:#aeafb8; font-size:inherit; }
 @keyframes export-code-expand { from { opacity:0; transform:scaleY(.35); } to { opacity:1; transform:scaleY(1); } }
-@keyframes list-expand { from { max-height:0; opacity:0; transform:translateY(-.35rem); } to { max-height:60rem; opacity:1; transform:translateY(0); } }
-@keyframes list-collapse { from { max-height:60rem; opacity:1; transform:translateY(0); } to { max-height:0; opacity:0; transform:translateY(-.35rem); } }
+@keyframes list-expand { from { opacity:0; transform:scaleY(.35) translateY(-.35rem); } to { opacity:1; transform:scaleY(1) translateY(0); } }
+@keyframes list-collapse { from { opacity:1; transform:scaleY(1) translateY(0); } to { opacity:0; transform:scaleY(.35) translateY(-.35rem); } }
 @media (prefers-reduced-motion:reduce) { .export-code-result--enter,.list-content--enter,.list-content--leave { animation:none; } }
 
 .list-summary-card app-disclosure { --disclosure-gap:1rem; --disclosure-padding:1.6rem 1.2rem; --disclosure-font-size:1.1rem; --disclosure-font-weight:700; }.list-summary-card .app-disclosure__count { font-weight:inherit; }
