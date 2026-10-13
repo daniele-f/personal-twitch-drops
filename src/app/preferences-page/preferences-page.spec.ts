@@ -116,6 +116,24 @@ describe('PreferencesPageComponent', () => {
     expect(favorites?.querySelector('[data-favorite-id="/game/valorant"]')?.textContent).toContain('Inactive');
   });
 
+  it('wraps long game names so each table can truncate them without covering its status', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    const longName = 'Lego Batman Legacy Of The Dark Knight';
+    preferences.addFavorite('/game/lego-batman', longName);
+    preferences.addBlacklist('/game/lego-batman-ignore', longName);
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    root.querySelector<HTMLButtonElement>('.favorites-disclosure button')?.click();
+    root.querySelector<HTMLButtonElement>('.blacklist-disclosure button')?.click();
+    fixture.detectChanges();
+
+    const gameNames = [...root.querySelectorAll<HTMLElement>('.game-name__text')];
+    expect(gameNames.map((gameName) => gameName.textContent?.trim())).toEqual([longName, longName]);
+    expect(gameNames.map((gameName) => gameName.title)).toEqual([longName, longName]);
+  });
+
   it('keeps a legacy inactive favorite readable and removable', () => {
     localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, '["/game/sea-of-thieves"]');
     const fixture = TestBed.createComponent(PreferencesPageComponent);

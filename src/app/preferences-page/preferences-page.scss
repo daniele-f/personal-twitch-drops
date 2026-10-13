@@ -36,3 +36,5 @@
 .list-summary-card app-disclosure { --disclosure-gap:1rem; --disclosure-padding:1.6rem 1.2rem; --disclosure-font-size:1.1rem; --disclosure-font-weight:700; }.list-summary-card .app-disclosure__count { font-weight:inherit; }
 
 .theme-color-setting .theme-color-icon,.import-export .preference-card-icon,.list-summary-card .blacklist-disclosure .app-disclosure__icon,.list-summary-card .favorites-disclosure .app-disclosure__icon { color:rgba(255, 255, 255, 0.60); }
+
+.game-name__text { display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
