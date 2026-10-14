@@ -84,6 +84,7 @@ describe('App', () => {
 
     const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.scroll-to-top');
     expect(button?.getAttribute('aria-label')).toBe('Scroll to top');
+    expect(button?.querySelector('.scroll-to-top__chevron')?.getAttribute('aria-hidden')).toBe('true');
 
     button?.click();
 
