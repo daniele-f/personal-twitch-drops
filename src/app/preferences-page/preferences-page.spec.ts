@@ -73,6 +73,7 @@ describe('PreferencesPageComponent', () => {
     fixture.detectChanges();
 
     expect(electricBlue?.getAttribute('aria-pressed')).toBe('true');
+    expect(electricBlue?.style.color).toBe('rgb(23, 37, 84)');
     expect(root.querySelector('.theme-color-selected')?.textContent?.trim()).toBe('Electric Blue');
   });
 
