@@ -1,4 +1,4 @@
-import { Component, computed, effect, ElementRef, HostListener, inject, isDevMode, signal, viewChild } from '@angular/core';
+import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, isDevMode, signal, viewChild } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
@@ -13,13 +13,14 @@ import { PreferenceNotificationsComponent } from './ui/preference-notifications'
 import { ToggleComponent } from './ui/toggle';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
+const SCROLL_TO_TOP_THRESHOLD = 320;
 
 @Component({
   imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent],
   selector: 'app-root',
   templateUrl: './app.html',
 })
-export class App {
+export class App implements AfterViewInit {
   protected readonly router = inject(Router);
   protected readonly preferences = inject(PreferencesService);
   private readonly document = inject(DOCUMENT);
@@ -34,6 +35,7 @@ export class App {
   private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
   private readonly changesPanel = viewChild<ElementRef<HTMLElement>>('changesPanel');
   protected readonly changesOpen = signal(false);
+  protected readonly showScrollToTop = signal(false);
   protected readonly showHiddenChanges = signal(this.readShowHiddenChanges());
   protected readonly debugMenuEnabled = isDevMode();
   protected readonly debugMenuOpen = signal(false);
@@ -72,6 +74,9 @@ export class App {
       newGame: () => this.seed([], [this.drop('Game 01', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Game 01', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]), mockYesterday: () => this.mockYesterday(), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
     } };
   }
+  ngAfterViewInit(): void {
+    this.updateScrollToTopVisibility();
+  }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
   protected isPreferencesRoute(): boolean {
@@ -94,6 +99,13 @@ export class App {
   protected closeChangesPanel(): void {
     this.changesState.clearChangedSinceLastRefresh();
     this.changesOpen.set(false);
+  }
+  @HostListener('window:scroll')
+  protected updateScrollToTopVisibility(): void {
+    this.showScrollToTop.set(window.scrollY >= SCROLL_TO_TOP_THRESHOLD);
+  }
+  protected scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   @HostListener('document:click', ['$event'])
   protected closeChangesOnOutsideClick(event: MouseEvent): void {

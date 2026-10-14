@@ -9,13 +9,19 @@ import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/chan
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 import { Router } from '@angular/router';
 
+const originalScrollYDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollY');
+
 describe('App', () => {
   beforeEach(async () => {
     localStorage.clear();
     await TestBed.configureTestingModule({ imports: [App], providers: [...appConfig.providers, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
   });
 
-  afterEach(() => vi.useRealTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+    if (originalScrollYDescriptor) Object.defineProperty(window, 'scrollY', originalScrollYDescriptor);
+  });
 
   it('renders Preferences as a button-styled hash route link', () => {
     const fixture = TestBed.createComponent(App);
@@ -62,6 +68,35 @@ describe('App', () => {
     const root = fixture.nativeElement as HTMLElement;
     expect(root.querySelector('.debug-button')?.classList).toContain('app-button');
     expect(root.querySelector('.changes-button')?.classList).toContain('app-button');
+  });
+
+  it('shows a scroll-to-top control after scrolling down and returns to the page top when clicked', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 0 });
+    const scrollTo = vi.spyOn(window, 'scrollTo').mockImplementation(() => undefined);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('.scroll-to-top')).toBeNull();
+
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 320 });
+    window.dispatchEvent(new Event('scroll'));
+    fixture.detectChanges();
+
+    const button = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.scroll-to-top');
+    expect(button?.getAttribute('aria-label')).toBe('Scroll to top');
+
+    button?.click();
+
+    expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: 'smooth' });
+  });
+
+  it('shows the scroll-to-top control when the browser restores a scrolled position', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 320 });
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.scroll-to-top')).toBeTruthy();
   });
 
   it('marks Preferences active and hides Changes on the Preferences route', async () => {
