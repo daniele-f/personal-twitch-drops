@@ -23,13 +23,13 @@ describe('App', () => {
     if (originalScrollYDescriptor) Object.defineProperty(window, 'scrollY', originalScrollYDescriptor);
   });
 
-  it('renders Preferences as a button-styled hash route link', () => {
+  it('renders Preferences as a button-styled path route link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
     expect(link?.classList).toContain('app-button');
-    expect(link?.getAttribute('href')).toBe('#/preferences');
+    expect(link?.getAttribute('href')).toBe('/preferences');
   });
 
   it('applies the saved theme accent to the application root', () => {
