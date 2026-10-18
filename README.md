@@ -2,7 +2,7 @@
 
 Personal Twitch Drops is a small, browser-based dashboard for keeping up with the Twitch Drops campaigns that matter to you. It gathers the active campaigns listed on [twitchdrops.app](https://twitchdrops.app/), puts your favorite games first, and keeps the choices and progress you make in this browser.
 
-It is an Angular single-page application designed to work as a static site, including on GitHub Pages. It is not affiliated with Twitch or twitchdrops.app.
+It is an Angular single-page application hosted on Cloudflare at `https://drops.unidea.dev/`. It is not affiliated with Twitch or twitchdrops.app.
 
 ## What it does
 

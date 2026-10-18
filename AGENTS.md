@@ -40,4 +40,5 @@
 
 * Keep external provider parsing and DTOs out of Angular components; normalize provider data before app logic consumes it.
 * Keep providers replaceable, avoid giant components/services and unnecessary state libraries, and centralize theme colors with CSS custom properties.
-* Keep the app compatible with static GitHub Pages hosting. Do not add a backend, dependencies, or frontend secrets without a clear need.
+* The production site is hosted on Cloudflare at `https://drops.unidea.dev/`; treat Cloudflare as the deployment target, not GitHub Pages.
+* A backend is now permitted when it is needed for a user-facing feature. Keep credentials, OAuth client secrets, and service-role keys in server-side Cloudflare secrets; never expose them in the Angular bundle or commit them to the repository.

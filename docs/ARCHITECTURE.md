@@ -2,7 +2,9 @@
 
 ## Application boundary
 
-The application is a static Angular frontend compatible with GitHub Pages. No permanent backend is planned by default. Angular standalone components provide the UI; Signals represent local application state and RxJS handles asynchronous streams where it clarifies composition or cancellation.
+The application is an Angular frontend hosted on Cloudflare at `https://drops.unidea.dev/`. Cloudflare Workers or other server-side services may be added when a feature requires them, such as OAuth callbacks or authenticated data access. Angular standalone components provide the UI; Signals represent local application state and RxJS handles asynchronous streams where it clarifies composition or cancellation.
+
+Secrets, OAuth client credentials, and privileged database keys must remain in server-side Cloudflare secrets or an equivalent secure server-side secret store; they must never enter the Angular bundle or repository.
 
 ## Provider and normalization layer
 
@@ -11,7 +13,7 @@ The application is a static Angular frontend compatible with GitHub Pages. No pe
 If `twitchdrops.app` is unavailable to browsers because of CORS, choose fallbacks in this order:
 
 1. Another browser-accessible structured source.
-2. GitHub Actions-generated static JSON.
+2. Cloudflare Worker-generated or cached JSON.
 3. A lightweight serverless proxy, only if genuinely necessary.
 
 ## Services
