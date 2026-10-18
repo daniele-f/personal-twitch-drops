@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
@@ -52,16 +52,21 @@ export class TrackerSyncService {
   private readonly client = inject(SUPABASE_AUTH_CLIENT);
   private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
+  private lastSyncedSnapshot: LocalTrackerSnapshot | null = null;
+  readonly readyForLocalChanges = signal(false);
 
   async syncAfterAuthentication(): Promise<SyncResult> {
     const user = this.auth.user();
     if (!user) return { status: 'skipped' };
 
+    this.readyForLocalChanges.set(false);
     const local = this.localSnapshot();
     try {
       const merged = mergeTrackerSnapshots(local, await this.readRemote(user.id));
       await this.writeRemote(user.id, merged);
       this.applyLocalSnapshot(merged);
+      this.lastSyncedSnapshot = merged;
+      this.readyForLocalChanges.set(true);
       return { status: 'synced' };
     } catch {
       return { status: 'error', message: 'Your tracker stays on this device until it can sync again.' };
@@ -70,9 +75,11 @@ export class TrackerSyncService {
 
   async syncLocalChange(): Promise<void> {
     const user = this.auth.user();
-    if (!user) return;
+    if (!user || !this.lastSyncedSnapshot) return;
     try {
-      await this.writeRemote(user.id, this.localSnapshot());
+      const next = withRemovalTombstones(this.localSnapshot(), this.lastSyncedSnapshot);
+      await this.writeRemote(user.id, next);
+      this.lastSyncedSnapshot = next;
     } catch {
       // Local storage remains the source of truth until the next successful sync.
     }
@@ -145,6 +152,26 @@ export class TrackerSyncService {
   private async upsertRows(table: string, rows: readonly Record<string, unknown>[]): Promise<void> {
     if (rows.length) await this.upsert(table, rows as unknown as Record<string, unknown>);
   }
+}
+
+function withRemovalTombstones(current: LocalTrackerSnapshot, previous: LocalTrackerSnapshot): LocalTrackerSnapshot {
+  const now = new Date().toISOString();
+  return {
+    ...current,
+    favorites: appendTombstones(current.favorites, previous.favorites, (row) => row.gameId, (row) => ({ ...row, updatedAt: now, removedAt: now })),
+    ignoredGames: appendTombstones(current.ignoredGames, previous.ignoredGames, (row) => row.gameId, (row) => ({ ...row, updatedAt: now, removedAt: now })),
+    collectedRewards: appendTombstones(current.collectedRewards, previous.collectedRewards, (row) => `${row.campaignId}\u0000${row.rewardName}`, (row) => ({ ...row, updatedAt: now, clearedAt: now })),
+  };
+}
+
+function appendTombstones<T extends { updatedAt: string }>(
+  current: readonly T[],
+  previous: readonly T[],
+  keyFor: (row: T) => string,
+  tombstone: (row: T) => T,
+): readonly T[] {
+  const currentKeys = new Set(current.map(keyFor));
+  return [...current, ...previous.filter((row) => !currentKeys.has(keyFor(row))).map(tombstone)];
 }
 
 function asOptionalString(value: unknown): string | null {

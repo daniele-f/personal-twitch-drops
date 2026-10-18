@@ -8,6 +8,7 @@ export const COLLECTED_REWARDS_STORAGE_KEY = 'personal-twitch-drops.collected-re
 export class CollectedRewardsService {
   private readonly storage = inject(PREFERENCES_STORAGE);
   private readonly collectedRewardsByCampaign = signal<ReadonlyMap<string, ReadonlySet<string>>>(this.readCollectedRewards());
+  readonly revision = signal(0);
 
   isCollected(campaignId: string, rewardName: string): boolean {
     return this.collectedRewardsByCampaign().get(campaignId)?.has(rewardName) ?? false;
@@ -68,6 +69,7 @@ export class CollectedRewardsService {
 
   private update(next: ReadonlyMap<string, ReadonlySet<string>>): void {
     this.collectedRewardsByCampaign.set(next);
+    this.revision.update((revision) => revision + 1);
     this.persist(next);
   }
 
