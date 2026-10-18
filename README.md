@@ -11,7 +11,7 @@ It is an Angular single-page application hosted on Cloudflare at `https://drops.
 - Lets you favorite games for a separate, prominent list, or add games to an Ignore List to hide them from the normal view.
 - Opens a campaign to show its available rewards, requirements, eligible-stream links, and a Steam, official-site, or Wikidata game link when one is available.
 - Lets you mark individual rewards—or an entire campaign—as collected. Campaign completion is celebrated in the interface.
-- Remembers favorites, ignored games, filters, collected rewards, and recent change state in browser storage.
+- Remembers favorites, ignored games, filters, collected rewards, and recent change state in browser storage; an optional email-and-password account can sync the tracker preferences across devices.
 - Highlights new and updated campaigns and provides a Changes panel for campaigns that appeared, changed, or ended since the previous day’s snapshot.
 - Lets you export Favorites and the Ignore List as a shareable code, then import that code on another browser. Importing replaces both existing lists.
 
@@ -27,7 +27,7 @@ It is an Angular single-page application hosted on Cloudflare at `https://drops.
 
 Campaign data is fetched directly from `twitchdrops.app`; its availability and accuracy depend on that third-party source. The app includes a link to your Twitch Drops inventory, but it does not sign in to Twitch or claim rewards on your behalf.
 
-Your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. Clearing site data or using another browser/device starts a separate local set of preferences, unless you export and import the two shareable lists.
+Without an account, your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. Signing in syncs favorites, ignored games, collected rewards, and display preferences through Supabase; snapshots and Twitch account data remain local and are never sent there.
 
 ## Development
 
@@ -48,6 +48,8 @@ npm run build
 
 ## Project notes
 
-The external source is isolated behind a provider abstraction so it can be changed without rewriting the UI. The project deliberately has no backend and stores no account or preference data remotely.
+The external source is isolated behind a provider abstraction so it can be changed without rewriting the UI. Supabase supplies optional account authentication and per-user preference storage; Row Level Security isolates each account's records.
+
+The Supabase project URL and publishable key are browser-safe configuration. Do not add a Supabase secret/service-role key, database password, or provider OAuth secret to Cloudflare Pages, the frontend bundle, or the repository.
 
 For contributor guidance and technical details, see [AGENTS.md](AGENTS.md), [the architecture overview](docs/ARCHITECTURE.md), [the code map](docs/CODEMAP.md), and [testing notes](docs/TESTING.md).
