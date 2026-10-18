@@ -11,18 +11,23 @@ import { ButtonDirective } from './ui/button.directive';
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 import { PreferenceNotificationsComponent } from './ui/preference-notifications';
 import { ToggleComponent } from './ui/toggle';
+import { AccountDialogComponent } from './account/account-dialog';
+import { AuthService } from './account/auth.service';
+import { TrackerSyncService } from './account/tracker-sync.service';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 const SCROLL_TO_TOP_THRESHOLD = 320;
 
 @Component({
-  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent],
+  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent, AccountDialogComponent],
   selector: 'app-root',
   templateUrl: './app.html',
 })
 export class App implements AfterViewInit {
   protected readonly router = inject(Router);
   protected readonly preferences = inject(PreferencesService);
+  protected readonly auth = inject(AuthService);
+  private readonly trackerSync = inject(TrackerSyncService);
   private readonly document = inject(DOCUMENT);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);
@@ -35,6 +40,8 @@ export class App implements AfterViewInit {
   private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
   private readonly changesPanel = viewChild<ElementRef<HTMLElement>>('changesPanel');
   protected readonly changesOpen = signal(false);
+  protected readonly accountOpen = signal(false);
+  protected readonly syncMessage = signal<string | null>(null);
   protected readonly showScrollToTop = signal(false);
   protected readonly showHiddenChanges = signal(this.readShowHiddenChanges());
   protected readonly debugMenuEnabled = isDevMode();
@@ -69,6 +76,10 @@ export class App implements AfterViewInit {
       root.setProperty('--color-accent-foreground', theme.foreground);
       root.setProperty('--color-accent-soft', theme.soft);
     });
+    effect(() => {
+      if (!this.auth.user()) return;
+      void this.syncAccount();
+    });
     if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.favorites() — Show saved favorites.', '- twitchDropsDebug.storage.ignored() — Show ignored games.', '- twitchDropsDebug.storage.previousDay() — Show the previous-day snapshot.', '- twitchDropsDebug.storage.today() — Show today\'s latest snapshot.'].join('\n'), storage: { favorites: () => this.showFavorites(), ignored: () => this.showIgnored(), previousDay: () => this.readSnapshots().baseline, today: () => this.readSnapshots().current }, changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.mockYesterday() — Compare live campaigns with a temporary mock of yesterday.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),
       newGame: () => this.seed([], [this.drop('Game 01', ['Raider pack'])]), rewardSwap: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]), endedGame: () => this.seed([this.drop('Game 01', ['Supply crate'])], []), multipleGames: () => this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]), newAndUpdated: () => this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]), mockYesterday: () => this.mockYesterday(), clear: () => { const changes = this.changesState.clear(); this.changesOpen.set(false); return changes; },
@@ -76,6 +87,10 @@ export class App implements AfterViewInit {
   }
   ngAfterViewInit(): void {
     this.updateScrollToTopVisibility();
+  }
+  protected async syncAccount(): Promise<void> {
+    const result = await this.trackerSync.syncAfterAuthentication();
+    this.syncMessage.set(result.status === 'error' ? result.message ?? 'Sync could not be completed.' : null);
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
