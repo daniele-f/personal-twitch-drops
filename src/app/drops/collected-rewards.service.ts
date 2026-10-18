@@ -1,5 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import type { TrackerCollectedReward } from '../account/tracker-sync.models';
 
 export const COLLECTED_REWARDS_STORAGE_KEY = 'personal-twitch-drops.collected-rewards.v1';
 
@@ -46,6 +47,23 @@ export class CollectedRewardsService {
     const activeIds = new Set(activeCampaignIds);
     const next = new Map([...this.collectedRewardsByCampaign()].filter(([campaignId]) => activeIds.has(campaignId)));
     if (next.size !== this.collectedRewardsByCampaign().size) this.update(next);
+  }
+
+  trackerCollectedRewards(updatedAt: string): readonly TrackerCollectedReward[] {
+    return [...this.collectedRewardsByCampaign()].flatMap(([campaignId, rewards]) =>
+      [...rewards].map((rewardName) => ({ campaignId, rewardName, updatedAt })),
+    );
+  }
+
+  applyTrackerCollectedRewards(rewards: readonly TrackerCollectedReward[]): void {
+    const next = new Map<string, ReadonlySet<string>>();
+    for (const reward of rewards) {
+      if (reward.clearedAt || !reward.campaignId || !reward.rewardName) continue;
+      const names = new Set(next.get(reward.campaignId) ?? []);
+      names.add(reward.rewardName);
+      next.set(reward.campaignId, names);
+    }
+    this.update(next);
   }
 
   private update(next: ReadonlyMap<string, ReadonlySet<string>>): void {

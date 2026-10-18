@@ -5,6 +5,7 @@ export const FAVORITE_NAMES_STORAGE_KEY = 'personal-twitch-drops.favorite-names.
 export const BLACKLIST_ENTRIES_STORAGE_KEY = 'personal-twitch-drops.blacklist-entries.v1';
 export const DISPLAY_PREFERENCES_STORAGE_KEY = 'personal-twitch-drops.display-preferences.v1';
 export const THEME_COLOR_STORAGE_KEY = 'personal-twitch-drops.theme-color.v1';
+export const SETTINGS_UPDATED_AT_STORAGE_KEY = 'personal-twitch-drops.settings-updated-at.v1';
 
 export const PREFERENCES_STORAGE = new InjectionToken<Storage | null>('preferences storage', {
   factory: (): Storage | null => {

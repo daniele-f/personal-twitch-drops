@@ -1,7 +1,8 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { BlacklistEntry } from './blacklist-entry';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, DISPLAY_PREFERENCES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, SETTINGS_UPDATED_AT_STORAGE_KEY, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferenceNotificationKind, PreferenceNotificationsService } from './preference-notifications.service';
+import type { TrackerFavorite, TrackerIgnoredGame, TrackerSettings } from '../account/tracker-sync.models';
 
 export type ThemeColor = 'twitch-purple' | 'electric-blue' | 'neon-rose' | 'emerald-glow' | 'golden-amber';
 export interface ThemeColorOption { readonly id: ThemeColor; readonly label: string; readonly accent: string; readonly hover: string; readonly text: string; readonly action: string; readonly actionHover: string; readonly foreground: string; readonly soft: string; }
@@ -22,12 +23,60 @@ export class PreferencesService {
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
   readonly themeOptions = THEME_COLOR_OPTIONS;
   readonly themeColor = signal<ThemeColor>(this.readThemeColor());
+  readonly showSubscriptions = signal(this.readDisplayPreferences().showSubscriptions);
+  readonly showBadges = signal(this.readDisplayPreferences().showBadges);
   readonly selectedTheme = computed(() => this.themeOptions.find((theme) => theme.id === this.themeColor())!);
+  private settingsUpdatedAt = this.readSettingsUpdatedAt();
 
   setThemeColor(theme: ThemeColor): void {
     if (!this.themeOptions.some((option) => option.id === theme)) return;
     this.themeColor.set(theme);
     try { this.storage?.setItem(THEME_COLOR_STORAGE_KEY, theme); } catch { /* Theme remains available for this browser session. */ }
+    this.touchSettings();
+  }
+
+  setShowSubscriptions(show: boolean): void {
+    if (this.showSubscriptions() === show) return;
+    this.showSubscriptions.set(show);
+    this.persistDisplayPreferences();
+    this.touchSettings();
+  }
+
+  setShowBadges(show: boolean): void {
+    if (this.showBadges() === show) return;
+    this.showBadges.set(show);
+    this.persistDisplayPreferences();
+    this.touchSettings();
+  }
+
+  restoreDisplayPreferences(): void {
+    const preferences = this.readDisplayPreferences();
+    this.showSubscriptions.set(preferences.showSubscriptions);
+    this.showBadges.set(preferences.showBadges);
+  }
+
+  trackerSettings(): TrackerSettings {
+    return { themeColor: this.themeColor(), showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), updatedAt: this.settingsUpdatedAt };
+  }
+
+  trackerFavorites(updatedAt: string): readonly TrackerFavorite[] {
+    return [...this.favoriteIds()].map((gameId) => ({ gameId, gameName: this.favoriteNames().get(gameId) ?? null, updatedAt }));
+  }
+
+  trackerIgnoredGames(updatedAt: string): readonly TrackerIgnoredGame[] {
+    return this.blacklistEntries().map((entry) => ({ gameId: entry.id, gameName: entry.gameName, updatedAt: entry.blacklistedAt || updatedAt }));
+  }
+
+  applyTrackerSettings(settings: TrackerSettings): void {
+    this.themeColor.set(settings.themeColor);
+    this.showSubscriptions.set(settings.showSubscriptions);
+    this.showBadges.set(settings.showBadges);
+    this.settingsUpdatedAt = settings.updatedAt;
+    try {
+      this.storage?.setItem(THEME_COLOR_STORAGE_KEY, settings.themeColor);
+      this.persistDisplayPreferences();
+      this.storage?.setItem(SETTINGS_UPDATED_AT_STORAGE_KEY, settings.updatedAt);
+    } catch { /* Settings remain available for this browser session. */ }
   }
 
   addFavorite(id: string, gameName?: string): void {
@@ -154,6 +203,32 @@ export class PreferencesService {
     }
   }
 
+  private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean } {
+    try {
+      const stored = this.storage?.getItem(DISPLAY_PREFERENCES_STORAGE_KEY);
+      const parsed: unknown = stored == null ? {} : JSON.parse(stored);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { showSubscriptions: false, showBadges: false };
+      const preferences = parsed as Record<string, unknown>;
+      return { showSubscriptions: preferences['showSubscriptions'] === true, showBadges: preferences['showBadges'] === true };
+    } catch {
+      return { showSubscriptions: false, showBadges: false };
+    }
+  }
+
+  private readSettingsUpdatedAt(): string {
+    try {
+      const value = this.storage?.getItem(SETTINGS_UPDATED_AT_STORAGE_KEY);
+      return value && !Number.isNaN(Date.parse(value)) ? value : new Date(0).toISOString();
+    } catch {
+      return new Date(0).toISOString();
+    }
+  }
+
+  private touchSettings(): void {
+    this.settingsUpdatedAt = new Date().toISOString();
+    try { this.storage?.setItem(SETTINGS_UPDATED_AT_STORAGE_KEY, this.settingsUpdatedAt); } catch { /* Storage is optional. */ }
+  }
+
   private readBlacklistEntries(): readonly BlacklistEntry[] {
     if (!this.storage) return [];
 
@@ -217,6 +292,10 @@ export class PreferencesService {
     } catch {
       // Preferences remain available for this browser session.
     }
+  }
+
+  private persistDisplayPreferences(): void {
+    try { this.storage?.setItem(DISPLAY_PREFERENCES_STORAGE_KEY, JSON.stringify({ showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() })); } catch { /* Storage is optional. */ }
   }
 
   private isBlacklistEntry(value: unknown): value is BlacklistEntry {

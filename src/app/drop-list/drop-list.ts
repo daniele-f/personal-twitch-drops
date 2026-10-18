@@ -4,7 +4,7 @@ import { RouterLink } from '@angular/router';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropDetails } from '../drops/drop-details';
 import { DropsProvider } from '../drops/drops-provider';
-import { DISPLAY_PREFERENCES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
@@ -22,7 +22,7 @@ import { DropCardComponent } from '../ui/drop-card';
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly injector = inject(Injector);
-  private readonly storage = inject(PREFERENCES_STORAGE);
+  private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly celebrations = inject(CampaignCelebrationsService);
   private readonly confetti = inject(CelebrationConfettiService);
@@ -48,11 +48,11 @@ export class DropListComponent {
   private readonly pendingGameLinkDropsById = new Map<string, ActiveDrop>();
   private activeFavoritePreload: { readonly requestId: number; readonly pendingIds: Set<string> } | null = null;
   private lastFavoritePreloadRequestId = 0;
-  private readonly displayPreferences = this.readDisplayPreferences();
-  protected readonly showSubscriptions = signal(this.displayPreferences.showSubscriptions);
-  protected readonly showBadges = signal(this.displayPreferences.showBadges);
+  protected readonly showSubscriptions = this.preferences.showSubscriptions;
+  protected readonly showBadges = this.preferences.showBadges;
 
   constructor() {
+    this.preferences.restoreDisplayPreferences();
     effect(() => {
       const favoriteDrops = this.favoriteDrops();
       const activeDrops = this.activeDrops();
@@ -91,14 +91,12 @@ export class DropListComponent {
   }
 
   protected setShowSubscriptions(checked: boolean): void {
-    this.showSubscriptions.set(checked);
-    this.persistDisplayPreferences();
+    this.preferences.setShowSubscriptions(checked);
     this.restoreToggleFocus('show-subs');
   }
 
   protected setShowBadges(checked: boolean): void {
-    this.showBadges.set(checked);
-    this.persistDisplayPreferences();
+    this.preferences.setShowBadges(checked);
     this.restoreToggleFocus('show-badges');
   }
 
@@ -358,30 +356,6 @@ export class DropListComponent {
 
   protected isHiddenByRewardFilter(drop: ActiveDrop): boolean {
     return !this.isVisibleUnderRewardFilters(drop);
-  }
-
-  private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean } {
-    if (!this.storage) return { showSubscriptions: false, showBadges: false };
-
-    try {
-      const stored = this.storage.getItem(DISPLAY_PREFERENCES_STORAGE_KEY);
-      const parsed: unknown = stored === null ? {} : JSON.parse(stored);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { showSubscriptions: false, showBadges: false };
-      const preferences = parsed as Record<string, unknown>;
-      return { showSubscriptions: preferences['showSubscriptions'] === true, showBadges: preferences['showBadges'] === true };
-    } catch {
-      return { showSubscriptions: false, showBadges: false };
-    }
-  }
-
-  private persistDisplayPreferences(): void {
-    if (!this.storage) return;
-
-    try {
-      this.storage.setItem(DISPLAY_PREFERENCES_STORAGE_KEY, JSON.stringify({ showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() }));
-    } catch {
-      // Display preferences remain available for this browser session.
-    }
   }
 
   protected remainingTime(drop: ActiveDrop): string {
