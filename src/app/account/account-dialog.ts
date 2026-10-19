@@ -14,9 +14,13 @@ export class AccountDialogComponent {
   readonly opened = input.required<boolean>();
   readonly closed = output<void>();
   protected readonly auth = inject(AuthService);
-  protected readonly mode = signal<'sign-in' | 'sign-up'>('sign-up');
+  protected readonly mode = signal<'sign-in' | 'sign-up' | 'request-reset'>('sign-up');
   protected readonly email = signal('');
   protected readonly password = signal('');
+  protected readonly confirmPassword = signal('');
+  protected readonly resetEmailSent = signal(false);
+  protected readonly passwordUpdated = signal(false);
+  protected readonly localError = signal<string | null>(null);
 
   protected async submit(): Promise<void> {
     const email = this.email().trim();
@@ -24,6 +28,29 @@ export class AccountDialogComponent {
     if (!email || !password) return;
     if (this.mode() === 'sign-up') await this.auth.signUp(email, password);
     else await this.auth.signIn(email, password);
+  }
+
+  protected async requestPasswordReset(): Promise<void> {
+    const email = this.email().trim();
+    if (!email) return;
+    const result = await this.auth.requestPasswordReset(email);
+    if (result.outcome === 'reset-email-sent') this.resetEmailSent.set(true);
+  }
+
+  protected async updatePassword(): Promise<void> {
+    if (!this.password() || this.password() !== this.confirmPassword()) {
+      this.localError.set('Enter the same new password twice.');
+      return;
+    }
+    this.localError.set(null);
+    const result = await this.auth.updatePassword(this.password());
+    if (result.outcome === 'password-updated') this.passwordUpdated.set(true);
+  }
+
+  protected selectMode(mode: 'sign-in' | 'sign-up' | 'request-reset'): void {
+    this.mode.set(mode);
+    this.resetEmailSent.set(false);
+    this.localError.set(null);
   }
 
   protected async signOut(): Promise<void> {

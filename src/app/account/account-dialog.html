@@ -3,17 +3,44 @@
     <section class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="account-dialog-title" (click)="$event.stopPropagation()">
       <button class="account-dialog__close" type="button" aria-label="Close account dialog" (click)="closed.emit()">×</button>
       <h2 id="account-dialog-title">Account</h2>
-      @if (auth.user(); as user) {
+      @if (auth.status() === 'password-recovery') {
+        @if (passwordUpdated()) {
+          <p>Your password has been updated. You are signed in.</p>
+          <button type="button" appButton="primary" (click)="closed.emit()">Continue</button>
+        } @else {
+          <p class="account-dialog__hint">Choose a new password for your account.</p>
+          <form (ngSubmit)="updatePassword()">
+            <label>New password <input name="new-password" type="password" autocomplete="new-password" minlength="8" required [ngModel]="password()" (ngModelChange)="password.set($event)" /></label>
+            <label>Confirm new password <input name="confirm-password" type="password" autocomplete="new-password" minlength="8" required [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" /></label>
+            @if (localError(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
+            @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
+            <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">Update password</button>
+          </form>
+        }
+      } @else if (auth.user(); as user) {
         <p>Signed in as <strong>{{ user.email }}</strong>.</p>
         <p class="account-dialog__hint">Your favorites, ignored games, collected rewards, and display preferences can sync across your devices.</p>
         <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>
-        <button type="button" appButton="default" (click)="mode.set('sign-in')">Go to sign in</button>
+        <button type="button" appButton="default" (click)="selectMode('sign-in')">Go to sign in</button>
+      } @else if (mode() === 'request-reset') {
+        @if (resetEmailSent()) {
+          <p>Check your email for a password-reset link. If an account exists for that address, we’ll send one.</p>
+          <button type="button" appButton="default" (click)="selectMode('sign-in')">Back to sign in</button>
+        } @else {
+          <p class="account-dialog__hint">Enter your email address and we’ll send you a reset link.</p>
+          <form (ngSubmit)="requestPasswordReset()">
+            <label>Email <input name="reset-email" type="email" autocomplete="email" required [ngModel]="email()" (ngModelChange)="email.set($event)" /></label>
+            @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
+            <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">Send reset link</button>
+          </form>
+          <button type="button" class="account-dialog__link-button" (click)="selectMode('sign-in')">Back to sign in</button>
+        }
       } @else {
         <div class="account-dialog__tabs" role="tablist" aria-label="Account action">
-          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="mode.set('sign-up')">Create account</button>
-          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-in'" (click)="mode.set('sign-in')">Sign in</button>
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="selectMode('sign-up')">Create account</button>
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-in'" (click)="selectMode('sign-in')">Sign in</button>
         </div>
         <p class="account-dialog__hint">You can keep using the tracker without an account. Signing in preserves and syncs this device’s tracker settings.</p>
         <form (ngSubmit)="submit()">
@@ -22,6 +49,7 @@
           @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
           <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">{{ mode() === 'sign-up' ? 'Create account' : 'Sign in' }}</button>
         </form>
+        @if (mode() === 'sign-in') { <button type="button" class="account-dialog__link-button" (click)="selectMode('request-reset')">Forgot password?</button> }
       }
     </section>
   </div>

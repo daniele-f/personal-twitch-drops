@@ -79,8 +79,11 @@ export class App implements AfterViewInit {
       root.setProperty('--color-accent-soft', theme.soft);
     });
     effect(() => {
-      if (!this.auth.user()) return;
+      if (!this.auth.user() || this.auth.status() === 'password-recovery') return;
       void this.syncAccount();
+    });
+    effect(() => {
+      if (this.auth.status() === 'password-recovery') this.accountOpen.set(true);
     });
     effect(() => {
       const user = this.auth.user();

@@ -2,7 +2,7 @@ import { Injectable, InjectionToken, inject, signal } from '@angular/core';
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { supabaseConfig } from '../../environments/supabase';
 
-export type AuthStatus = 'guest' | 'authenticating' | 'awaiting-confirmation' | 'authenticated' | 'error';
+export type AuthStatus = 'guest' | 'authenticating' | 'awaiting-confirmation' | 'password-recovery' | 'authenticated' | 'error';
 
 export interface AccountUser {
   id: string;
@@ -10,7 +10,7 @@ export interface AccountUser {
 }
 
 export interface AuthResult {
-  outcome: 'signed-in' | 'confirmation-required' | 'error';
+  outcome: 'signed-in' | 'confirmation-required' | 'reset-email-sent' | 'password-updated' | 'error';
   message?: string;
 }
 
@@ -27,7 +27,15 @@ export class AuthService {
   readonly error = signal<string | null>(null);
 
   constructor() {
-    this.client.auth.onAuthStateChange((_event, session) => this.applySession(session));
+    this.client.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) {
+        this.user.set({ id: session.user.id, email: session.user.email ?? null });
+        this.status.set('password-recovery');
+        this.error.set(null);
+        return;
+      }
+      this.applySession(session);
+    });
     void this.restoreSession();
   }
 
@@ -68,6 +76,36 @@ export class AuthService {
     }
   }
 
+  async requestPasswordReset(email: string): Promise<AuthResult> {
+    this.beginRequest();
+
+    try {
+      const { error } = await this.client.auth.resetPasswordForEmail(email, {
+        redirectTo: globalThis.location?.origin,
+      });
+      if (error) return this.fail('We could not send a reset email. Please try again.');
+
+      this.status.set('guest');
+      return { outcome: 'reset-email-sent' };
+    } catch {
+      return this.fail('We could not send a reset email. Please try again.');
+    }
+  }
+
+  async updatePassword(password: string): Promise<AuthResult> {
+    this.beginRequest();
+
+    try {
+      const { error } = await this.client.auth.updateUser({ password });
+      if (error) return this.fail('We could not update your password. Please try again.');
+
+      this.status.set('authenticated');
+      return { outcome: 'password-updated' };
+    } catch {
+      return this.fail('We could not update your password. Please try again.');
+    }
+  }
+
   async signOut(): Promise<void> {
     const { error } = await this.client.auth.signOut();
     if (error) {
@@ -80,7 +118,7 @@ export class AuthService {
 
   private async restoreSession(): Promise<void> {
     const { data } = await this.client.auth.getSession();
-    if (data.session || this.status() === 'guest') this.applySession(data.session);
+    if (this.status() !== 'password-recovery' && (data.session || this.status() === 'guest')) this.applySession(data.session);
   }
 
   private beginRequest(): void {

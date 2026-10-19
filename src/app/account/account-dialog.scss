@@ -10,3 +10,4 @@
 .account-dialog__tabs button[aria-selected='true'] { color: var(--color-accent-text); border-bottom: 2px solid var(--color-accent); }
 .account-dialog__hint { color: #cfc8dc; font-size: .9rem; line-height: 1.45; }
 .account-dialog__error { color: #ff9b9b; margin: 0; }
+.account-dialog__link-button { width: fit-content; margin-top: .85rem; padding: 0; border: 0; background: transparent; color: var(--color-accent-text); cursor: pointer; text-decoration: underline; }
