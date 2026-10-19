@@ -99,7 +99,13 @@ export class TrackerSyncService {
     try {
       const merged = mergeTrackerSnapshots(local, await this.readRemote(user.id));
       await this.writeRemote(user.id, merged);
-      this.applyLocalSnapshot(merged);
+      const latestSettings = this.preferences.trackerSettings();
+      this.applyLocalSnapshot({
+        ...merged,
+        settings: isNewer(latestSettings.updatedAt, merged.settings.updatedAt)
+          ? latestSettings
+          : merged.settings,
+      });
       this.lastSyncedSnapshot = merged;
       this.readyForLocalChanges.set(true);
       return { status: 'synced' };

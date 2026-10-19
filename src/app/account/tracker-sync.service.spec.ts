@@ -1,4 +1,10 @@
-import { mergeTrackerSnapshots } from './tracker-sync.service';
+import { TestBed } from '@angular/core/testing';
+import { signal } from '@angular/core';
+import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
+import { CollectedRewardsService } from '../drops/collected-rewards.service';
+import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PreferencesService } from '../preferences/preferences.service';
+import { mergeTrackerSnapshots, TrackerSyncService } from './tracker-sync.service';
 import { LocalTrackerSnapshot } from './tracker-sync.models';
 
 const local: LocalTrackerSnapshot = {
@@ -55,5 +61,46 @@ describe('mergeTrackerSnapshots', () => {
 
     expect(merged.favorites).toEqual([{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T12:00:00.000Z', removedAt: expect.any(String) }]);
     expect(merged.ignoredGames).toEqual([{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T13:00:00.000Z' }]);
+  });
+});
+
+describe('TrackerSyncService', () => {
+  afterEach(() => TestBed.resetTestingModule());
+
+  it('keeps a theme selected while the initial account sync is in progress', async () => {
+    localStorage.clear();
+    let releaseReads!: () => void;
+    const readsReady = new Promise<void>((resolve) => { releaseReads = resolve; });
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [{ theme_color: 'twitch-purple', show_subscriptions: false, show_badges: false, updated_at: '2026-10-18T12:00:00.000Z' }],
+      user_favorite_games: [],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({
+        select: () => ({ eq: async () => { await readsReady; return { data: rowsByTable[table], error: null }; } }),
+        upsert: async () => ({ error: null }),
+      }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+
+    const syncing = sync.syncAfterAuthentication();
+    preferences.setThemeColor('electric-blue');
+    releaseReads();
+    await syncing;
+
+    expect(preferences.themeColor()).toBe('electric-blue');
   });
 });
