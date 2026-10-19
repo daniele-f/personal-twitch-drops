@@ -8,6 +8,9 @@ import { appConfig } from './app.config';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { CampaignCelebrationsService } from './drops/campaign-celebrations.service';
 import { Router } from '@angular/router';
+import { signal } from '@angular/core';
+import { AuthService } from './account/auth.service';
+import { TrackerSyncService } from './account/tracker-sync.service';
 
 const originalScrollYDescriptor = Object.getOwnPropertyDescriptor(window, 'scrollY');
 
@@ -21,6 +24,43 @@ describe('App', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     if (originalScrollYDescriptor) Object.defineProperty(window, 'scrollY', originalScrollYDescriptor);
+  });
+
+  it('does not repeat account sync when synced preferences change', async () => {
+    const auth = { user: signal<{ id: string; email: string | null } | null>(null), status: signal('guest'), error: signal<string | null>(null) };
+    const trackerSync = {
+      readyForLocalChanges: signal(false),
+      syncAfterAuthentication: vi.fn(() => {
+        TestBed.inject(PreferencesService).trackerSettings();
+        return Promise.resolve({ status: 'synced' as const });
+      }),
+      syncLocalChange: vi.fn(() => Promise.resolve()),
+    };
+
+    TestBed.resetTestingModule();
+    localStorage.clear();
+    await TestBed.configureTestingModule({
+      imports: [App],
+      providers: [
+        ...appConfig.providers,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
+        { provide: AuthService, useValue: auth },
+        { provide: TrackerSyncService, useValue: trackerSync },
+      ],
+    }).compileComponents();
+
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+    auth.user.set({ id: 'user-1', email: 'person@example.com' });
+    auth.status.set('authenticated');
+    TestBed.tick();
+    expect(trackerSync.syncAfterAuthentication).toHaveBeenCalledTimes(1);
+
+    TestBed.inject(PreferencesService).setThemeColor('electric-blue');
+    TestBed.tick();
+
+    expect(trackerSync.syncAfterAuthentication).toHaveBeenCalledTimes(1);
   });
 
   it('renders Preferences as a button-styled path route link', () => {

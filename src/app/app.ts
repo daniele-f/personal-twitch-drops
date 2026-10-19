@@ -80,7 +80,7 @@ export class App implements AfterViewInit {
     });
     effect(() => {
       if (!this.auth.user() || this.auth.status() === 'password-recovery') return;
-      void this.syncAccount();
+      untracked(() => void this.syncAccount());
     });
     effect(() => {
       if (this.auth.status() === 'password-recovery') this.accountOpen.set(true);
