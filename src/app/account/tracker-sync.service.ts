@@ -22,15 +22,45 @@ function mergeActiveRows<T extends { updatedAt: string }>(
     const tombstone = tombstoneFor(row);
     if (tombstone) {
       const currentTombstone = tombstones.get(key);
-      if (!currentTombstone || isNewer(tombstone, currentTombstone)) tombstones.set(key, tombstone);
+      const deletionTime = isNewer(row.updatedAt, tombstone) ? row.updatedAt : tombstone;
+      if (!currentTombstone || isNewer(deletionTime, currentTombstone)) tombstones.set(key, deletionTime);
+      continue;
     }
     const current = activeRows.get(key);
     if (!current || isNewer(row.updatedAt, current.updatedAt)) activeRows.set(key, row);
   }
 
   return [...activeRows.values()]
-    .filter((row) => !isNewer(tombstones.get(keyFor(row)) ?? row.updatedAt, row.updatedAt))
+    .filter((row) => {
+      const deletionTime = tombstones.get(keyFor(row));
+      return !deletionTime || isNewer(row.updatedAt, deletionTime);
+    })
     .sort((left, right) => keyFor(left).localeCompare(keyFor(right)));
+}
+
+function resolvePreferenceConflicts(
+  favorites: readonly TrackerFavorite[],
+  ignoredGames: readonly TrackerIgnoredGame[],
+): { favorites: readonly TrackerFavorite[]; ignoredGames: readonly TrackerIgnoredGame[] } {
+  const resolvedFavorites = new Map(favorites.map((favorite) => [favorite.gameId, favorite]));
+  const resolvedIgnoredGames = new Map(ignoredGames.map((game) => [game.gameId, game]));
+  const resolvedAt = new Date().toISOString();
+
+  for (const [gameId, favorite] of resolvedFavorites) {
+    const ignoredGame = resolvedIgnoredGames.get(gameId);
+    if (!ignoredGame) continue;
+
+    if (isNewer(favorite.updatedAt, ignoredGame.updatedAt)) {
+      resolvedIgnoredGames.set(gameId, { ...ignoredGame, removedAt: resolvedAt });
+    } else {
+      resolvedFavorites.set(gameId, { ...favorite, removedAt: resolvedAt });
+    }
+  }
+
+  return {
+    favorites: [...resolvedFavorites.values()].sort((left, right) => left.gameId.localeCompare(right.gameId)),
+    ignoredGames: [...resolvedIgnoredGames.values()].sort((left, right) => left.gameId.localeCompare(right.gameId)),
+  };
 }
 
 export function mergeTrackerSnapshots(local: LocalTrackerSnapshot, remote: RemoteTrackerSnapshot): LocalTrackerSnapshot {
@@ -38,10 +68,15 @@ export function mergeTrackerSnapshots(local: LocalTrackerSnapshot, remote: Remot
     ? local.settings
     : remote.settings;
 
+  const preferences = resolvePreferenceConflicts(
+    mergeActiveRows<TrackerFavorite>(local.favorites, remote.favorites, (row) => row.gameId, (row) => row.removedAt),
+    mergeActiveRows<TrackerIgnoredGame>(local.ignoredGames, remote.ignoredGames, (row) => row.gameId, (row) => row.removedAt),
+  );
+
   return {
     settings,
-    favorites: mergeActiveRows<TrackerFavorite>(local.favorites, remote.favorites, (row) => row.gameId, (row) => row.removedAt),
-    ignoredGames: mergeActiveRows<TrackerIgnoredGame>(local.ignoredGames, remote.ignoredGames, (row) => row.gameId, (row) => row.removedAt),
+    favorites: preferences.favorites,
+    ignoredGames: preferences.ignoredGames,
     collectedRewards: mergeActiveRows<TrackerCollectedReward>(local.collectedRewards, remote.collectedRewards, (row) => `${row.campaignId}\u0000${row.rewardName}`, (row) => row.clearedAt),
   };
 }
@@ -98,8 +133,8 @@ export class TrackerSyncService {
   private applyLocalSnapshot(snapshot: LocalTrackerSnapshot): void {
     this.preferences.applyTrackerSettings(snapshot.settings);
     this.preferences.replaceLists(
-      snapshot.favorites.map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined })),
-      snapshot.ignoredGames.map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt })),
+      snapshot.favorites.filter((favorite) => !favorite.removedAt).map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined })),
+      snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt })),
     );
     this.collectedRewards.applyTrackerCollectedRewards(snapshot.collectedRewards);
   }

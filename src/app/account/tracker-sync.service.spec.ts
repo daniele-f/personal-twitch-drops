@@ -34,4 +34,26 @@ describe('mergeTrackerSnapshots', () => {
 
     expect(merged.favorites).toEqual([]);
   });
+
+  it('treats a tombstoned row as removed even when the database updated timestamp is later', () => {
+    const merged = mergeTrackerSnapshots(local, {
+      settings: null,
+      favorites: [{ gameId: '/game/local', gameName: 'Local game', updatedAt: '2026-10-18T15:00:00.000Z', removedAt: '2026-10-18T14:00:00.000Z' }],
+      ignoredGames: [],
+      collectedRewards: [],
+    });
+
+    expect(merged.favorites).toEqual([]);
+  });
+
+  it('keeps the most recently changed preference and tombstones the conflicting older one', () => {
+    const merged = mergeTrackerSnapshots({
+      ...local,
+      favorites: [{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T12:00:00.000Z' }],
+      ignoredGames: [{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T13:00:00.000Z' }],
+    }, { settings: null, favorites: [], ignoredGames: [], collectedRewards: [] });
+
+    expect(merged.favorites).toEqual([{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T12:00:00.000Z', removedAt: expect.any(String) }]);
+    expect(merged.ignoredGames).toEqual([{ gameId: '/game/airmech-strike', gameName: 'Airmech Strike', updatedAt: '2026-10-18T13:00:00.000Z' }]);
+  });
 });
