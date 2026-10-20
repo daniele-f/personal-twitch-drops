@@ -103,4 +103,63 @@ describe('TrackerSyncService', () => {
 
     expect(preferences.themeColor()).toBe('electric-blue');
   });
+
+  it('restores all ignored games with one server operation and no local notifications', async () => {
+    localStorage.clear();
+    const rpc = vi.fn(async () => ({ error: null }));
+    const client = { rpc };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addBlacklist('/game/ignored', 'Ignored game');
+
+    const result = await sync.restoreAllIgnored();
+
+    expect(result.status).toBe('synced');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('restore_all_ignored_games');
+    expect(preferences.blacklistEntries()).toEqual([]);
+  });
+
+  it('requires an explicit source choice when an unlinked browser and account both have preferences', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [{ game_id: '/game/account', game_name: 'Account game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null }],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addBlacklist('/game/browser', 'Browser game');
+
+    const result = await sync.syncAfterAuthentication();
+
+    expect(result.status).toBe('skipped');
+    expect(sync.status()).toBe('needs-reconciliation');
+    expect(sync.reconciliation()).toMatchObject({ accountId: 'user-1', browserPreferenceCount: 1, accountPreferenceCount: 1 });
+    expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/browser']);
+  });
 });

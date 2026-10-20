@@ -1,6 +1,8 @@
 import { TestBed } from '@angular/core/testing';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferencesService } from './preferences.service';
+import { PreferenceNotificationsService } from './preference-notifications.service';
+import { TrackerMutationDispatcherService } from '../account/tracker-mutation-dispatcher.service';
 
 function createStorage(initialValues: Record<string, string> = {}): Storage {
   const values = new Map(Object.entries(initialValues));
@@ -116,6 +118,27 @@ describe('PreferencesService', () => {
     service.addFavorite('/game/sea-of-thieves');
 
     expect(service.favoriteIds().has('/game/sea-of-thieves')).toBe(true);
+  });
+
+  it('applies an account-sync replacement without preference toasts', () => {
+    const service = configure(createStorage());
+    const notifications = TestBed.inject(PreferenceNotificationsService);
+
+    service.replaceLists([], [
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-10-20T00:00:00.000Z' },
+      { id: '/game/valorant', gameName: 'VALORANT', blacklistedAt: '2026-10-20T00:00:00.000Z' },
+    ], 'sync');
+
+    expect(notifications.notifications()).toEqual([]);
+  });
+
+  it('records one targeted mutation for a direct ignore action', () => {
+    const service = configure(createStorage());
+    const dispatcher = TestBed.inject(TrackerMutationDispatcherService);
+
+    service.addBlacklist('/game/sea-of-thieves', 'Sea of Thieves');
+
+    expect(dispatcher.mutations()).toEqual([{ type: 'ignore', gameId: '/game/sea-of-thieves', gameName: 'Sea of Thieves' }]);
   });
 
   it('defaults invalid themes to Twitch Purple and persists a chosen theme', () => {

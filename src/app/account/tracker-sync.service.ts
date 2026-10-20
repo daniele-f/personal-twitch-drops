@@ -3,6 +3,13 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
 import { LocalTrackerSnapshot, RemoteTrackerSnapshot, SyncResult, TrackerCollectedReward, TrackerFavorite, TrackerIgnoredGame } from './tracker-sync.models';
+import { TrackerMutation } from './tracker-mutation';
+import { TrackerMutationDispatcherService } from './tracker-mutation-dispatcher.service';
+import { TrackerMutationQueueService } from './tracker-mutation-queue.service';
+import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { TrackerReconciliation, TrackerSyncStatus } from './tracker-sync.models';
+
+const LINKED_ACCOUNT_STORAGE_KEY = 'personal-twitch-drops.tracker-sync-link.v1';
 
 function isNewer(left: string, right: string): boolean {
   return Date.parse(left) > Date.parse(right);
@@ -87,42 +94,126 @@ export class TrackerSyncService {
   private readonly client = inject(SUPABASE_AUTH_CLIENT);
   private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
+  private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
+  private readonly mutationQueue = inject(TrackerMutationQueueService);
+  private readonly storage = inject(PREFERENCES_STORAGE);
   private lastSyncedSnapshot: LocalTrackerSnapshot | null = null;
   readonly readyForLocalChanges = signal(false);
+  readonly status = signal<TrackerSyncStatus>('idle');
+  readonly summary = signal<string | null>(null);
+  readonly reconciliation = signal<TrackerReconciliation | null>(null);
 
   async syncAfterAuthentication(): Promise<SyncResult> {
     const user = this.auth.user();
     if (!user) return { status: 'skipped' };
 
     this.readyForLocalChanges.set(false);
+    this.status.set('syncing');
+    this.summary.set(null);
+    this.reconciliation.set(null);
     const local = this.localSnapshot();
     try {
-      const merged = mergeTrackerSnapshots(local, await this.readRemote(user.id));
-      await this.writeRemote(user.id, merged);
-      const latestSettings = this.preferences.trackerSettings();
-      this.applyLocalSnapshot({
-        ...merged,
-        settings: isNewer(latestSettings.updatedAt, merged.settings.updatedAt)
-          ? latestSettings
-          : merged.settings,
-      });
-      this.lastSyncedSnapshot = merged;
+      const remote = await this.readRemote(user.id);
+      if (this.linkedAccountId() === user.id) {
+        this.adoptAccountSnapshot(remote, local);
+        await this.replayQueuedMutations(user.id);
+        return { status: 'synced' };
+      }
+
+      const browserPreferenceCount = this.preferenceCount(local);
+      const accountPreferenceCount = this.preferenceCount(remote);
+      if (browserPreferenceCount && accountPreferenceCount) {
+        this.status.set('needs-reconciliation');
+        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount });
+        return { status: 'skipped' };
+      }
+      if (accountPreferenceCount) {
+        this.adoptAccountSnapshot(remote, local);
+        this.rememberLinkedAccount(user.id);
+        return { status: 'synced' };
+      }
+      if (browserPreferenceCount) {
+        this.status.set('needs-reconciliation');
+        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount: 0 });
+        return { status: 'skipped' };
+      }
+      this.lastSyncedSnapshot = local;
+      this.rememberLinkedAccount(user.id);
       this.readyForLocalChanges.set(true);
+      this.status.set('idle');
       return { status: 'synced' };
     } catch {
+      this.status.set('error');
       return { status: 'error', message: 'Your tracker stays on this device until it can sync again.' };
+    }
+  }
+
+  async chooseInitialSource(source: 'browser' | 'account'): Promise<SyncResult> {
+    const user = this.auth.user();
+    const reconciliation = this.reconciliation();
+    if (!user || !reconciliation || reconciliation.accountId !== user.id) return { status: 'skipped' };
+
+    this.status.set('syncing');
+    try {
+      const local = this.localSnapshot();
+      if (source === 'browser') {
+        await this.importInitialSnapshot(local, reconciliation.accountPreferenceCount > 0);
+        this.lastSyncedSnapshot = local;
+        this.summary.set(`Synced ${this.preferenceCount(local)} preferences.`);
+      } else {
+        this.mutationDispatcher.clearRecorded();
+        this.mutationQueue.clearForAccount(user.id);
+        this.adoptAccountSnapshot(await this.readRemote(user.id), local);
+      }
+      if (source === 'browser') this.mutationDispatcher.clearRecorded();
+      this.rememberLinkedAccount(user.id);
+      this.reconciliation.set(null);
+      this.readyForLocalChanges.set(true);
+      this.status.set('idle');
+      await this.replayQueuedMutations(user.id);
+      return { status: 'synced' };
+    } catch {
+      this.status.set('error');
+      return { status: 'error', message: 'Your preference choice could not be synchronized. Please try again.' };
     }
   }
 
   async syncLocalChange(): Promise<void> {
     const user = this.auth.user();
     if (!user || !this.lastSyncedSnapshot) return;
+    for (const mutation of this.mutationDispatcher.drain()) this.mutationQueue.enqueue(user.id, mutation);
     try {
-      const next = withRemovalTombstones(this.localSnapshot(), this.lastSyncedSnapshot);
-      await this.writeRemote(user.id, next);
-      this.lastSyncedSnapshot = next;
+      await this.replayQueuedMutations(user.id);
     } catch {
-      // Local storage remains the source of truth until the next successful sync.
+      this.status.set('pending-retry');
+    }
+  }
+
+  async retryPending(): Promise<void> {
+    const user = this.auth.user();
+    if (!user) return;
+    this.status.set('syncing');
+    try { await this.replayQueuedMutations(user.id); }
+    catch { this.status.set('pending-retry'); }
+  }
+
+  async restoreAllIgnored(): Promise<SyncResult> {
+    if (!this.auth.user()) return { status: 'skipped' };
+
+    try {
+      await this.applyMutation({ type: 'restore-all-ignored' });
+      this.preferences.replaceLists(
+        [...this.preferences.favoriteIds()].map((id) => ({
+          id,
+          gameName: this.preferences.favoriteNames().get(id),
+        })),
+        [],
+        'recovery',
+      );
+      this.lastSyncedSnapshot = this.localSnapshot();
+      return { status: 'synced' };
+    } catch {
+      return { status: 'error', message: 'Ignored games could not be restored. Please try again.' };
     }
   }
 
@@ -140,7 +231,7 @@ export class TrackerSyncService {
     this.preferences.applyTrackerSettings(snapshot.settings);
     this.preferences.replaceLists(
       snapshot.favorites.filter((favorite) => !favorite.removedAt).map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined })),
-      snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt })),
+      snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt })), 'sync',
     );
     this.collectedRewards.applyTrackerCollectedRewards(snapshot.collectedRewards);
   }
@@ -185,6 +276,66 @@ export class TrackerSyncService {
     await this.upsertRows('user_collected_rewards', snapshot.collectedRewards.map((row) => ({ user_id: userId, campaign_id: row.campaignId, reward_name: row.rewardName, cleared_at: row.clearedAt ?? null, updated_at: row.updatedAt })));
   }
 
+  private async applyMutation(mutation: TrackerMutation): Promise<void> {
+    let result: { error: unknown };
+    if (mutation.type === 'favorite' || mutation.type === 'ignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId, p_game_name: mutation.gameName });
+    else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
+    else if (mutation.type === 'settings') result = await this.client.rpc('set_tracker_settings', { p_theme_color: mutation.themeColor, p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
+    else if (mutation.type === 'set-collected') result = await this.client.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
+    else result = await this.client.rpc('restore_all_ignored_games');
+    if (result.error) throw result.error;
+  }
+
+  private async importInitialSnapshot(snapshot: LocalTrackerSnapshot, replaceExisting = false): Promise<void> {
+    const { error } = await this.client.rpc('import_tracker_preferences', { p_snapshot: snapshot, p_replace_existing: replaceExisting });
+    if (error) throw error;
+  }
+
+  private async replayQueuedMutations(userId: string): Promise<void> {
+    const entries = this.mutationQueue.loadForAccount(userId);
+    for (const entry of entries) {
+      await this.applyMutation(entry.mutation);
+      this.mutationQueue.removeThrough(userId, entry.sequence);
+    }
+    const remote = await this.readRemote(userId);
+    this.lastSyncedSnapshot = this.snapshotFromRemote(remote, this.localSnapshot());
+    this.readyForLocalChanges.set(true);
+    this.status.set('idle');
+    if (entries.length) this.summary.set(`Synced ${entries.length} preference${entries.length === 1 ? '' : 's'}.`);
+  }
+
+  private adoptAccountSnapshot(remote: RemoteTrackerSnapshot, local: LocalTrackerSnapshot): void {
+    const snapshot = this.snapshotFromRemote(remote, local);
+    this.applyLocalSnapshot(snapshot);
+    this.lastSyncedSnapshot = snapshot;
+    this.readyForLocalChanges.set(true);
+    this.status.set('idle');
+    const count = this.preferenceCount(remote);
+    if (count) this.summary.set(`Synced ${count} preference${count === 1 ? '' : 's'}.`);
+  }
+
+  private snapshotFromRemote(remote: RemoteTrackerSnapshot, fallback: LocalTrackerSnapshot): LocalTrackerSnapshot {
+    return { ...fallback, settings: remote.settings ?? fallback.settings, favorites: remote.favorites, ignoredGames: remote.ignoredGames, collectedRewards: remote.collectedRewards };
+  }
+
+  private preferenceCount(snapshot: Pick<RemoteTrackerSnapshot, 'favorites' | 'ignoredGames' | 'collectedRewards'>): number {
+    return snapshot.favorites.filter((row) => !row.removedAt).length
+      + snapshot.ignoredGames.filter((row) => !row.removedAt).length
+      + snapshot.collectedRewards.filter((row) => !row.clearedAt).length;
+  }
+
+  private linkedAccountId(): string | null {
+    try {
+      const parsed: unknown = JSON.parse(this.storage?.getItem(LINKED_ACCOUNT_STORAGE_KEY) ?? 'null');
+      return parsed && typeof parsed === 'object' && typeof (parsed as Record<string, unknown>)['accountId'] === 'string'
+        ? (parsed as Record<string, unknown>)['accountId'] as string : null;
+    } catch { return null; }
+  }
+
+  private rememberLinkedAccount(accountId: string): void {
+    try { this.storage?.setItem(LINKED_ACCOUNT_STORAGE_KEY, JSON.stringify({ accountId })); } catch { /* Link metadata is optional. */ }
+  }
+
   private async upsert(table: string, row: Record<string, unknown>): Promise<void> {
     const { error } = await this.client.from(table).upsert(row);
     if (error) throw error;
@@ -193,26 +344,6 @@ export class TrackerSyncService {
   private async upsertRows(table: string, rows: readonly Record<string, unknown>[]): Promise<void> {
     if (rows.length) await this.upsert(table, rows as unknown as Record<string, unknown>);
   }
-}
-
-function withRemovalTombstones(current: LocalTrackerSnapshot, previous: LocalTrackerSnapshot): LocalTrackerSnapshot {
-  const now = new Date().toISOString();
-  return {
-    ...current,
-    favorites: appendTombstones(current.favorites, previous.favorites, (row) => row.gameId, (row) => ({ ...row, updatedAt: now, removedAt: now })),
-    ignoredGames: appendTombstones(current.ignoredGames, previous.ignoredGames, (row) => row.gameId, (row) => ({ ...row, updatedAt: now, removedAt: now })),
-    collectedRewards: appendTombstones(current.collectedRewards, previous.collectedRewards, (row) => `${row.campaignId}\u0000${row.rewardName}`, (row) => ({ ...row, updatedAt: now, clearedAt: now })),
-  };
-}
-
-function appendTombstones<T extends { updatedAt: string }>(
-  current: readonly T[],
-  previous: readonly T[],
-  keyFor: (row: T) => string,
-  tombstone: (row: T) => T,
-): readonly T[] {
-  const currentKeys = new Set(current.map(keyFor));
-  return [...current, ...previous.filter((row) => !currentKeys.has(keyFor(row))).map(tombstone)];
 }
 
 function asOptionalString(value: unknown): string | null {

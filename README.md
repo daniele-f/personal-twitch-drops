@@ -27,7 +27,7 @@ It is an Angular single-page application hosted on Cloudflare at `https://drops.
 
 Campaign data is fetched directly from `twitchdrops.app`; its availability and accuracy depend on that third-party source. The app includes a link to your Twitch Drops inventory, but it does not sign in to Twitch or claim rewards on your behalf.
 
-Without an account, your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. Signing in syncs favorites, ignored games, collected rewards, and display preferences through Supabase; snapshots and Twitch account data remain local and are never sent there.
+Without an account, your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. Signing in syncs favorites, ignored games, collected rewards, and display preferences through Supabase; snapshots and Twitch account data remain local and are never sent there. When a browser and an account both already have saved preferences, the Account dialog asks which source to keep rather than merging them silently. Sync imports are quiet, and **Restore all ignored games** restores the account-wide Ignore List after confirmation.
 
 ## Development
 

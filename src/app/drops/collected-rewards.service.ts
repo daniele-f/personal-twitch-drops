@@ -1,12 +1,14 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import type { TrackerCollectedReward } from '../account/tracker-sync.models';
+import { TrackerMutationDispatcherService } from '../account/tracker-mutation-dispatcher.service';
 
 export const COLLECTED_REWARDS_STORAGE_KEY = 'personal-twitch-drops.collected-rewards.v1';
 
 @Injectable({ providedIn: 'root' })
 export class CollectedRewardsService {
   private readonly storage = inject(PREFERENCES_STORAGE);
+  private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   private readonly collectedRewardsByCampaign = signal<ReadonlyMap<string, ReadonlySet<string>>>(this.readCollectedRewards());
   readonly revision = signal(0);
 
@@ -25,6 +27,7 @@ export class CollectedRewardsService {
     if (rewards.size) next.set(campaignId, rewards);
     else next.delete(campaignId);
     this.update(next);
+    this.mutationDispatcher.record({ type: 'set-collected', campaignId, rewardName, collected });
   }
 
   markAllCollected(campaignId: string, rewardNames: readonly string[]): void {
@@ -33,6 +36,7 @@ export class CollectedRewardsService {
     const next = new Map(this.collectedRewardsByCampaign());
     next.set(campaignId, new Set([...(next.get(campaignId) ?? []), ...rewardNames.filter(Boolean)]));
     this.update(next);
+    for (const rewardName of rewardNames.filter(Boolean)) this.mutationDispatcher.record({ type: 'set-collected', campaignId, rewardName, collected: true });
   }
 
   markNoneCollected(campaignId: string, rewardNames: readonly string[]): void {
@@ -42,6 +46,7 @@ export class CollectedRewardsService {
     if (rewards.size) next.set(campaignId, rewards);
     else next.delete(campaignId);
     this.update(next);
+    for (const rewardName of rewardNames.filter(Boolean)) this.mutationDispatcher.record({ type: 'set-collected', campaignId, rewardName, collected: false });
   }
 
   retainActiveCampaigns(activeCampaignIds: readonly string[]): void {

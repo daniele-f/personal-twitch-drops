@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, input, output, signal } fro
 import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '../ui/button.directive';
 import { AuthService } from './auth.service';
+import { TrackerSyncService } from './tracker-sync.service';
 
 @Component({
   selector: 'app-account-dialog',
@@ -14,6 +15,7 @@ export class AccountDialogComponent {
   readonly opened = input.required<boolean>();
   readonly closed = output<void>();
   protected readonly auth = inject(AuthService);
+  protected readonly trackerSync = inject(TrackerSyncService);
   protected readonly mode = signal<'sign-in' | 'sign-up' | 'request-reset'>('sign-up');
   protected readonly email = signal('');
   protected readonly password = signal('');
@@ -21,6 +23,8 @@ export class AccountDialogComponent {
   protected readonly resetEmailSent = signal(false);
   protected readonly passwordUpdated = signal(false);
   protected readonly localError = signal<string | null>(null);
+  protected readonly restoreConfirmation = signal(false);
+  protected readonly restoreInProgress = signal(false);
 
   protected async submit(): Promise<void> {
     const email = this.email().trim();
@@ -56,5 +60,24 @@ export class AccountDialogComponent {
   protected async signOut(): Promise<void> {
     await this.auth.signOut();
     this.closed.emit();
+  }
+
+  protected requestRestoreAllIgnored(): void {
+    this.restoreConfirmation.set(true);
+  }
+
+  protected async confirmRestoreAllIgnored(): Promise<void> {
+    this.restoreInProgress.set(true);
+    await this.trackerSync.restoreAllIgnored();
+    this.restoreInProgress.set(false);
+    this.restoreConfirmation.set(false);
+  }
+
+  protected async chooseInitialSource(source: 'browser' | 'account'): Promise<void> {
+    await this.trackerSync.chooseInitialSource(source);
+  }
+
+  protected async retrySync(): Promise<void> {
+    await this.trackerSync.retryPending();
   }
 }

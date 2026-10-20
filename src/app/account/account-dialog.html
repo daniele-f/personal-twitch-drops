@@ -20,6 +20,25 @@
       } @else if (auth.user(); as user) {
         <p>Signed in as <strong>{{ user.email }}</strong>.</p>
         <p class="account-dialog__hint">Your favorites, ignored games, collected rewards, and display preferences can sync across your devices.</p>
+        @if (trackerSync.summary(); as summary) { <p class="account-dialog__hint" role="status">{{ summary }}</p> }
+        @if (trackerSync.reconciliation(); as reconciliation) {
+          <section class="account-dialog__sync-choice" aria-labelledby="sync-choice-title">
+            <h3 id="sync-choice-title">Choose the preferences to keep</h3>
+            <p class="account-dialog__hint">This browser has {{ reconciliation.browserPreferenceCount }} saved preferences and your account has {{ reconciliation.accountPreferenceCount }}. Choose one source once; the other source will be replaced.</p>
+            <button type="button" appButton="primary" (click)="chooseInitialSource('browser')">Use this browser</button>
+            <button type="button" appButton="default" (click)="chooseInitialSource('account')">Use my account</button>
+          </section>
+        } @else if (trackerSync.status() === 'pending-retry' || trackerSync.status() === 'error') {
+          <p class="account-dialog__error" role="status">Changes are waiting to sync.</p>
+          <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
+        }
+        @if (restoreConfirmation()) {
+          <p class="account-dialog__hint">Restore every ignored game on all linked devices?</p>
+          <button type="button" appButton="primary" [disabled]="restoreInProgress()" (click)="confirmRestoreAllIgnored()">Restore ignored games</button>
+          <button type="button" appButton="default" [disabled]="restoreInProgress()" (click)="restoreConfirmation.set(false)">Cancel</button>
+        } @else {
+          <button type="button" appButton="default" (click)="requestRestoreAllIgnored()">Restore all ignored games</button>
+        }
         <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>

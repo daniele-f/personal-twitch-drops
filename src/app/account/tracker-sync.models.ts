@@ -46,3 +46,11 @@ export interface SyncResult {
   status: 'synced' | 'skipped' | 'error';
   message?: string;
 }
+
+export type TrackerSyncStatus = 'idle' | 'syncing' | 'needs-reconciliation' | 'pending-retry' | 'error';
+
+export interface TrackerReconciliation {
+  accountId: string;
+  browserPreferenceCount: number;
+  accountPreferenceCount: number;
+}

@@ -15,6 +15,7 @@ import { ToggleComponent } from './ui/toggle';
 import { AccountDialogComponent } from './account/account-dialog';
 import { AuthService } from './account/auth.service';
 import { TrackerSyncService } from './account/tracker-sync.service';
+import { TrackerMutationDispatcherService } from './account/tracker-mutation-dispatcher.service';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 const SCROLL_TO_TOP_THRESHOLD = 320;
@@ -29,6 +30,7 @@ export class App implements AfterViewInit {
   protected readonly preferences = inject(PreferencesService);
   protected readonly auth = inject(AuthService);
   private readonly trackerSync = inject(TrackerSyncService);
+  private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly document = inject(DOCUMENT);
   private readonly storage = inject(PREFERENCES_STORAGE);
@@ -88,13 +90,8 @@ export class App implements AfterViewInit {
     effect(() => {
       const user = this.auth.user();
       const ready = this.trackerSync.readyForLocalChanges();
-      this.preferences.favoriteIds();
-      this.preferences.blacklistEntries();
-      this.preferences.themeColor();
-      this.preferences.showSubscriptions();
-      this.preferences.showBadges();
-      this.collectedRewards.revision();
-      if (user && ready) untracked(() => void this.trackerSync.syncLocalChange());
+      const mutations = this.mutationDispatcher.mutations();
+      if (user && ready && mutations.length) untracked(() => void this.trackerSync.syncLocalChange());
     });
     if (this.debugMenuEnabled) (window as Window & { twitchDropsDebug?: unknown }).twitchDropsDebug = { openMenu: () => this.debugMenuOpen.set(true), showAll: () => ['Available debug commands:', '- twitchDropsDebug.openMenu() — Open the debug menu.', '- twitchDropsDebug.changes.showAll() — List change scenarios.', '- twitchDropsDebug.storage.favorites() — Show saved favorites.', '- twitchDropsDebug.storage.ignored() — Show ignored games.', '- twitchDropsDebug.storage.previousDay() — Show the previous-day snapshot.', '- twitchDropsDebug.storage.today() — Show today\'s latest snapshot.'].join('\n'), storage: { favorites: () => this.showFavorites(), ignored: () => this.showIgnored(), previousDay: () => this.readSnapshots().baseline, today: () => this.readSnapshots().current }, changes: {
       showAll: () => ['Available change scenarios:', '- twitchDropsDebug.changes.newGame() — Show one new game.', '- twitchDropsDebug.changes.rewardSwap() — Show a same-count reward swap.', '- twitchDropsDebug.changes.endedGame() — Show an ended game.', '- twitchDropsDebug.changes.multipleGames() — Show three new games.', '- twitchDropsDebug.changes.newAndUpdated() — Show a new and an updated game.', '- twitchDropsDebug.changes.mockYesterday() — Compare live campaigns with a temporary mock of yesterday.', '- twitchDropsDebug.changes.clear() — Reset the scenario.'].join('\n'),

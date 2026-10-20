@@ -3,6 +3,7 @@ import { BlacklistEntry } from './blacklist-entry';
 import { BLACKLIST_ENTRIES_STORAGE_KEY, DISPLAY_PREFERENCES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, SETTINGS_UPDATED_AT_STORAGE_KEY, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferenceNotificationKind, PreferenceNotificationsService } from './preference-notifications.service';
 import type { TrackerFavorite, TrackerIgnoredGame, TrackerSettings } from '../account/tracker-sync.models';
+import { TrackerMutationDispatcherService } from '../account/tracker-mutation-dispatcher.service';
 
 export type ThemeColor = 'twitch-purple' | 'electric-blue' | 'neon-rose' | 'emerald-glow' | 'golden-amber';
 export interface ThemeColorOption { readonly id: ThemeColor; readonly label: string; readonly accent: string; readonly hover: string; readonly text: string; readonly action: string; readonly actionHover: string; readonly foreground: string; readonly soft: string; }
@@ -18,6 +19,7 @@ const THEME_COLOR_OPTIONS: readonly ThemeColorOption[] = [
 export class PreferencesService {
   private readonly storage = inject(PREFERENCES_STORAGE);
   private readonly notifications = inject(PreferenceNotificationsService);
+  private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   readonly favoriteIds = signal<ReadonlySet<string>>(this.readFavoriteIds());
   readonly favoriteNames = signal<ReadonlyMap<string, string>>(this.readFavoriteNames());
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
@@ -33,6 +35,7 @@ export class PreferencesService {
     this.themeColor.set(theme);
     try { this.storage?.setItem(THEME_COLOR_STORAGE_KEY, theme); } catch { /* Theme remains available for this browser session. */ }
     this.touchSettings();
+    this.recordSettings();
   }
 
   setShowSubscriptions(show: boolean): void {
@@ -40,6 +43,7 @@ export class PreferencesService {
     this.showSubscriptions.set(show);
     this.persistDisplayPreferences();
     this.touchSettings();
+    this.recordSettings();
   }
 
   setShowBadges(show: boolean): void {
@@ -47,6 +51,7 @@ export class PreferencesService {
     this.showBadges.set(show);
     this.persistDisplayPreferences();
     this.touchSettings();
+    this.recordSettings();
   }
 
   restoreDisplayPreferences(): void {
@@ -87,6 +92,7 @@ export class PreferencesService {
       next.add(id);
       this.favoriteIds.set(next);
       this.persist(next);
+      this.mutationDispatcher.record({ type: 'favorite', gameId: id, gameName: gameName ?? this.nameFromId(id) });
       this.notify('favorite-added', gameName ?? this.nameFromId(id));
     }
     if (gameName) this.rememberFavoriteNames([{ id, gameName }]);
@@ -99,6 +105,7 @@ export class PreferencesService {
 
     this.favoriteIds.set(next);
     this.persist(next);
+    this.mutationDispatcher.record({ type: 'unfavorite', gameId: id });
     if (this.favoriteNames().has(id)) {
       const names = new Map(this.favoriteNames());
       names.delete(id);
@@ -141,6 +148,7 @@ export class PreferencesService {
     const next = [{ id, gameName, blacklistedAt: new Date().toISOString() }, ...this.blacklistEntries()];
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+    this.mutationDispatcher.record({ type: 'ignore', gameId: id, gameName });
     this.notify('ignored-added', gameName);
   }
 
@@ -151,6 +159,7 @@ export class PreferencesService {
 
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
+    this.mutationDispatcher.record({ type: 'unignore', gameId: id });
     if (gameName) this.notify('ignored-removed', gameName);
   }
 
@@ -164,7 +173,7 @@ export class PreferencesService {
     for (const gameName of removed) this.notify('ignored-removed', gameName);
   }
 
-  replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[]): void {
+  replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[], origin: 'user' | 'sync' | 'recovery' | 'import' = 'user'): void {
     const previousFavoriteIds = this.favoriteIds();
     const previousFavoriteNames = this.favoriteNames();
     const previousBlacklist = this.blacklistEntries();
@@ -178,7 +187,7 @@ export class PreferencesService {
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
     this.persistBlacklist(blacklistEntries);
-    this.notifyListReplacement(previousFavoriteIds, previousFavoriteNames, previousBlacklist, favoriteIds, favoriteNames, blacklistEntries);
+    if (origin === 'user') this.notifyListReplacement(previousFavoriteIds, previousFavoriteNames, previousBlacklist, favoriteIds, favoriteNames, blacklistEntries);
   }
 
   private readFavoriteIds(): ReadonlySet<string> {
@@ -227,6 +236,10 @@ export class PreferencesService {
   private touchSettings(): void {
     this.settingsUpdatedAt = new Date().toISOString();
     try { this.storage?.setItem(SETTINGS_UPDATED_AT_STORAGE_KEY, this.settingsUpdatedAt); } catch { /* Storage is optional. */ }
+  }
+
+  private recordSettings(): void {
+    this.mutationDispatcher.record({ type: 'settings', themeColor: this.themeColor(), showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() });
   }
 
   private readBlacklistEntries(): readonly BlacklistEntry[] {
