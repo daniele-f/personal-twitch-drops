@@ -117,6 +117,24 @@ describe('PreferencesPageComponent', () => {
     expect(favorites?.querySelector('[data-favorite-id="/game/valorant"]')?.textContent).toContain('Inactive');
   });
 
+  it('sorts favorites and ignored games alphabetically by name', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/zulu', 'Zulu');
+    preferences.addFavorite('/game/alpha', 'Alpha');
+    preferences.addBlacklist('/game/yankee', 'Yankee');
+    preferences.addBlacklist('/game/bravo', 'Bravo');
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const root = fixture.nativeElement as HTMLElement;
+    root.querySelector<HTMLButtonElement>('.favorites-disclosure button')?.click();
+    root.querySelector<HTMLButtonElement>('.blacklist-disclosure button')?.click();
+    fixture.detectChanges();
+
+    expect([...root.querySelectorAll('[data-favorite-id] .game-name__text')].map((entry) => entry.textContent?.trim())).toEqual(['Alpha', 'Zulu']);
+    expect([...root.querySelectorAll('[data-blacklist-id] .game-name__text')].map((entry) => entry.textContent?.trim())).toEqual(['Bravo', 'Yankee']);
+  });
+
   it('wraps long game names so each table can truncate them without covering its status', () => {
     const preferences = TestBed.inject(PreferencesService);
     const longName = 'Lego Batman Legacy Of The Dark Knight';

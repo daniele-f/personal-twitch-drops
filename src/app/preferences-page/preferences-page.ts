@@ -11,7 +11,11 @@ export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   private readonly importExport = inject(ImportExportService);
   private readonly dropsProvider = inject(DropsProvider);
-  protected readonly favoriteRows = computed(() => [...this.preferences.favoriteIds()].map((id) => ({ id, gameName: this.preferences.favoriteNames().get(id) ?? this.fallbackName(id) })));
+  protected readonly favoriteRows = computed(() => [...this.preferences.favoriteIds()]
+    .map((id) => ({ id, gameName: this.preferences.favoriteNames().get(id) ?? this.fallbackName(id) }))
+    .sort((left, right) => left.gameName.localeCompare(right.gameName, undefined, { sensitivity: 'base' })));
+  protected readonly ignoredRows = computed(() => [...this.preferences.blacklistEntries()]
+    .sort((left, right) => left.gameName.localeCompare(right.gameName, undefined, { sensitivity: 'base' })));
   protected readonly favoritesExpanded = signal(false);
   protected readonly activeDropIds = signal<ReadonlySet<string> | null>(null);
   protected readonly dropStatusUnavailable = signal(false);
