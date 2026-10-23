@@ -43,6 +43,28 @@ export class App implements AfterViewInit {
   ];
   private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
   private readonly changesPanel = viewChild<ElementRef<HTMLElement>>('changesPanel');
+  private readonly navigationToggle = viewChild<ElementRef<HTMLButtonElement>>('navigationToggle');
+  private readonly headerActions = viewChild<ElementRef<HTMLElement>>('headerActions');
+  protected readonly navigationOpen = signal(false);
+
+  protected toggleNavigation(): void {
+    if (!this.navigationOpen()) this.closeChangesPanel();
+    this.navigationOpen.update((open) => !open);
+  }
+
+  @HostListener('document:keydown.escape')
+  protected closeNavigationOnEscape(): void {
+    if (!this.navigationOpen()) return;
+    this.navigationOpen.set(false);
+    this.navigationToggle()?.nativeElement.focus();
+  }
+
+  @HostListener('document:pointerdown', ['$event'])
+  protected closeNavigationOnOutsideClick(event: MouseEvent): void {
+    if (!this.navigationOpen() || !(event.target instanceof Node)) return;
+    if (this.navigationToggle()?.nativeElement.contains(event.target) || this.headerActions()?.nativeElement.contains(event.target)) return;
+    this.navigationOpen.set(false);
+  }
   protected readonly changesOpen = signal(false);
   protected readonly accountOpen = signal(false);
   protected readonly syncMessage = signal<string | null>(null);
@@ -137,6 +159,7 @@ export class App implements AfterViewInit {
   }
   @HostListener('document:click', ['$event'])
   protected closeChangesOnOutsideClick(event: MouseEvent): void {
+    this.closeNavigationOnOutsideClick(event);
     if (!this.changesOpen() || !(event.target instanceof Node)) return;
     if (this.changesButton()?.nativeElement.contains(event.target) || this.changesPanel()?.nativeElement.contains(event.target)) return;
     this.closeChangesPanel();

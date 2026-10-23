@@ -20,3 +20,16 @@ button.debug-button--active,button.debug-button--active:hover:not(:disabled),but
 
 .changes-popover,.debug-menu { border-color:color-mix(in srgb,var(--color-accent) 48%,#3c3c45); }
 button.refresh:hover:not(:disabled),button.refresh:focus-visible { background:var(--color-accent-action-hover); color:var(--color-accent-foreground); }
+.app-header .navigation-toggle { display:none; }
+@media (max-width: 520px) {
+  .app-header { position:relative; flex-direction:row; align-items:center; min-height:4rem; gap:.5rem; }
+  .wordmark { min-width:0; font-size:.9rem; }
+  .wordmark__icon { width:2rem; height:2rem; }
+  .app-header .navigation-toggle { position:relative; display:grid; place-items:center; flex:0 0 auto; width:2.75rem; height:2.75rem; padding:.55rem; }
+  .navigation-toggle svg { width:1.5rem; height:1.5rem; }
+  .app-header nav { display:none; position:absolute; z-index:21; top:calc(100% + .5rem); right:1rem; left:1rem; flex-direction:column; align-items:stretch; gap:.5rem; padding:.75rem; border:1px solid #3c3c45; border-radius:.65rem; background:#18181b; box-shadow:0 .75rem 2rem rgba(0,0,0,.45); }
+  .app-header nav.header-actions--open { display:flex; }
+  .app-header nav > :is(button,a) { box-sizing:border-box; min-height:2.75rem; text-align:left; padding:.7rem; }
+  .app-header nav:has(.preferences-link--active)::before { display:none; }
+  .changes-popover,.debug-menu { top:4.5rem; max-height:calc(100dvh - 5.5rem); }
+}

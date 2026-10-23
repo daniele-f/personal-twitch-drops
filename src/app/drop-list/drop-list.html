@@ -139,7 +139,7 @@
                 (click)="toggleFavoriteDetails(drop)"
               >
                 @if (drop.imageUrl) {
-                  <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" />
+                  <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" loading="lazy" />
                 } @else {
                   <div class="cover-placeholder" aria-hidden="true"></div>
                 }
@@ -235,7 +235,7 @@
               (click)="toggleFavoriteDetails(drop)"
             >
               @if (drop.imageUrl) {
-                <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" />
+                <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" loading="lazy" />
               } @else {
                 <div class="cover-placeholder" aria-hidden="true"></div>
               }
