@@ -8,6 +8,8 @@ import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { RefreshLoaderComponent } from '../ui/refresh-loader';
 import { ButtonDirective } from '../ui/button.directive';
+import { AuthService } from '../account/auth.service';
+import { TrackerSyncService } from '../account/tracker-sync.service';
 
 @Component({ imports: [ButtonDirective, DropListComponent, RefreshLoaderComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
 export class DropsPageComponent {
@@ -16,11 +18,14 @@ export class DropsPageComponent {
   private readonly changesState = inject(ChangesStateService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly celebrations = inject(CampaignCelebrationsService);
+  private readonly auth = inject(AuthService);
+  private readonly trackerSync = inject(TrackerSyncService);
   protected readonly preferences = inject(PreferencesService);
   protected readonly drops = this.changesState.drops;
   protected readonly searchTerm = signal('');
   protected readonly searchActive = computed(() => this.searchTerm().trim().length > 0);
   protected readonly loading = signal(true);
+  protected readonly initialLoading = computed(() => this.loading() || (this.auth.user() !== null && this.trackerSync.status() === 'syncing' && !this.trackerSync.readyForLocalChanges()));
   protected readonly refreshing = signal(true);
   protected readonly favoritePreloadRequestId = signal(0);
   protected readonly updatedAt = signal<Date | null>(null);

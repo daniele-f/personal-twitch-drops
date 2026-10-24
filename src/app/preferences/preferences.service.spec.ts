@@ -141,6 +141,22 @@ describe('PreferencesService', () => {
     expect(dispatcher.mutations()).toEqual([{ type: 'ignore', gameId: '/game/sea-of-thieves', gameName: 'Sea of Thieves' }]);
   });
 
+  it('records removals for every item cleared from tracker lists', () => {
+    const service = configure(createStorage());
+    const dispatcher = TestBed.inject(TrackerMutationDispatcherService);
+    service.addFavorite('/game/sea-of-thieves', 'Sea of Thieves');
+    service.addBlacklist('/game/valorant', 'VALORANT');
+    dispatcher.clearRecorded();
+
+    service.clearFavorites();
+    service.clearBlacklist();
+
+    expect(dispatcher.mutations()).toEqual([
+      { type: 'unfavorite', gameId: '/game/sea-of-thieves' },
+      { type: 'unignore', gameId: '/game/valorant' },
+    ]);
+  });
+
   it('defaults invalid themes to Twitch Purple and persists a chosen theme', () => {
     const storage = createStorage({ [THEME_COLOR_STORAGE_KEY]: 'not-a-theme' });
     const service = configure(storage);

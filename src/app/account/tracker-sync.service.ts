@@ -111,30 +111,40 @@ export class TrackerSyncService {
     this.status.set('syncing');
     this.summary.set(null);
     this.reconciliation.set(null);
-    const local = this.localSnapshot();
+    let local!: LocalTrackerSnapshot;
     try {
-      const remote = await this.readRemote(user.id);
-      if (this.linkedAccountId() === user.id) {
-        this.adoptAccountSnapshot(remote, local);
+      let remote = await this.readRemote(user.id);
+      local = this.localSnapshot();
+      if (this.mutationQueue.loadForAccount(user.id).length) {
         await this.replayQueuedMutations(user.id);
-        return { status: 'synced' };
+        remote = await this.readRemote(user.id);
       }
-
-      const browserPreferenceCount = this.preferenceCount(local);
-      const accountPreferenceCount = this.preferenceCount(remote);
-      if (browserPreferenceCount && accountPreferenceCount) {
-        this.status.set('needs-reconciliation');
-        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount });
-        return { status: 'skipped' };
-      }
-      if (accountPreferenceCount) {
+      const account = this.snapshotFromRemote(remote, local);
+      const browserHasData = !this.isProfileEmpty(local);
+      const accountHasData = !this.isProfileEmpty(account);
+      if (this.profilesEqual(local, account)) {
         this.adoptAccountSnapshot(remote, local);
         this.rememberLinkedAccount(user.id);
         return { status: 'synced' };
       }
-      if (browserPreferenceCount) {
+      if (!accountHasData && browserHasData) {
+        await this.importInitialSnapshot(local, false);
+        this.lastSyncedSnapshot = local;
+        this.rememberLinkedAccount(user.id);
+        this.readyForLocalChanges.set(true);
+        this.status.set('idle');
+        return { status: 'synced' };
+      }
+      if (accountHasData && !browserHasData) {
+        this.adoptAccountSnapshot(remote, local);
+        this.rememberLinkedAccount(user.id);
+        return { status: 'synced' };
+      }
+      if (browserHasData && accountHasData) {
+        const browserPreferenceCount = this.preferenceCount(local);
+        const accountPreferenceCount = this.preferenceCount(remote);
         this.status.set('needs-reconciliation');
-        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount: 0 });
+        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount });
         return { status: 'skipped' };
       }
       this.lastSyncedSnapshot = local;
@@ -159,7 +169,6 @@ export class TrackerSyncService {
       if (source === 'browser') {
         await this.importInitialSnapshot(local, reconciliation.accountPreferenceCount > 0);
         this.lastSyncedSnapshot = local;
-        this.summary.set(`Synced ${this.preferenceCount(local)} preferences.`);
       } else {
         this.mutationDispatcher.clearRecorded();
         this.mutationQueue.clearForAccount(user.id);
@@ -195,26 +204,6 @@ export class TrackerSyncService {
     this.status.set('syncing');
     try { await this.replayQueuedMutations(user.id); }
     catch { this.status.set('pending-retry'); }
-  }
-
-  async restoreAllIgnored(): Promise<SyncResult> {
-    if (!this.auth.user()) return { status: 'skipped' };
-
-    try {
-      await this.applyMutation({ type: 'restore-all-ignored' });
-      this.preferences.replaceLists(
-        [...this.preferences.favoriteIds()].map((id) => ({
-          id,
-          gameName: this.preferences.favoriteNames().get(id),
-        })),
-        [],
-        'recovery',
-      );
-      this.lastSyncedSnapshot = this.localSnapshot();
-      return { status: 'synced' };
-    } catch {
-      return { status: 'error', message: 'Ignored games could not be restored. Please try again.' };
-    }
   }
 
   private localSnapshot(): LocalTrackerSnapshot {
@@ -301,7 +290,6 @@ export class TrackerSyncService {
     this.lastSyncedSnapshot = this.snapshotFromRemote(remote, this.localSnapshot());
     this.readyForLocalChanges.set(true);
     this.status.set('idle');
-    if (entries.length) this.summary.set(`Synced ${entries.length} preference${entries.length === 1 ? '' : 's'}.`);
   }
 
   private adoptAccountSnapshot(remote: RemoteTrackerSnapshot, local: LocalTrackerSnapshot): void {
@@ -310,8 +298,6 @@ export class TrackerSyncService {
     this.lastSyncedSnapshot = snapshot;
     this.readyForLocalChanges.set(true);
     this.status.set('idle');
-    const count = this.preferenceCount(remote);
-    if (count) this.summary.set(`Synced ${count} preference${count === 1 ? '' : 's'}.`);
   }
 
   private snapshotFromRemote(remote: RemoteTrackerSnapshot, fallback: LocalTrackerSnapshot): LocalTrackerSnapshot {
@@ -322,6 +308,23 @@ export class TrackerSyncService {
     return snapshot.favorites.filter((row) => !row.removedAt).length
       + snapshot.ignoredGames.filter((row) => !row.removedAt).length
       + snapshot.collectedRewards.filter((row) => !row.clearedAt).length;
+  }
+
+  private isProfileEmpty(snapshot: LocalTrackerSnapshot): boolean {
+    return snapshot.settings.themeColor === 'twitch-purple' && !snapshot.settings.showSubscriptions && !snapshot.settings.showBadges
+      && snapshot.favorites.every((row) => !!row.removedAt)
+      && snapshot.ignoredGames.every((row) => !!row.removedAt)
+      && snapshot.collectedRewards.every((row) => !!row.clearedAt);
+  }
+
+  private profilesEqual(left: LocalTrackerSnapshot, right: LocalTrackerSnapshot): boolean {
+    const profile = (snapshot: LocalTrackerSnapshot) => JSON.stringify({
+      settings: { themeColor: snapshot.settings.themeColor, showSubscriptions: snapshot.settings.showSubscriptions, showBadges: snapshot.settings.showBadges },
+      favorites: snapshot.favorites.filter((row) => !row.removedAt).map((row) => [row.gameId, row.gameName]).sort(),
+      ignoredGames: snapshot.ignoredGames.filter((row) => !row.removedAt).map((row) => [row.gameId, row.gameName]).sort(),
+      collectedRewards: snapshot.collectedRewards.filter((row) => !row.clearedAt).map((row) => [row.campaignId, row.rewardName]).sort(),
+    });
+    return profile(left) === profile(right);
   }
 
   private linkedAccountId(): string | null {

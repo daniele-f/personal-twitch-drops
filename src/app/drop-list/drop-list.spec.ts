@@ -990,12 +990,12 @@ describe('DropListComponent', () => {
     expect(unfavoriteRequested).toHaveBeenCalledWith(sea);
   });
 
-  it('shows four decorative skeleton rows while Drops are loading', () => {
+  it('shows three decorative skeleton rows while Drops are loading', () => {
     fixture.componentRef.setInput('favoriteDrops', []);
     fixture.componentRef.setInput('activeDrops', []);
     fixture.componentRef.setInput('loading', true);
     fixture.detectChanges();
-    expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(4);
+    expect(fixture.nativeElement.querySelectorAll('.drop-row--skeleton')).toHaveLength(3);
   });
 
   it('keeps campaign cards as semantic articles while applying the shared card behavior', () => {

@@ -118,13 +118,15 @@ export class PreferencesService {
   clearFavorites(): void {
     if (!this.favoriteIds().size && !this.favoriteNames().size) return;
 
-    const removed = [...this.favoriteIds()].map((id) => this.favoriteNames().get(id) ?? this.nameFromId(id));
+    const removedIds = [...this.favoriteIds()];
+    const removed = removedIds.map((id) => this.favoriteNames().get(id) ?? this.nameFromId(id));
     const favoriteIds = new Set<string>();
     const favoriteNames = new Map<string, string>();
     this.favoriteIds.set(favoriteIds);
     this.favoriteNames.set(favoriteNames);
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
+    for (const id of removedIds) this.mutationDispatcher.record({ type: 'unfavorite', gameId: id });
     for (const gameName of removed) this.notify('favorite-removed', gameName);
   }
 
@@ -166,10 +168,12 @@ export class PreferencesService {
   clearBlacklist(): void {
     if (!this.blacklistEntries().length) return;
 
-    const removed = this.blacklistEntries().map((entry) => entry.gameName);
+    const removedEntries = this.blacklistEntries();
+    const removed = removedEntries.map((entry) => entry.gameName);
     const entries: readonly BlacklistEntry[] = [];
     this.blacklistEntries.set(entries);
     this.persistBlacklist(entries);
+    for (const entry of removedEntries) this.mutationDispatcher.record({ type: 'unignore', gameId: entry.id });
     for (const gameName of removed) this.notify('ignored-removed', gameName);
   }
 

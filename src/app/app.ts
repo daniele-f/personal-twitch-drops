@@ -126,6 +126,7 @@ export class App implements AfterViewInit {
   protected async syncAccount(): Promise<void> {
     const result = await this.trackerSync.syncAfterAuthentication();
     this.syncMessage.set(result.status === 'error' ? result.message ?? 'Sync could not be completed.' : null);
+    if (this.trackerSync.reconciliation?.()) this.accountOpen.set(true);
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }

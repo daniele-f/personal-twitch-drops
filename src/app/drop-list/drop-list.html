@@ -82,7 +82,7 @@
 @if (loading()) {
   <p class="loading-message" aria-live="polite">Loading active Drops</p>
   <ul class="drop-list" aria-hidden="true">
-    @for (skeleton of [0, 1, 2, 3]; track skeleton) {
+    @for (skeleton of [0, 1, 2]; track skeleton) {
       <li>
         <article class="drop-row drop-row--skeleton">
           <div class="skeleton-block skeleton-cover"></div>
