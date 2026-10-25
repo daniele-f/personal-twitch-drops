@@ -16,9 +16,9 @@ Each tracker row belongs to `auth.users` through `user_id`. Row Level Security i
 
 ## Mutation operations
 
-Migration `20261020000000_operation_based_tracker_sync.sql` exposes authenticated, `security invoker` RPCs for a single game preference, display settings, one reward, restoring all ignored games, and importing explicitly approved initial browser data. The game-preference RPC atomically tombstones the opposing state so a game cannot remain both active favorite and ignored.
+Migration `20261020000000_operation_based_tracker_sync.sql` exposes authenticated, `security invoker` RPCs for a single game preference, display settings, one reward, and importing explicitly approved initial browser data. Migration `20261025000000_drop_restore_all_ignored_games.sql` retires the former bulk restore RPC. The game-preference RPC atomically tombstones the opposing state so a game cannot remain both active favorite and ignored.
 
-Routine browser synchronization must invoke one of these operations, never upsert a full collection. The initial import RPC accepts `p_replace_existing` only after the user explicitly chooses this browser during first-link reconciliation; it tombstones prior active account rows before applying the approved browser preferences. Recovery restores ignored games by tombstoning their remote rows, so the same bad list cannot reappear on another linked device.
+Routine browser synchronization must invoke one of these operations, never upsert a full collection. The initial import RPC accepts `p_replace_existing` only after the user explicitly chooses this browser during first-link reconciliation; it tombstones prior active account rows before applying the approved browser preferences.
 
 ## Applying and verifying migrations
 

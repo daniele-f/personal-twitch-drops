@@ -271,7 +271,10 @@ export class TrackerSyncService {
     else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
     else if (mutation.type === 'settings') result = await this.client.rpc('set_tracker_settings', { p_theme_color: mutation.themeColor, p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
     else if (mutation.type === 'set-collected') result = await this.client.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
-    else result = await this.client.rpc('restore_all_ignored_games');
+    else {
+      const unsupported: never = mutation;
+      throw new Error(`Unsupported tracker mutation: ${JSON.stringify(unsupported)}`);
+    }
     if (result.error) throw result.error;
   }
 

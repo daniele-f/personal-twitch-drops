@@ -20,7 +20,6 @@ export class PreferencesPageComponent {
   protected readonly armedFavoriteId = signal<string | null>(null);
   protected readonly expanded = signal(false);
   protected readonly armedForId = signal<string | null>(null);
-  protected readonly fileDragActive = signal(false);
   constructor() {
     if (this.preferences.favoriteIds().size || this.preferences.blacklistEntries().length) {
       this.dropsProvider.loadActiveDrops().subscribe({

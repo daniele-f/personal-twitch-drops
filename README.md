@@ -13,21 +13,21 @@ It is an Angular single-page application hosted on Cloudflare at `https://drops.
 - Lets you mark individual rewards—or an entire campaign—as collected. Campaign completion is celebrated in the interface.
 - Remembers favorites, ignored games, filters, collected rewards, and recent change state in browser storage; an optional email-and-password account can sync the tracker preferences across devices.
 - Highlights new and updated campaigns and provides a Changes panel for campaigns that appeared, changed, or ended since the previous day’s snapshot.
-- Lets you export Favorites and the Ignore List as a shareable code, then import that code on another browser. Importing replaces both existing lists.
+- Lets signed-in users sync Favorites, the Ignore List, collected rewards, and display preferences across their devices.
 
 ## How to use it
 
 1. Browse the active campaigns or use the search box to find a game.
 2. Use the star to add a game to Favorites, or the ignore icon to hide it from the ordinary list.
 3. Open a campaign to review rewards and mark ones you have collected.
-4. Open **Preferences** to manage saved games or transfer Favorites and the Ignore List with a share code.
+4. Open **Preferences** to manage saved games and display settings. Sign in from **Account** to sync tracker data across devices.
 5. Check **Changes** after a refresh to see what is new, updated, or no longer active.
 
 ## Data and privacy
 
 Campaign data is fetched directly from `twitchdrops.app`; its availability and accuracy depend on that third-party source. The app includes a link to your Twitch Drops inventory, but it does not sign in to Twitch or claim rewards on your behalf.
 
-Without an account, your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. Signing in syncs favorites, ignored games, collected rewards, and display preferences through Supabase; snapshots and Twitch account data remain local and are never sent there. When a browser and an account both already have saved preferences, the Account dialog asks which source to keep rather than merging them silently. Sync imports are quiet, and **Restore all ignored games** restores the account-wide Ignore List after confirmation.
+Without an account, your Favorites, Ignore List, filters, reward checkmarks, and change snapshots stay in this browser’s local storage. They are not transferable and may be lost if browser storage is cleared. Signing in syncs favorites, ignored games, collected rewards, and display preferences through Supabase; this is the only cross-device tracker-data path. Snapshots and Twitch account data remain local and are never sent there. When a browser and an account both already have saved preferences, the app asks which complete profile to keep rather than merging them silently.
 
 ## Development
 

@@ -1,3 +1,5 @@
+> **Historical design note (2026-10-25):** The former account-wide “Restore all ignored games” action was removed. Current behavior is documented in the root README and `supabase/README.md`.
+
 # Operation-Based Account Sync Design
 
 ## Goal

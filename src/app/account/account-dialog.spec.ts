@@ -23,7 +23,7 @@ describe('AccountDialogComponent', () => {
         },
       }, {
         provide: TrackerSyncService,
-        useValue: { restoreAllIgnored: vi.fn() },
+        useValue: {},
       }],
     });
     const fixture = TestBed.createComponent(AccountDialogComponent);
