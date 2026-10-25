@@ -144,7 +144,7 @@ export class TrackerSyncService {
         const browserPreferenceCount = this.preferenceCount(local);
         const accountPreferenceCount = this.preferenceCount(remote);
         this.status.set('needs-reconciliation');
-        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount });
+        this.reconciliation.set({ accountId: user.id, browserPreferenceCount, accountPreferenceCount, differences: this.profileDifferences(local, account) });
         return { status: 'skipped' };
       }
       this.lastSyncedSnapshot = local;
@@ -325,6 +325,22 @@ export class TrackerSyncService {
       collectedRewards: snapshot.collectedRewards.filter((row) => !row.clearedAt).map((row) => [row.campaignId, row.rewardName]).sort(),
     });
     return profile(left) === profile(right);
+  }
+
+  private profileDifferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): readonly string[] {
+    const active = <T extends { removedAt?: string | null; clearedAt?: string | null }>(rows: readonly T[], key: (row: T) => string) =>
+      new Set(rows.filter((row) => !row.removedAt && !row.clearedAt).map(key));
+    const differences: string[] = [];
+    if (browser.settings.themeColor !== account.settings.themeColor || browser.settings.showSubscriptions !== account.settings.showSubscriptions || browser.settings.showBadges !== account.settings.showBadges) differences.push('Display settings');
+    const append = <T extends { removedAt?: string | null; clearedAt?: string | null }>(label: string, localRows: readonly T[], accountRows: readonly T[], key: (row: T) => string) => {
+      const local = active(localRows, key); const remote = active(accountRows, key);
+      const onlyBrowser = [...local].filter((value) => !remote.has(value)); const onlyAccount = [...remote].filter((value) => !local.has(value));
+      if (onlyBrowser.length || onlyAccount.length) differences.push(`${label}: ${onlyBrowser.length} only in this browser, ${onlyAccount.length} only in your account`);
+    };
+    append('Favorites', browser.favorites, account.favorites, (row) => row.gameId);
+    append('Ignored games', browser.ignoredGames, account.ignoredGames, (row) => row.gameId);
+    append('Collected rewards', browser.collectedRewards, account.collectedRewards, (row) => `${row.campaignId}: ${row.rewardName}`);
+    return differences;
   }
 
   private linkedAccountId(): string | null {

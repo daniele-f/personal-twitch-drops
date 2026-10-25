@@ -53,4 +53,5 @@ export interface TrackerReconciliation {
   accountId: string;
   browserPreferenceCount: number;
   accountPreferenceCount: number;
+  differences: readonly string[];
 }

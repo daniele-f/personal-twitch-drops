@@ -132,6 +132,22 @@ describe('PreferencesService', () => {
     expect(notifications.notifications()).toEqual([]);
   });
 
+  it('restores ignored games synced with an offset timestamp after a refresh', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+
+    service.replaceLists([], [
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-10-20T00:00:00+00:00' },
+    ], 'sync');
+
+    TestBed.resetTestingModule();
+    const restored = configure(storage);
+
+    expect(restored.blacklistEntries()).toEqual([
+      { id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', blacklistedAt: '2026-10-20T00:00:00+00:00' },
+    ]);
+  });
+
   it('records one targeted mutation for a direct ignore action', () => {
     const service = configure(createStorage());
     const dispatcher = TestBed.inject(TrackerMutationDispatcherService);

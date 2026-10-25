@@ -60,10 +60,6 @@ export class AccountDialogComponent {
     this.closed.emit();
   }
 
-  protected async chooseInitialSource(source: 'browser' | 'account'): Promise<void> {
-    await this.trackerSync.chooseInitialSource(source);
-  }
-
   protected async retrySync(): Promise<void> {
     await this.trackerSync.retryPending();
   }

@@ -21,14 +21,7 @@
         <p>Signed in as <strong>{{ user.email }}</strong>.</p>
         <p class="account-dialog__hint">Your favorites, ignored games, collected rewards, and display preferences can sync across your devices.</p>
         @if (trackerSync.summary(); as summary) { <p class="account-dialog__hint" role="status">{{ summary }}</p> }
-        @if (trackerSync.reconciliation(); as reconciliation) {
-          <section class="account-dialog__sync-choice" aria-labelledby="sync-choice-title">
-            <h3 id="sync-choice-title">Your tracker data is different</h3>
-            <p class="account-dialog__hint">This browser and your account have different favorites, ignored games, reward progress, or display settings. Choose one complete tracker profile; the other will be fully replaced.</p>
-            <button type="button" appButton="primary" (click)="chooseInitialSource('browser')">Use this browser’s data</button>
-            <button type="button" appButton="default" (click)="chooseInitialSource('account')">Use my account’s data</button>
-          </section>
-        } @else if (trackerSync.status() === 'pending-retry' || trackerSync.status() === 'error') {
+        @if (trackerSync.status() === 'pending-retry' || trackerSync.status() === 'error') {
           <p class="account-dialog__error" role="status">Changes are waiting to sync.</p>
           <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
         }

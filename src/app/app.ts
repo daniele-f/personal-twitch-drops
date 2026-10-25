@@ -16,12 +16,13 @@ import { AccountDialogComponent } from './account/account-dialog';
 import { AuthService } from './account/auth.service';
 import { TrackerSyncService } from './account/tracker-sync.service';
 import { TrackerMutationDispatcherService } from './account/tracker-mutation-dispatcher.service';
+import { SyncChoiceDialogComponent } from './account/sync-choice-dialog';
 
 export const CHANGES_SHOW_HIDDEN_STORAGE_KEY = 'personal-twitch-drops.changes-show-hidden.v1';
 const SCROLL_TO_TOP_THRESHOLD = 320;
 
 @Component({
-  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent, AccountDialogComponent],
+  imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent, AccountDialogComponent, SyncChoiceDialogComponent],
   selector: 'app-root',
   templateUrl: './app.html',
 })
@@ -67,6 +68,7 @@ export class App implements AfterViewInit {
   }
   protected readonly changesOpen = signal(false);
   protected readonly accountOpen = signal(false);
+  protected readonly syncChoiceOpen = signal(false);
   protected readonly syncMessage = signal<string | null>(null);
   protected readonly showScrollToTop = signal(false);
   protected readonly showHiddenChanges = signal(this.readShowHiddenChanges());
@@ -86,6 +88,7 @@ export class App implements AfterViewInit {
   protected readonly debugTodayError = signal<string | null>(null);
   private temporaryPrevious: readonly ActiveDrop[] | null = null;
   private temporaryToday: readonly ActiveDrop[] | null = null;
+  private accountSyncInProgress = false;
   protected readonly conflicts = computed(() => {
     const favorites = this.preferences.favoriteIds();
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
@@ -124,9 +127,15 @@ export class App implements AfterViewInit {
     this.updateScrollToTopVisibility();
   }
   protected async syncAccount(): Promise<void> {
-    const result = await this.trackerSync.syncAfterAuthentication();
-    this.syncMessage.set(result.status === 'error' ? result.message ?? 'Sync could not be completed.' : null);
-    if (this.trackerSync.reconciliation?.()) this.accountOpen.set(true);
+    if (this.accountSyncInProgress) return;
+    this.accountSyncInProgress = true;
+    try {
+      const result = await this.trackerSync.syncAfterAuthentication();
+      this.syncMessage.set(result.status === 'error' ? result.message ?? 'Sync could not be completed.' : null);
+      if (this.trackerSync.reconciliation?.()) this.syncChoiceOpen.set(true);
+    } finally {
+      this.accountSyncInProgress = false;
+    }
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }

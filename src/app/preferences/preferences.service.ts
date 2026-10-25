@@ -321,7 +321,7 @@ export class PreferencesService {
     if (typeof id !== 'string' || !id || typeof gameName !== 'string' || !gameName || typeof blacklistedAt !== 'string') return false;
 
     const date = new Date(blacklistedAt);
-    return !Number.isNaN(date.valueOf()) && date.toISOString() === blacklistedAt;
+    return !Number.isNaN(date.valueOf());
   }
 
   private notifyListReplacement(previousFavoriteIds: ReadonlySet<string>, previousFavoriteNames: ReadonlyMap<string, string>, previousBlacklist: readonly BlacklistEntry[], favoriteIds: ReadonlySet<string>, favoriteNames: ReadonlyMap<string, string>, blacklistEntries: readonly BlacklistEntry[]): void {
