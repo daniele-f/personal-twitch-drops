@@ -8,7 +8,7 @@ Each tracker row belongs to `auth.users` through `user_id`. Row Level Security i
 
 ## Tracker tables
 
-- `user_settings` stores the theme and display toggles for one user.
+- `user_settings` stores the synced display toggles for one user. Theme color remains browser-local; the legacy `theme_color` column is retained for compatibility but is ignored by current clients.
 - `user_favorite_games` and `user_ignored_games` contain game state. A null `removed_at` means the row is active; a timestamp is a tombstone retained to prevent stale-device restores.
 - `user_collected_rewards` stores campaign reward state. A null `cleared_at` means collected; a timestamp is its tombstone.
 
@@ -16,7 +16,7 @@ Each tracker row belongs to `auth.users` through `user_id`. Row Level Security i
 
 ## Mutation operations
 
-Migration `20261020000000_operation_based_tracker_sync.sql` exposes authenticated, `security invoker` RPCs for a single game preference, display settings, one reward, and importing explicitly approved initial browser data. Migration `20261025000000_drop_restore_all_ignored_games.sql` retires the former bulk restore RPC. The game-preference RPC atomically tombstones the opposing state so a game cannot remain both active favorite and ignored.
+Migration `20261020000000_operation_based_tracker_sync.sql` exposes authenticated, `security invoker` RPCs for a single game preference, display settings, one reward, and importing explicitly approved initial browser data. Migration `20261025000000_drop_restore_all_ignored_games.sql` retires the former bulk restore RPC. Migration `20261025010000_device_local_theme.sql` retains the legacy display-settings RPC while preventing it from synchronizing theme color. The game-preference RPC atomically tombstones the opposing state so a game cannot remain both active favorite and ignored.
 
 Routine browser synchronization must invoke one of these operations, never upsert a full collection. The initial import RPC accepts `p_replace_existing` only after the user explicitly chooses this browser during first-link reconciliation; it tombstones prior active account rows before applying the approved browser preferences.
 

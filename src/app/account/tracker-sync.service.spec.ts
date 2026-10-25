@@ -2,13 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
-import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
 import { mergeTrackerSnapshots, TrackerSyncService } from './tracker-sync.service';
 import { LocalTrackerSnapshot } from './tracker-sync.models';
 
 const local: LocalTrackerSnapshot = {
-  settings: { themeColor: 'electric-blue', showSubscriptions: false, showBadges: false, updatedAt: '2026-10-18T12:00:00.000Z' },
+  settings: { showSubscriptions: false, showBadges: false, updatedAt: '2026-10-18T12:00:00.000Z' },
   favorites: [{ gameId: '/game/local', gameName: 'Local game', updatedAt: '2026-10-18T12:00:00.000Z' }],
   ignoredGames: [{ gameId: '/game/ignored-local', gameName: 'Ignored local game', updatedAt: '2026-10-18T12:00:00.000Z' }],
   collectedRewards: [{ campaignId: '/campaign/local', rewardName: 'Local reward', updatedAt: '2026-10-18T12:00:00.000Z' }],
@@ -17,13 +17,13 @@ const local: LocalTrackerSnapshot = {
 describe('mergeTrackerSnapshots', () => {
   it('unions tracker collections, chooses the newest settings, and excludes snapshots', () => {
     const merged = mergeTrackerSnapshots(local, {
-      settings: { themeColor: 'emerald-glow', showSubscriptions: true, showBadges: true, updatedAt: '2026-10-18T13:00:00.000Z' },
+      settings: { showSubscriptions: true, showBadges: true, updatedAt: '2026-10-18T13:00:00.000Z' },
       favorites: [{ gameId: '/game/remote', gameName: 'Remote game', updatedAt: '2026-10-18T13:00:00.000Z' }],
       ignoredGames: [{ gameId: '/game/ignored-remote', gameName: 'Ignored remote game', updatedAt: '2026-10-18T13:00:00.000Z' }],
       collectedRewards: [{ campaignId: '/campaign/remote', rewardName: 'Remote reward', updatedAt: '2026-10-18T13:00:00.000Z' }],
     });
 
-    expect(merged.settings.themeColor).toBe('emerald-glow');
+    expect(merged.settings.showSubscriptions).toBe(true);
     expect(merged.favorites.map((favorite) => favorite.gameId)).toEqual(['/game/local', '/game/remote']);
     expect(merged.ignoredGames.map((game) => game.gameId)).toEqual(['/game/ignored-local', '/game/ignored-remote']);
     expect(merged.collectedRewards.map((reward) => reward.rewardName)).toEqual(['Local reward', 'Remote reward']);
@@ -102,6 +102,65 @@ describe('TrackerSyncService', () => {
     await syncing;
 
     expect(preferences.themeColor()).toBe('electric-blue');
+  });
+
+  it('keeps the device theme while adopting synced display settings', async () => {
+    localStorage.clear();
+    localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'electric-blue');
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [{ theme_color: 'emerald-glow', show_subscriptions: true, show_badges: false, updated_at: '2026-10-25T12:00:00.000Z' }],
+      user_favorite_games: [],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+
+    const result = await sync.syncAfterAuthentication();
+
+    expect(result.status).toBe('synced');
+    expect(preferences.themeColor()).toBe('electric-blue');
+    expect(preferences.showSubscriptions()).toBe(true);
+  });
+
+  it('reads only synced display fields from account settings', async () => {
+    localStorage.clear();
+    const selectedColumns = new Map<string, string>();
+    const client = {
+      from: (table: string) => ({
+        select: (columns: string) => {
+          selectedColumns.set(table, columns);
+          return { eq: async () => ({ data: [], error: null }) };
+        },
+      }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+
+    await TestBed.inject(TrackerSyncService).syncAfterAuthentication();
+
+    expect(selectedColumns.get('user_settings')).toBe('show_subscriptions,show_badges,updated_at');
   });
 
   it('requires an explicit source choice when an unlinked browser and account both have preferences', async () => {

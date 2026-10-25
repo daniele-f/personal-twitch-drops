@@ -227,7 +227,7 @@ export class TrackerSyncService {
 
   private async readRemote(userId: string): Promise<RemoteTrackerSnapshot> {
     const [settings, favorites, ignoredGames, collectedRewards] = await Promise.all([
-      this.select('user_settings', userId),
+      this.selectSettings(userId),
       this.select('user_favorite_games', userId),
       this.select('user_ignored_games', userId),
       this.select('user_collected_rewards', userId),
@@ -235,7 +235,6 @@ export class TrackerSyncService {
     const setting = settings[0] as Record<string, unknown> | undefined;
     return {
       settings: setting ? {
-        themeColor: setting['theme_color'] as LocalTrackerSnapshot['settings']['themeColor'],
         showSubscriptions: setting['show_subscriptions'] === true,
         showBadges: setting['show_badges'] === true,
         updatedAt: String(setting['updated_at']),
@@ -252,10 +251,15 @@ export class TrackerSyncService {
     return (data ?? []) as Record<string, unknown>[];
   }
 
+  private async selectSettings(userId: string): Promise<Record<string, unknown>[]> {
+    const { data, error } = await this.client.from('user_settings').select('show_subscriptions,show_badges,updated_at').eq('user_id', userId);
+    if (error) throw error;
+    return (data ?? []) as Record<string, unknown>[];
+  }
+
   private async writeRemote(userId: string, snapshot: LocalTrackerSnapshot): Promise<void> {
     await this.upsert('user_settings', {
       user_id: userId,
-      theme_color: snapshot.settings.themeColor,
       show_subscriptions: snapshot.settings.showSubscriptions,
       show_badges: snapshot.settings.showBadges,
       updated_at: snapshot.settings.updatedAt,
@@ -269,7 +273,7 @@ export class TrackerSyncService {
     let result: { error: unknown };
     if (mutation.type === 'favorite' || mutation.type === 'ignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId, p_game_name: mutation.gameName });
     else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
-    else if (mutation.type === 'settings') result = await this.client.rpc('set_tracker_settings', { p_theme_color: mutation.themeColor, p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
+    else if (mutation.type === 'settings') result = await this.client.rpc('set_tracker_settings', { p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
     else if (mutation.type === 'set-collected') result = await this.client.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
     else {
       const unsupported: never = mutation;
@@ -314,7 +318,7 @@ export class TrackerSyncService {
   }
 
   private isProfileEmpty(snapshot: LocalTrackerSnapshot): boolean {
-    return snapshot.settings.themeColor === 'twitch-purple' && !snapshot.settings.showSubscriptions && !snapshot.settings.showBadges
+    return !snapshot.settings.showSubscriptions && !snapshot.settings.showBadges
       && snapshot.favorites.every((row) => !!row.removedAt)
       && snapshot.ignoredGames.every((row) => !!row.removedAt)
       && snapshot.collectedRewards.every((row) => !!row.clearedAt);
@@ -322,7 +326,7 @@ export class TrackerSyncService {
 
   private profilesEqual(left: LocalTrackerSnapshot, right: LocalTrackerSnapshot): boolean {
     const profile = (snapshot: LocalTrackerSnapshot) => JSON.stringify({
-      settings: { themeColor: snapshot.settings.themeColor, showSubscriptions: snapshot.settings.showSubscriptions, showBadges: snapshot.settings.showBadges },
+      settings: { showSubscriptions: snapshot.settings.showSubscriptions, showBadges: snapshot.settings.showBadges },
       favorites: snapshot.favorites.filter((row) => !row.removedAt).map((row) => [row.gameId, row.gameName]).sort(),
       ignoredGames: snapshot.ignoredGames.filter((row) => !row.removedAt).map((row) => [row.gameId, row.gameName]).sort(),
       collectedRewards: snapshot.collectedRewards.filter((row) => !row.clearedAt).map((row) => [row.campaignId, row.rewardName]).sort(),
@@ -334,7 +338,7 @@ export class TrackerSyncService {
     const active = <T extends { removedAt?: string | null; clearedAt?: string | null }>(rows: readonly T[], key: (row: T) => string) =>
       new Set(rows.filter((row) => !row.removedAt && !row.clearedAt).map(key));
     const differences: string[] = [];
-    if (browser.settings.themeColor !== account.settings.themeColor || browser.settings.showSubscriptions !== account.settings.showSubscriptions || browser.settings.showBadges !== account.settings.showBadges) differences.push('Display settings');
+    if (browser.settings.showSubscriptions !== account.settings.showSubscriptions || browser.settings.showBadges !== account.settings.showBadges) differences.push('Display settings');
     const append = <T extends { removedAt?: string | null; clearedAt?: string | null }>(label: string, localRows: readonly T[], accountRows: readonly T[], key: (row: T) => string) => {
       const local = active(localRows, key); const remote = active(accountRows, key);
       const onlyBrowser = [...local].filter((value) => !remote.has(value)); const onlyAccount = [...remote].filter((value) => !local.has(value));

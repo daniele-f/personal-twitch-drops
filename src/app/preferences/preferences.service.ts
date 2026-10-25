@@ -34,8 +34,6 @@ export class PreferencesService {
     if (!this.themeOptions.some((option) => option.id === theme)) return;
     this.themeColor.set(theme);
     try { this.storage?.setItem(THEME_COLOR_STORAGE_KEY, theme); } catch { /* Theme remains available for this browser session. */ }
-    this.touchSettings();
-    this.recordSettings();
   }
 
   setShowSubscriptions(show: boolean): void {
@@ -61,7 +59,7 @@ export class PreferencesService {
   }
 
   trackerSettings(): TrackerSettings {
-    return { themeColor: this.themeColor(), showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), updatedAt: this.settingsUpdatedAt };
+    return { showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), updatedAt: this.settingsUpdatedAt };
   }
 
   trackerFavorites(updatedAt: string): readonly TrackerFavorite[] {
@@ -73,12 +71,10 @@ export class PreferencesService {
   }
 
   applyTrackerSettings(settings: TrackerSettings): void {
-    this.themeColor.set(settings.themeColor);
     this.showSubscriptions.set(settings.showSubscriptions);
     this.showBadges.set(settings.showBadges);
     this.settingsUpdatedAt = settings.updatedAt;
     try {
-      this.storage?.setItem(THEME_COLOR_STORAGE_KEY, settings.themeColor);
       this.persistDisplayPreferences();
       this.storage?.setItem(SETTINGS_UPDATED_AT_STORAGE_KEY, settings.updatedAt);
     } catch { /* Settings remain available for this browser session. */ }
@@ -243,7 +239,7 @@ export class PreferencesService {
   }
 
   private recordSettings(): void {
-    this.mutationDispatcher.record({ type: 'settings', themeColor: this.themeColor(), showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() });
+    this.mutationDispatcher.record({ type: 'settings', showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() });
   }
 
   private readBlacklistEntries(): readonly BlacklistEntry[] {
