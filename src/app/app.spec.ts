@@ -85,12 +85,12 @@ describe('App', () => {
     expect(host.style.getPropertyValue('--color-accent-foreground')).toBe('#172554');
   });
 
-  it('applies a synced theme to the application host', () => {
+  it('keeps the device theme on the application host when synced display settings change', () => {
+    localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'electric-blue');
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     TestBed.inject(PreferencesService).applyTrackerSettings({
-      themeColor: 'electric-blue',
       showSubscriptions: false,
       showBadges: false,
       updatedAt: '2026-10-25T12:00:00.000Z',

@@ -176,6 +176,7 @@ describe('PreferencesService', () => {
   it('defaults invalid themes to Twitch Purple and persists a chosen theme', () => {
     const storage = createStorage({ [THEME_COLOR_STORAGE_KEY]: 'not-a-theme' });
     const service = configure(storage);
+    const dispatcher = TestBed.inject(TrackerMutationDispatcherService);
 
     expect(service.themeColor()).toBe('twitch-purple');
 
@@ -183,5 +184,6 @@ describe('PreferencesService', () => {
 
     expect(service.themeColor()).toBe('electric-blue');
     expect(storage.getItem(THEME_COLOR_STORAGE_KEY)).toBe('electric-blue');
+    expect(dispatcher.mutations()).toEqual([]);
   });
 });

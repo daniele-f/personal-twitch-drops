@@ -1,7 +1,4 @@
-import { ThemeColor } from '../preferences/preferences.service';
-
 export interface TrackerSettings {
-  themeColor: ThemeColor;
   showSubscriptions: boolean;
   showBadges: boolean;
   updatedAt: string;
