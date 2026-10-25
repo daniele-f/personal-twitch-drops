@@ -1,6 +1,5 @@
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, isDevMode, signal, untracked, viewChild } from '@angular/core';
 import { CollectedRewardsService } from './drops/collected-rewards.service';
-import { DOCUMENT } from '@angular/common';
 import { ActiveDrop } from './drops/active-drop';
 import { ChangesStateService, DAILY_SNAPSHOTS_STORAGE_KEY } from './changes/changes-state.service';
 import { DropChange } from './changes/change-detection';
@@ -25,6 +24,15 @@ const SCROLL_TO_TOP_THRESHOLD = 320;
   imports: [ButtonDirective, ConflictResolutionComponent, PreferenceNotificationsComponent, RouterLink, RouterOutlet, ToggleComponent, AccountDialogComponent, SyncChoiceDialogComponent],
   selector: 'app-root',
   templateUrl: './app.html',
+  host: {
+    '[style.--color-accent]': 'preferences.selectedTheme().accent',
+    '[style.--color-accent-hover]': 'preferences.selectedTheme().hover',
+    '[style.--color-accent-text]': 'preferences.selectedTheme().text',
+    '[style.--color-accent-action]': 'preferences.selectedTheme().action',
+    '[style.--color-accent-action-hover]': 'preferences.selectedTheme().actionHover',
+    '[style.--color-accent-foreground]': 'preferences.selectedTheme().foreground',
+    '[style.--color-accent-soft]': 'preferences.selectedTheme().soft',
+  },
 })
 export class App implements AfterViewInit {
   protected readonly router = inject(Router);
@@ -33,7 +41,6 @@ export class App implements AfterViewInit {
   private readonly trackerSync = inject(TrackerSyncService);
   private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   private readonly collectedRewards = inject(CollectedRewardsService);
-  private readonly document = inject(DOCUMENT);
   private readonly storage = inject(PREFERENCES_STORAGE);
   protected readonly changesState = inject(ChangesStateService);
   private readonly celebrations = inject(CampaignCelebrationsService);
@@ -94,17 +101,6 @@ export class App implements AfterViewInit {
     return this.preferences.blacklistEntries().filter((entry) => favorites.has(entry.id));
   });
   constructor() {
-    effect(() => {
-      const theme = this.preferences.selectedTheme();
-      const root = this.document.documentElement.style;
-      root.setProperty('--color-accent', theme.accent);
-      root.setProperty('--color-accent-hover', theme.hover);
-      root.setProperty('--color-accent-text', theme.text);
-      root.setProperty('--color-accent-action', theme.action);
-      root.setProperty('--color-accent-action-hover', theme.actionHover);
-      root.setProperty('--color-accent-foreground', theme.foreground);
-      root.setProperty('--color-accent-soft', theme.soft);
-    });
     effect(() => {
       if (!this.auth.user() || this.auth.status() === 'password-recovery') return;
       untracked(() => void this.syncAccount());
