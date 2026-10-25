@@ -38,6 +38,32 @@ describe('AccountDialogComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('Forgot password?');
   });
 
+  it('opens with sign-in fields that password managers can autofill', () => {
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal(null),
+          status: signal('guest'),
+          error: signal(null),
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: {},
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    const signIn = [...fixture.nativeElement.querySelectorAll('button')]
+      .find((button: HTMLButtonElement) => button.textContent?.trim() === 'Sign in') as HTMLButtonElement;
+    const password = fixture.nativeElement.querySelector('input[name="password"]') as HTMLInputElement;
+
+    expect(signIn.getAttribute('aria-selected')).toBe('true');
+    expect(password.autocomplete).toBe('current-password');
+  });
+
   it('closes after a successful sign-in', async () => {
     const signIn = vi.fn().mockResolvedValue({ outcome: 'signed-in' });
     TestBed.configureTestingModule({

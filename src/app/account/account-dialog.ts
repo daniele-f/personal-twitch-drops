@@ -16,7 +16,7 @@ export class AccountDialogComponent {
   readonly closed = output<void>();
   protected readonly auth = inject(AuthService);
   protected readonly trackerSync = inject(TrackerSyncService);
-  protected readonly mode = signal<'sign-in' | 'sign-up' | 'request-reset'>('sign-up');
+  protected readonly mode = signal<'sign-in' | 'sign-up' | 'request-reset'>('sign-in');
   protected readonly email = signal('');
   protected readonly password = signal('');
   protected readonly confirmPassword = signal('');
