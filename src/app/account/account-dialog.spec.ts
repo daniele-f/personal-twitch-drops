@@ -1,8 +1,15 @@
 import { TestBed } from '@angular/core/testing';
-import { signal } from '@angular/core';
+import { signal, type WritableSignal } from '@angular/core';
 import { AccountDialogComponent } from './account-dialog';
 import { AuthService } from './auth.service';
 import { TrackerSyncService } from './tracker-sync.service';
+
+type AccountDialogTestApi = {
+  mode: WritableSignal<'sign-in' | 'sign-up' | 'request-reset'>;
+  email: WritableSignal<string>;
+  password: WritableSignal<string>;
+  submit(): Promise<void>;
+};
 
 describe('AccountDialogComponent', () => {
   it('offers password recovery from the sign-in form', () => {
@@ -29,6 +36,38 @@ describe('AccountDialogComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).toContain('Forgot password?');
+  });
+
+  it('closes after a successful sign-in', async () => {
+    const signIn = vi.fn().mockResolvedValue({ outcome: 'signed-in' });
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal(null),
+          status: signal('guest'),
+          error: signal(null),
+          signIn,
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: {},
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+    let closed = false;
+    fixture.componentInstance.closed.subscribe(() => { closed = true; });
+    const component = fixture.componentInstance as unknown as AccountDialogTestApi;
+    component.mode.set('sign-in');
+    component.email.set('person@example.com');
+    component.password.set('password123');
+
+    await component.submit();
+
+    expect(signIn).toHaveBeenCalledWith('person@example.com', 'password123');
+    expect(closed).toBe(true);
   });
 
 });

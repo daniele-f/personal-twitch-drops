@@ -28,8 +28,10 @@ export class AccountDialogComponent {
     const email = this.email().trim();
     const password = this.password();
     if (!email || !password) return;
-    if (this.mode() === 'sign-up') await this.auth.signUp(email, password);
-    else await this.auth.signIn(email, password);
+    const result = this.mode() === 'sign-up'
+      ? await this.auth.signUp(email, password)
+      : await this.auth.signIn(email, password);
+    if (result.outcome === 'signed-in') this.closed.emit();
   }
 
   protected async requestPasswordReset(): Promise<void> {
