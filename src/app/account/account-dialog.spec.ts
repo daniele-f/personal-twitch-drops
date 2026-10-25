@@ -60,6 +60,7 @@ describe('AccountDialogComponent', () => {
       .find((button: HTMLButtonElement) => button.textContent?.trim() === 'Sign in') as HTMLButtonElement;
     const password = fixture.nativeElement.querySelector('input[name="password"]') as HTMLInputElement;
 
+    expect([...fixture.nativeElement.querySelectorAll('[role="tab"]')].map((tab: HTMLElement) => tab.textContent?.trim())).toEqual(['Sign in', 'Create account']);
     expect(signIn.getAttribute('aria-selected')).toBe('true');
     expect(password.autocomplete).toBe('current-password');
   });

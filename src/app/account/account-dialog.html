@@ -44,8 +44,8 @@
         }
       } @else {
         <div class="account-dialog__tabs" role="tablist" aria-label="Account action">
-          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="selectMode('sign-up')">Create account</button>
           <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-in'" (click)="selectMode('sign-in')">Sign in</button>
+          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="selectMode('sign-up')">Create account</button>
         </div>
         <p class="account-dialog__hint">You can keep using the tracker without an account. Signing in preserves and syncs this device’s tracker settings.</p>
         <form (ngSubmit)="submit()">
