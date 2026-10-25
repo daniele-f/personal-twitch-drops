@@ -72,16 +72,35 @@ describe('App', () => {
     expect(link?.getAttribute('href')).toBe('/preferences');
   });
 
-  it('applies the saved theme accent to the application root', () => {
+  it('applies the saved theme accent to the application host', () => {
     localStorage.setItem(THEME_COLOR_STORAGE_KEY, 'electric-blue');
 
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    expect(document.documentElement.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
-    expect(document.documentElement.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');
-    expect(document.documentElement.style.getPropertyValue('--color-accent-action')).toBe('#3b82f6');
-    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#172554');
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
+    expect(host.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');
+    expect(host.style.getPropertyValue('--color-accent-action')).toBe('#3b82f6');
+    expect(host.style.getPropertyValue('--color-accent-foreground')).toBe('#172554');
+  });
+
+  it('applies a synced theme to the application host', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    TestBed.inject(PreferencesService).applyTrackerSettings({
+      themeColor: 'electric-blue',
+      showSubscriptions: false,
+      showBadges: false,
+      updatedAt: '2026-10-25T12:00:00.000Z',
+    });
+    fixture.detectChanges();
+
+    const host = fixture.nativeElement as HTMLElement;
+    expect(host.style.getPropertyValue('--color-accent')).toBe('#3b82f6');
+    expect(host.style.getPropertyValue('--color-accent-text')).toBe('#93c5fd');
+    expect(host.style.getPropertyValue('--color-accent-action')).toBe('#3b82f6');
   });
 
   it('uses forest-green foreground text for the Emerald Glow action color', () => {
@@ -90,7 +109,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    expect(document.documentElement.style.getPropertyValue('--color-accent-foreground')).toBe('#123524');
+    expect((fixture.nativeElement as HTMLElement).style.getPropertyValue('--color-accent-foreground')).toBe('#123524');
   });
 
   it('orders header actions with Twitch inventory last', () => {
