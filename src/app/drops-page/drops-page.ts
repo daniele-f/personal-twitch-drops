@@ -4,7 +4,6 @@ import { DropListComponent } from '../drop-list/drop-list';
 import { PreferencesService } from '../preferences/preferences.service';
 import { ChangesStateService } from '../changes/changes-state.service';
 import { ActiveDrop } from '../drops/active-drop';
-import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { RefreshLoaderComponent } from '../ui/refresh-loader';
 import { ButtonDirective } from '../ui/button.directive';
@@ -16,7 +15,6 @@ export class DropsPageComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly destroyRef = inject(DestroyRef);
   private readonly changesState = inject(ChangesStateService);
-  private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly celebrations = inject(CampaignCelebrationsService);
   private readonly auth = inject(AuthService);
   private readonly trackerSync = inject(TrackerSyncService);
@@ -50,7 +48,7 @@ export class DropsPageComponent {
     this.destroyRef.onDestroy(() => window.clearInterval(clockInterval));
     this.loadDrops();
   }
-  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.collectedRewards.retainActiveCampaigns(drops.map((drop) => drop.id)); this.celebrations.reconcileActiveCampaigns(drops); this.changesState.updateDrops(drops); this.favoritePreloadRequestId.set(requestVersion); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
+  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.celebrations.reconcileActiveCampaigns(drops); this.changesState.updateDrops(drops); this.favoritePreloadRequestId.set(requestVersion); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
   protected finishRefreshing(requestId: number): void { if (requestId === this.requestVersion) this.refreshing.set(false); }
   protected updatedLabel(): string {
     const updatedAt = this.updatedAt();

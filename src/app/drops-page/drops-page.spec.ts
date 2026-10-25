@@ -71,7 +71,7 @@ describe('DropsPageComponent', () => {
     expect(refresh.classList).not.toContain('refresh--spinning');
   });
 
-  it('removes collected reward state when a refreshed campaign is no longer active', async () => {
+  it('keeps collected reward state when a refreshed campaign is no longer active', async () => {
     localStorage.clear();
     localStorage.setItem('personal-twitch-drops.collected-rewards.v1', JSON.stringify({ '/game/ended': ['Reward'], '/game/current': ['Reward'] }));
     const provider = new TestDropsProvider();
@@ -81,7 +81,7 @@ describe('DropsPageComponent', () => {
     provider.requests[0].next([{ id: '/game/current', gameName: 'Current', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
     fixture.detectChanges();
 
-    expect(TestBed.inject(CollectedRewardsService).isCollected('/game/ended', 'Reward')).toBe(false);
+    expect(TestBed.inject(CollectedRewardsService).isCollected('/game/ended', 'Reward')).toBe(true);
     expect(TestBed.inject(CollectedRewardsService).isCollected('/game/current', 'Reward')).toBe(true);
   });
 
