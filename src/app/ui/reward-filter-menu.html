@@ -15,7 +15,7 @@
         <span><strong>Badge rewards</strong><small>Hide rewards that grant a Twitch badge</small></span>
         <input type="checkbox" [checked]="showBadges()" aria-label="Hide badge rewards" (change)="setShowBadges(badge.checked)" #badge />
       </label>
-      <p class="reward-filter-summary" aria-live="polite">{{ hiddenGameCount() }} {{ hiddenGameCount() === 1 ? 'game' : 'games' }} hidden · {{ hiddenRewardCount() }} {{ hiddenRewardCount() === 1 ? 'reward' : 'rewards' }} hidden</p>
+      <p class="reward-filter-summary" aria-live="polite"><strong>{{ hiddenGameCount() }} {{ hiddenGameCount() === 1 ? 'game' : 'games' }}</strong> hidden · <strong>{{ hiddenRewardCount() }} {{ hiddenRewardCount() === 1 ? 'reward' : 'rewards' }}</strong> hidden</p>
     </section>
   }
 </div>
