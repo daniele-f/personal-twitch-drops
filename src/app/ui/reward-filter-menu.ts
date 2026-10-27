@@ -9,6 +9,8 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild
 export class RewardFilterMenuComponent {
   readonly showSubscriptions = input.required<boolean>();
   readonly showBadges = input.required<boolean>();
+  readonly hiddenGameCount = input.required<number>();
+  readonly hiddenRewardCount = input.required<number>();
   readonly showSubscriptionsChange = output<boolean>();
   readonly showBadgesChange = output<boolean>();
   protected readonly open = signal(false);

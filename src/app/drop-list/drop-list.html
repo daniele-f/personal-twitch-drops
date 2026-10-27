@@ -103,7 +103,7 @@
           <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
         }
         <div class="section-heading-actions">
-          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       </div>
@@ -201,7 +201,7 @@
           <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
         }
         <div class="section-heading-actions">
-          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       }

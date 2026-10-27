@@ -146,6 +146,11 @@ export class DropListComponent {
     return [...this.favoriteDrops(), ...this.activeDrops()].filter((drop) => !this.isDropVisible(drop)).length;
   }
 
+  protected hiddenRewardTotal(): number {
+    return [...this.favoriteDrops(), ...this.activeDrops()]
+      .reduce((total, drop) => total + this.hiddenRewardCount(drop), 0);
+  }
+
   private ensureDetailsFor(drops: readonly ActiveDrop[], includeGameLinks = false, favoritePreloadRequestId?: number): void {
     const detailsById = this.detailsByDropId();
     const loadingIds = this.loadingDetailIds();

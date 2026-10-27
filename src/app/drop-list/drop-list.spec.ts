@@ -495,6 +495,27 @@ describe('DropListComponent', () => {
     expect(page.querySelector('.hidden-games-count')).toBeNull();
   });
 
+  it('shows hidden game and reward counts in Filters', () => {
+    const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
+    const mixed = { ...sea, id: '/game/mixed', gameName: 'Mixed', rewards: ['Watch Reward', 'Subscription Reward'] } as ActiveDrop;
+    loadDropDetails.mockImplementation((id: string) => of(
+      id === subscriptionOnly.id
+        ? { requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }
+        : { requirementByReward: { 'Watch Reward': '1h watch', 'Subscription Reward': '1 sub' }, badgeRewardNames: [] },
+    ));
+    render([], [subscriptionOnly, mixed]);
+
+    const switches = rewardFilterSwitches();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.reward-filter-summary')?.textContent?.trim()).toBe('0 games hidden · 0 rewards hidden');
+
+    switches[0].click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.reward-filter-summary')?.textContent?.trim()).toBe('1 game hidden · 2 rewards hidden');
+  });
+
   it('reclassifies a game when a refresh changes its reward set', () => {
     const initial = { ...sea, id: '/game/changing-game', gameName: 'Changing Game', rewards: ['Watch Reward'] } as ActiveDrop;
     const changed = { ...initial, rewards: ['Subscription Reward'] } as ActiveDrop;
