@@ -103,10 +103,7 @@
           <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
         }
         <div class="section-heading-actions">
-          <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" icon="eye" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" icon="eye" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
-          </div>
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       </div>
@@ -204,10 +201,7 @@
           <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
         }
         <div class="section-heading-actions">
-          <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" icon="eye" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" icon="eye" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
-          </div>
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       }

@@ -31,6 +31,13 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
   }
 
+  function rewardFilterSwitches(scope: ParentNode = fixture.nativeElement): NodeListOf<HTMLInputElement> {
+    const trigger = scope.querySelector<HTMLButtonElement>('.reward-filter-trigger')!;
+    if (trigger.getAttribute('aria-expanded') === 'false') trigger.click();
+    fixture.detectChanges();
+    return scope.querySelectorAll<HTMLInputElement>('.reward-filter-menu input[type="checkbox"]');
+  }
+
   it('hides Favorites when empty and renders active Drops', () => {
     render();
     expect(fixture.nativeElement.querySelector('.favorites-section')).toBeFalsy();
@@ -258,7 +265,7 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
     expect(launch).toHaveBeenCalledOnce();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     switches[0].click();
     switches[1].click();
     fixture.detectChanges();
@@ -296,19 +303,42 @@ describe('DropListComponent', () => {
     expect(manage?.getAttribute('href')).toBe('/preferences#favorites');
   });
 
-  it('renders default-off Subs and Badges switches alongside the single Manage action', () => {
+  it('opens a Filters menu that explains both default-hidden reward types', () => {
     render();
 
     const heading = (fixture.nativeElement as HTMLElement).querySelector('.active-section .section-heading');
     const controls = heading?.querySelector('.section-heading-actions');
-    const switches = controls?.querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const filters = controls?.querySelector<HTMLButtonElement>('.reward-filter-trigger');
 
     expect(controls?.querySelector('.favorites-manage')?.textContent?.trim()).toBe('Manage');
-    expect(switches).toHaveLength(2);
-    expect(switches?.[0].getAttribute('aria-label')).toBe('Show subscription Drops');
-    expect(switches?.[1].getAttribute('aria-label')).toBe('Show badge Drops');
+    expect(filters?.textContent?.trim()).toContain('Filters');
+    expect(filters?.textContent?.trim()).toContain('0 active');
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+
+    filters?.click();
+    fixture.detectChanges();
+
+    const menu = controls?.querySelector('.reward-filter-menu');
+    const switches = menu?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+    expect(filters?.getAttribute('aria-expanded')).toBe('true');
+    expect(menu?.textContent).toContain('Subscriber rewards');
+    expect(menu?.textContent).toContain('Rewards requiring a channel subscription');
+    expect(menu?.textContent).toContain('Badge rewards');
+    expect(menu?.textContent).toContain('Rewards that grant a Twitch badge');
     expect(switches?.[0].checked).toBe(false);
     expect(switches?.[1].checked).toBe(false);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+    expect(controls?.querySelector('.reward-filter-menu')).toBeNull();
+
+    filters?.click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+    expect(controls?.querySelector('.reward-filter-menu')).toBeNull();
   });
 
   it('restores persisted Subs and Badges switches', () => {
@@ -317,7 +347,7 @@ describe('DropListComponent', () => {
     fixture = TestBed.createComponent(DropListComponent);
     render();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     expect(switches[0].checked).toBe(true);
     expect(switches[1].checked).toBe(true);
   });
@@ -325,7 +355,7 @@ describe('DropListComponent', () => {
   it('persists changed Subs and Badges switches', () => {
     render();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     switches[0].click();
     switches[1].click();
 
@@ -344,7 +374,7 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
     expect([...fixture.nativeElement.querySelectorAll('.reward-name')].map((reward: Element) => reward.textContent?.trim())).toEqual(['Watch Reward']);
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     switches[0].click();
     switches[1].click();
     fixture.detectChanges();
@@ -434,11 +464,7 @@ describe('DropListComponent', () => {
 
     const page = fixture.nativeElement as HTMLElement;
     expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
-    const toggles = page.querySelector('.active-section .display-toggles')!;
-    expect([...toggles.children].map((element) => element.className)).toEqual([
-      'toggle-control', 'toggle-control',
-    ]);
-    const switches = page.querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches(page.querySelector('.active-section')!);
     switches[0].click();
     switches[1].click();
     fixture.detectChanges();
@@ -461,21 +487,21 @@ describe('DropListComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/changing-game"]')).toBeNull();
   });
 
-  it('keeps keyboard focus on the Badge switch when it moves from Favorites to Active Drops', async () => {
+  it('keeps keyboard focus on Filters when it moves from Favorites to Active Drops', async () => {
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
     loadDropDetails.mockReturnValue(of({ requirementByReward: { 'Badge Reward': '1h watch' }, badgeRewardNames: ['Badge Reward'] }));
     render([badgeOnly], []);
 
-    const activeBadgeSwitch = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]')[1];
+    const activeBadgeSwitch = rewardFilterSwitches((fixture.nativeElement as HTMLElement).querySelector('.active-section')!)[1];
     activeBadgeSwitch.click();
     fixture.detectChanges();
 
-    const favoriteBadgeSwitch = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.favorites-section .toggle input[type="checkbox"]')[1];
+    const favoriteBadgeSwitch = rewardFilterSwitches((fixture.nativeElement as HTMLElement).querySelector('.favorites-section')!)[1];
     favoriteBadgeSwitch.focus();
     favoriteBadgeSwitch.click();
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]')[1]);
+    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelector('.active-section #reward-filters'));
   });
 
   it('reclassifies a game when a refresh changes the campaign end time but not its rewards', () => {
@@ -861,7 +887,7 @@ describe('DropListComponent', () => {
     }));
     render([eldenRing], []);
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     switches[0].click();
     switches[1].click();
     fixture.detectChanges();
@@ -889,7 +915,7 @@ describe('DropListComponent', () => {
     }));
     render([favorite], []);
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     switches[0].click();
     switches[1].click();
 
