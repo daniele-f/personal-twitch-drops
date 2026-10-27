@@ -13,7 +13,7 @@
         }
         @if (drop.watchDuration) {
           <span>{{ drop.watchDuration }}</span>
-        } @else if (showSubscriptions() && subscriptionRequirement(drop); as requirement) {
+        } @else if (!showSubscriptions() && subscriptionRequirement(drop); as requirement) {
           <span class="subscription-requirement">{{ requirement }}</span>
         } @else if (isLoadingDetails(drop)) {
           <span>Loading requirement…</span>
@@ -99,14 +99,8 @@
     <section class="favorites-section">
       <div class="section-heading">
         <h2>Favorites ({{ visibleFavoriteDrops().length }})</h2>
-        @if (hiddenGameCount(); as hiddenCount) {
-          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-        }
         <div class="section-heading-actions">
-          <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" icon="eye" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" icon="eye" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
-          </div>
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       </div>
@@ -200,14 +194,8 @@
         <h2>No active Drops</h2>
       }
       @if (!visibleFavoriteDrops().length) {
-        @if (hiddenGameCount(); as hiddenCount) {
-          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-        }
         <div class="section-heading-actions">
-          <div class="display-toggles">
-            <app-toggle controlId="show-subs" label="Subs" icon="eye" ariaLabel="Show subscription Drops" tooltip="Show/hide rewards requiring a subscription" [checked]="showSubscriptions()" (checkedChange)="setShowSubscriptions($event)" />
-            <app-toggle controlId="show-badges" label="Badges" icon="eye" ariaLabel="Show badge Drops" tooltip="Show/hide badge rewards" [checked]="showBadges()" (checkedChange)="setShowBadges($event)" />
-          </div>
+          <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
         </div>
       }

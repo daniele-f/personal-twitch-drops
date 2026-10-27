@@ -31,6 +31,13 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
   }
 
+  function rewardFilterSwitches(scope: ParentNode = fixture.nativeElement): NodeListOf<HTMLInputElement> {
+    const trigger = scope.querySelector<HTMLButtonElement>('.reward-filter-trigger')!;
+    if (trigger.getAttribute('aria-expanded') === 'false') trigger.click();
+    fixture.detectChanges();
+    return scope.querySelectorAll<HTMLInputElement>('.reward-filter-menu input[type="checkbox"]');
+  }
+
   it('hides Favorites when empty and renders active Drops', () => {
     render();
     expect(fixture.nativeElement.querySelector('.favorites-section')).toBeFalsy();
@@ -236,6 +243,10 @@ describe('DropListComponent', () => {
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
     fixture.detectChanges();
 
+    rewardFilterSwitches()[0].click();
+    rewardFilterSwitches()[1].click();
+    fixture.detectChanges();
+
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
     fixture.detectChanges();
 
@@ -254,13 +265,16 @@ describe('DropListComponent', () => {
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[data-drop-id="/game/sea-of-thieves"] .favorite-details-toggle--card')!.click();
     fixture.detectChanges();
 
+    rewardFilterSwitches()[0].click();
+    rewardFilterSwitches()[1].click();
+    fixture.detectChanges();
+
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
     fixture.detectChanges();
     expect(launch).toHaveBeenCalledOnce();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
+    rewardFilterSwitches()[0].click();
+    rewardFilterSwitches()[1].click();
     fixture.detectChanges();
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.mark-all-collected')!.click();
     fixture.detectChanges();
@@ -296,19 +310,42 @@ describe('DropListComponent', () => {
     expect(manage?.getAttribute('href')).toBe('/preferences#favorites');
   });
 
-  it('renders default-off Subs and Badges switches alongside the single Manage action', () => {
+  it('opens a Filters menu that explains the reward types it can hide', () => {
     render();
 
     const heading = (fixture.nativeElement as HTMLElement).querySelector('.active-section .section-heading');
     const controls = heading?.querySelector('.section-heading-actions');
-    const switches = controls?.querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const filters = controls?.querySelector<HTMLButtonElement>('.reward-filter-trigger');
 
     expect(controls?.querySelector('.favorites-manage')?.textContent?.trim()).toBe('Manage');
-    expect(switches).toHaveLength(2);
-    expect(switches?.[0].getAttribute('aria-label')).toBe('Show subscription Drops');
-    expect(switches?.[1].getAttribute('aria-label')).toBe('Show badge Drops');
+    expect(filters?.textContent?.trim()).toContain('Filters');
+    expect(filters?.textContent?.trim()).toContain('0 active');
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+
+    filters?.click();
+    fixture.detectChanges();
+
+    const menu = controls?.querySelector('.reward-filter-menu');
+    const switches = menu?.querySelectorAll<HTMLInputElement>('input[type="checkbox"]');
+    expect(filters?.getAttribute('aria-expanded')).toBe('true');
+    expect(menu?.textContent).toContain('Subscriber rewards');
+    expect(menu?.textContent).toContain('Hide rewards requiring a channel subscription');
+    expect(menu?.textContent).toContain('Badge rewards');
+    expect(menu?.textContent).toContain('Hide rewards that grant a Twitch badge');
     expect(switches?.[0].checked).toBe(false);
     expect(switches?.[1].checked).toBe(false);
+
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+    fixture.detectChanges();
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+    expect(controls?.querySelector('.reward-filter-menu')).toBeNull();
+
+    filters?.click();
+    fixture.detectChanges();
+    document.body.click();
+    fixture.detectChanges();
+    expect(filters?.getAttribute('aria-expanded')).toBe('false');
+    expect(controls?.querySelector('.reward-filter-menu')).toBeNull();
   });
 
   it('restores persisted Subs and Badges switches', () => {
@@ -317,7 +354,7 @@ describe('DropListComponent', () => {
     fixture = TestBed.createComponent(DropListComponent);
     render();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
+    const switches = rewardFilterSwitches();
     expect(switches[0].checked).toBe(true);
     expect(switches[1].checked).toBe(true);
   });
@@ -325,14 +362,13 @@ describe('DropListComponent', () => {
   it('persists changed Subs and Badges switches', () => {
     render();
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
+    rewardFilterSwitches()[0].click();
+    rewardFilterSwitches()[1].click();
 
     expect(localStorage.getItem('personal-twitch-drops.display-preferences.v1')).toBe(JSON.stringify({ showSubscriptions: true, showBadges: true }));
   });
 
-  it('reveals subscription and badge rewards only when their switches are enabled', () => {
+  it('hides subscription and badge rewards only when their switches are checked', () => {
     const favorite = { ...sea, rewards: ['Watch Reward', 'Subscription Reward', 'Badge Reward'] } as ActiveDrop;
     loadDropDetails.mockReturnValue(of({
       requirementByReward: { 'Watch Reward': '1h watch', 'Subscription Reward': '1 sub', 'Badge Reward': '2h watch' },
@@ -342,16 +378,15 @@ describe('DropListComponent', () => {
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
     fixture.detectChanges();
-    expect([...fixture.nativeElement.querySelectorAll('.reward-name')].map((reward: Element) => reward.textContent?.trim())).toEqual(['Watch Reward']);
-
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
-    fixture.detectChanges();
-
     expect([...fixture.nativeElement.querySelectorAll('.reward-name')].map((reward: Element) => reward.textContent?.trim())).toEqual([
       'Watch Reward', 'Badge Reward', 'Subscription Reward',
     ]);
+
+    rewardFilterSwitches()[0].click();
+    rewardFilterSwitches()[1].click();
+    fixture.detectChanges();
+
+    expect([...fixture.nativeElement.querySelectorAll('.reward-name')].map((reward: Element) => reward.textContent?.trim())).toEqual(['Watch Reward']);
   });
 
   it('explains when a visible campaign has rewards hidden by the active filters', () => {
@@ -367,6 +402,10 @@ describe('DropListComponent', () => {
       badgeRewardNames: [],
     }));
     render([], [mixedCampaign]);
+
+    const switches = rewardFilterSwitches();
+    switches[0].click();
+    fixture.detectChanges();
 
     const hiddenCount = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/control-resonant"] .hidden-reward-count');
     expect(hiddenCount?.textContent?.trim()).toBe('1 hidden');
@@ -387,7 +426,7 @@ describe('DropListComponent', () => {
     expect(fixture.nativeElement.querySelector('.reward-details')?.textContent).not.toContain('Current reward details are unavailable.');
   });
 
-  it('removes favorite and active games when every reward is hidden by the default filters', () => {
+  it('removes favorite and active games when every reward is hidden by checked filters', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
     const watchOnly = { ...sea, id: '/game/watch-only', gameName: 'Watch Only', rewards: ['Watch Reward'] } as ActiveDrop;
@@ -399,6 +438,11 @@ describe('DropListComponent', () => {
           : { requirementByReward: { 'Watch Reward': '1h watch' }, badgeRewardNames: [] },
     ));
     render([subscriptionOnly], [badgeOnly, watchOnly]);
+    fixture.detectChanges();
+
+    const switches = rewardFilterSwitches();
+    switches[0].click();
+    switches[1].click();
     fixture.detectChanges();
 
     const page = fixture.nativeElement as HTMLElement;
@@ -416,34 +460,35 @@ describe('DropListComponent', () => {
     fixture.componentRef.setInput('ignoredDropIds', new Set([subscriptionOnly.id]));
     render([], [subscriptionOnly]);
 
+    const switches = rewardFilterSwitches();
+    switches[0].click();
+    fixture.detectChanges();
+
     const row = (fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/subscription-only"]');
     expect(row?.textContent).toContain('Subscription Only');
     expect(row?.textContent).toContain('Ignored');
     expect(row?.textContent).toContain('Hidden by reward filter');
   });
 
-  it('reports how many games are hidden by the reward filters', () => {
+  it('shows hidden game and reward counts in Filters', () => {
     const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
-    const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
+    const mixed = { ...sea, id: '/game/mixed', gameName: 'Mixed', rewards: ['Watch Reward', 'Subscription Reward'] } as ActiveDrop;
     loadDropDetails.mockImplementation((id: string) => of(
       id === subscriptionOnly.id
         ? { requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }
-        : { requirementByReward: { 'Badge Reward': '1h watch' }, badgeRewardNames: ['Badge Reward'] },
+        : { requirementByReward: { 'Watch Reward': '1h watch', 'Subscription Reward': '1 sub' }, badgeRewardNames: [] },
     ));
-    render([subscriptionOnly], [badgeOnly]);
+    render([], [subscriptionOnly, mixed]);
 
-    const page = fixture.nativeElement as HTMLElement;
-    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
-    const toggles = page.querySelector('.active-section .display-toggles')!;
-    expect([...toggles.children].map((element) => element.className)).toEqual([
-      'toggle-control', 'toggle-control',
-    ]);
-    const switches = page.querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
+    const switches = rewardFilterSwitches();
     fixture.detectChanges();
 
-    expect(page.querySelector('.hidden-games-count')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelector('.reward-filter-summary')?.textContent?.trim()).toBe('0 games hidden · 0 rewards hidden');
+
+    switches[0].click();
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelector('.reward-filter-summary')?.textContent?.trim()).toBe('1 game hidden · 2 rewards hidden');
   });
 
   it('reclassifies a game when a refresh changes its reward set', () => {
@@ -455,27 +500,25 @@ describe('DropListComponent', () => {
         : { requirementByReward: { 'Watch Reward': '1h watch' }, badgeRewardNames: [] },
     ));
     render([initial], []);
+    rewardFilterSwitches()[0].click();
+    fixture.detectChanges();
     fixture.componentRef.setInput('favoriteDrops', [changed]);
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('[data-drop-id="/game/changing-game"]')).toBeNull();
   });
 
-  it('keeps keyboard focus on the Badge switch when it moves from Favorites to Active Drops', async () => {
+  it('keeps keyboard focus on Filters when it moves from Favorites to Active Drops', async () => {
     const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
     loadDropDetails.mockReturnValue(of({ requirementByReward: { 'Badge Reward': '1h watch' }, badgeRewardNames: ['Badge Reward'] }));
     render([badgeOnly], []);
 
-    const activeBadgeSwitch = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]')[1];
-    activeBadgeSwitch.click();
-    fixture.detectChanges();
-
-    const favoriteBadgeSwitch = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.favorites-section .toggle input[type="checkbox"]')[1];
+    const favoriteBadgeSwitch = rewardFilterSwitches((fixture.nativeElement as HTMLElement).querySelector('.favorites-section')!)[1];
     favoriteBadgeSwitch.focus();
     favoriteBadgeSwitch.click();
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.active-section .toggle input[type="checkbox"]')[1]);
+    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelector('.active-section #reward-filters'));
   });
 
   it('reclassifies a game when a refresh changes the campaign end time but not its rewards', () => {
@@ -487,6 +530,8 @@ describe('DropListComponent', () => {
         : { requirementByReward: { Reward: '1h watch' }, badgeRewardNames: [] },
     ));
     render([initial], []);
+    rewardFilterSwitches()[0].click();
+    fixture.detectChanges();
     fixture.componentRef.setInput('favoriteDrops', [changed]);
     fixture.detectChanges();
 
@@ -499,6 +544,8 @@ describe('DropListComponent', () => {
       requirementByReward: { Reward: '1 sub' }, badgeRewardNames: [],
     }));
     render([drop], []);
+    rewardFilterSwitches()[0].click();
+    fixture.detectChanges();
     fixture.componentRef.setInput('favoriteDrops', [{ ...drop }]);
     fixture.detectChanges();
 
@@ -861,11 +908,6 @@ describe('DropListComponent', () => {
     }));
     render([eldenRing], []);
 
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
-    fixture.detectChanges();
-
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
     fixture.detectChanges();
 
@@ -888,10 +930,6 @@ describe('DropListComponent', () => {
       badgeRewardNames: ['Subscription Reward'],
     }));
     render([favorite], []);
-
-    const switches = (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLInputElement>('.toggle input[type="checkbox"]');
-    switches[0].click();
-    switches[1].click();
 
     (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.favorite-details-toggle')!.click();
     fixture.detectChanges();

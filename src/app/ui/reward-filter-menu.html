@@ -1,0 +1,21 @@
+<div class="reward-filter-menu-control">
+  <button #trigger id="reward-filters" class="reward-filter-trigger" type="button" [attr.aria-expanded]="open()" aria-haspopup="true" (click)="toggle()">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
+    <span>Filters</span>
+    <span class="reward-filter-count">{{ activeFilterCount() }} active</span>
+  </button>
+  @if (open()) {
+    <section class="reward-filter-menu" aria-label="Reward filters">
+      <p class="reward-filter-menu__title">Hide rewards</p>
+      <label class="reward-filter-option">
+        <span><strong>Subscriber rewards</strong><small>Hide rewards requiring a channel subscription</small></span>
+        <input type="checkbox" [checked]="showSubscriptions()" aria-label="Hide subscriber rewards" (change)="setShowSubscriptions(subscription.checked)" #subscription />
+      </label>
+      <label class="reward-filter-option">
+        <span><strong>Badge rewards</strong><small>Hide rewards that grant a Twitch badge</small></span>
+        <input type="checkbox" [checked]="showBadges()" aria-label="Hide badge rewards" (change)="setShowBadges(badge.checked)" #badge />
+      </label>
+      <p class="reward-filter-summary" aria-live="polite">{{ hiddenGameCount() }} {{ hiddenGameCount() === 1 ? 'game' : 'games' }} hidden · {{ hiddenRewardCount() }} {{ hiddenRewardCount() === 1 ? 'reward' : 'rewards' }} hidden</p>
+    </section>
+  }
+</div>

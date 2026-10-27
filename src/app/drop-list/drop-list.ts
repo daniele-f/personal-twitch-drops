@@ -8,7 +8,7 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
-import { ToggleComponent } from '../ui/toggle';
+import { RewardFilterMenuComponent } from '../ui/reward-filter-menu';
 import { CollapseChevronComponent } from '../ui/collapse-chevron';
 import { GameCardComponent } from '../ui/game-card';
 import { DropCardComponent } from '../ui/drop-card';
@@ -17,7 +17,7 @@ import { DropCardComponent } from '../ui/drop-card';
   selector: 'app-drop-list',
   templateUrl: './drop-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, ToggleComponent, CollapseChevronComponent, GameCardComponent, DropCardComponent],
+  imports: [RouterLink, NgTemplateOutlet, RewardFilterMenuComponent, CollapseChevronComponent, GameCardComponent, DropCardComponent],
 })
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
@@ -92,12 +92,12 @@ export class DropListComponent {
 
   protected setShowSubscriptions(checked: boolean): void {
     this.preferences.setShowSubscriptions(checked);
-    this.restoreToggleFocus('show-subs');
+    this.restoreToggleFocus('reward-filters');
   }
 
   protected setShowBadges(checked: boolean): void {
     this.preferences.setShowBadges(checked);
-    this.restoreToggleFocus('show-badges');
+    this.restoreToggleFocus('reward-filters');
   }
 
   protected toggleFavoriteDetails(drop: ActiveDrop): void {
@@ -144,6 +144,11 @@ export class DropListComponent {
 
   protected hiddenGameCount(): number {
     return [...this.favoriteDrops(), ...this.activeDrops()].filter((drop) => !this.isDropVisible(drop)).length;
+  }
+
+  protected hiddenRewardTotal(): number {
+    return [...this.favoriteDrops(), ...this.activeDrops()]
+      .reduce((total, drop) => total + this.hiddenRewardCount(drop), 0);
   }
 
   private ensureDetailsFor(drops: readonly ActiveDrop[], includeGameLinks = false, favoritePreloadRequestId?: number): void {
@@ -267,8 +272,8 @@ export class DropListComponent {
 
   protected visibleRewards(drop: ActiveDrop): readonly { readonly name: string; readonly imageUrl?: string }[] {
     return this.sortedRewards(drop).filter((reward) =>
-      (this.showSubscriptions() || !this.isSubscriptionReward(drop, reward.name)) &&
-      (this.showBadges() || !this.isBadgeReward(drop, reward.name)),
+      (!this.showSubscriptions() || !this.isSubscriptionReward(drop, reward.name)) &&
+      (!this.showBadges() || !this.isBadgeReward(drop, reward.name)),
     );
   }
 
