@@ -13,7 +13,7 @@
         }
         @if (drop.watchDuration) {
           <span>{{ drop.watchDuration }}</span>
-        } @else if (showSubscriptions() && subscriptionRequirement(drop); as requirement) {
+        } @else if (!showSubscriptions() && subscriptionRequirement(drop); as requirement) {
           <span class="subscription-requirement">{{ requirement }}</span>
         } @else if (isLoadingDetails(drop)) {
           <span>Loading requirement…</span>

@@ -267,8 +267,8 @@ export class DropListComponent {
 
   protected visibleRewards(drop: ActiveDrop): readonly { readonly name: string; readonly imageUrl?: string }[] {
     return this.sortedRewards(drop).filter((reward) =>
-      (this.showSubscriptions() || !this.isSubscriptionReward(drop, reward.name)) &&
-      (this.showBadges() || !this.isBadgeReward(drop, reward.name)),
+      (!this.showSubscriptions() || !this.isSubscriptionReward(drop, reward.name)) &&
+      (!this.showBadges() || !this.isBadgeReward(drop, reward.name)),
     );
   }
 

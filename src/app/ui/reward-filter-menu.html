@@ -6,14 +6,14 @@
   </button>
   @if (open()) {
     <section class="reward-filter-menu" aria-label="Reward filters">
-      <p class="reward-filter-menu__title">Show rewards</p>
+      <p class="reward-filter-menu__title">Hide rewards</p>
       <label class="reward-filter-option">
-        <span><strong>Subscriber rewards</strong><small>Rewards requiring a channel subscription</small></span>
-        <input type="checkbox" [checked]="showSubscriptions()" aria-label="Show subscriber rewards" (change)="setShowSubscriptions(subscription.checked)" #subscription />
+        <span><strong>Subscriber rewards</strong><small>Hide rewards requiring a channel subscription</small></span>
+        <input type="checkbox" [checked]="showSubscriptions()" aria-label="Hide subscriber rewards" (change)="setShowSubscriptions(subscription.checked)" #subscription />
       </label>
       <label class="reward-filter-option">
-        <span><strong>Badge rewards</strong><small>Rewards that grant a Twitch badge</small></span>
-        <input type="checkbox" [checked]="showBadges()" aria-label="Show badge rewards" (change)="setShowBadges(badge.checked)" #badge />
+        <span><strong>Badge rewards</strong><small>Hide rewards that grant a Twitch badge</small></span>
+        <input type="checkbox" [checked]="showBadges()" aria-label="Hide badge rewards" (change)="setShowBadges(badge.checked)" #badge />
       </label>
     </section>
   }
