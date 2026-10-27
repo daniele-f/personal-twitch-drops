@@ -4,7 +4,6 @@ import { of, Subject, throwError } from 'rxjs';
 import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
 import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
-import { PreferencesService } from '../preferences/preferences.service';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { DropListComponent } from './drop-list';
 
@@ -469,30 +468,6 @@ describe('DropListComponent', () => {
     expect(row?.textContent).toContain('Subscription Only');
     expect(row?.textContent).toContain('Ignored');
     expect(row?.textContent).toContain('Hidden by reward filter');
-  });
-
-  it('reports how many games are hidden by the reward filters', () => {
-    const subscriptionOnly = { ...sea, id: '/game/subscription-only', gameName: 'Subscription Only', rewards: ['Subscription Reward'] } as ActiveDrop;
-    const badgeOnly = { ...sea, id: '/game/badge-only', gameName: 'Badge Only', rewards: ['Badge Reward'] } as ActiveDrop;
-    loadDropDetails.mockImplementation((id: string) => of(
-      id === subscriptionOnly.id
-        ? { requirementByReward: { 'Subscription Reward': '1 sub' }, badgeRewardNames: [] }
-        : { requirementByReward: { 'Badge Reward': '1h watch' }, badgeRewardNames: ['Badge Reward'] },
-    ));
-    render([subscriptionOnly], [badgeOnly]);
-
-    const switches = rewardFilterSwitches();
-    switches[0].click();
-    switches[1].click();
-    fixture.detectChanges();
-
-    const page = fixture.nativeElement as HTMLElement;
-    expect(page.querySelector('.hidden-games-count')?.textContent?.trim()).toBe('2 games hidden');
-    TestBed.inject(PreferencesService).setShowSubscriptions(false);
-    TestBed.inject(PreferencesService).setShowBadges(false);
-    fixture.detectChanges();
-
-    expect(page.querySelector('.hidden-games-count')).toBeNull();
   });
 
   it('shows hidden game and reward counts in Filters', () => {

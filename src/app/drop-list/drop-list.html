@@ -99,9 +99,6 @@
     <section class="favorites-section">
       <div class="section-heading">
         <h2>Favorites ({{ visibleFavoriteDrops().length }})</h2>
-        @if (hiddenGameCount(); as hiddenCount) {
-          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-        }
         <div class="section-heading-actions">
           <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
@@ -197,9 +194,6 @@
         <h2>No active Drops</h2>
       }
       @if (!visibleFavoriteDrops().length) {
-        @if (hiddenGameCount(); as hiddenCount) {
-          <span class="hidden-games-count" aria-live="polite">{{ hiddenCount }} {{ hiddenCount === 1 ? 'game' : 'games' }} hidden</span>
-        }
         <div class="section-heading-actions">
           <app-reward-filter-menu [showSubscriptions]="showSubscriptions()" [showBadges]="showBadges()" [hiddenGameCount]="hiddenGameCount()" [hiddenRewardCount]="hiddenRewardTotal()" (showSubscriptionsChange)="setShowSubscriptions($event)" (showBadgesChange)="setShowBadges($event)" />
           <a class="favorites-manage" routerLink="/preferences" fragment="favorites">Manage</a>
