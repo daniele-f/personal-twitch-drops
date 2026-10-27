@@ -163,6 +163,38 @@ describe('TrackerSyncService', () => {
     expect(selectedColumns.get('user_settings')).toBe('show_subscriptions,show_badges,updated_at');
   });
 
+  it('sends the theme argument required by the settings RPC', async () => {
+    localStorage.clear();
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const client = {
+      from: () => ({ select: () => ({ eq: async () => ({ data: [], error: null }) }) }),
+      rpc,
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.setThemeColor('electric-blue');
+    await sync.syncAfterAuthentication();
+
+    preferences.setShowSubscriptions(true);
+    await sync.syncLocalChange();
+
+    expect(rpc).toHaveBeenCalledWith('set_tracker_settings', {
+      p_theme_color: 'electric-blue',
+      p_show_subscriptions: true,
+      p_show_badges: false,
+    });
+  });
+
   it('requires an explicit source choice when an unlinked browser and account both have preferences', async () => {
     localStorage.clear();
     const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
