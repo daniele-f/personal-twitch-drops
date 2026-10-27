@@ -15,6 +15,7 @@ describe('DropListComponent', () => {
 
   beforeEach(async () => {
     localStorage.clear();
+    sessionStorage.clear();
     loadDropDetails.mockReset();
     loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: [] }));
     await TestBed.configureTestingModule({
@@ -37,6 +38,17 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
     return scope.querySelectorAll<HTMLInputElement>('.reward-filter-menu input[type="checkbox"]');
   }
+
+  it('reuses active campaign details when the list is recreated within five minutes', () => {
+    render();
+    expect(loadDropDetails).toHaveBeenCalledTimes(1);
+    fixture.destroy();
+
+    fixture = TestBed.createComponent(DropListComponent);
+    render();
+
+    expect(loadDropDetails).toHaveBeenCalledTimes(1);
+  });
 
   it('hides Favorites when empty and renders active Drops', () => {
     render();

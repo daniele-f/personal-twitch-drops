@@ -7,8 +7,14 @@ import { ActiveDrop } from '../drops/active-drop';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
 import { RefreshLoaderComponent } from '../ui/refresh-loader';
 import { ButtonDirective } from '../ui/button.directive';
-import { AuthService } from '../account/auth.service';
-import { TrackerSyncService } from '../account/tracker-sync.service';
+
+const DROPS_CACHE_KEY = 'personal-twitch-drops.active-drops.v1';
+const DROPS_CACHE_MAX_AGE_MS = 5 * 60_000;
+
+interface CachedDrops {
+  readonly drops: readonly ActiveDrop[];
+  readonly updatedAt: number;
+}
 
 @Component({ imports: [ButtonDirective, DropListComponent, RefreshLoaderComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
 export class DropsPageComponent {
@@ -16,14 +22,12 @@ export class DropsPageComponent {
   private readonly destroyRef = inject(DestroyRef);
   private readonly changesState = inject(ChangesStateService);
   private readonly celebrations = inject(CampaignCelebrationsService);
-  private readonly auth = inject(AuthService);
-  private readonly trackerSync = inject(TrackerSyncService);
   protected readonly preferences = inject(PreferencesService);
   protected readonly drops = this.changesState.drops;
   protected readonly searchTerm = signal('');
   protected readonly searchActive = computed(() => this.searchTerm().trim().length > 0);
   protected readonly loading = signal(true);
-  protected readonly initialLoading = computed(() => this.loading() || (this.auth.user() !== null && this.trackerSync.status() === 'syncing' && !this.trackerSync.readyForLocalChanges()));
+  protected readonly initialLoading = computed(() => this.loading() && !this.drops().length);
   protected readonly refreshing = signal(true);
   protected readonly favoritePreloadRequestId = signal(0);
   protected readonly updatedAt = signal<Date | null>(null);
@@ -46,9 +50,9 @@ export class DropsPageComponent {
   constructor() {
     const clockInterval = window.setInterval(() => this.currentTime.set(new Date()), 60_000);
     this.destroyRef.onDestroy(() => window.clearInterval(clockInterval));
-    this.loadDrops();
+    if (!this.restoreFreshDrops()) this.loadDrops();
   }
-  protected loadDrops(): void { const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.celebrations.reconcileActiveCampaigns(drops); this.changesState.updateDrops(drops); this.favoritePreloadRequestId.set(requestVersion); this.updatedAt.set(new Date()); this.loading.set(false); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
+  protected loadDrops(force = false): void { if (!force && this.hasFreshDrops()) return; const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.applyDrops(drops, new Date()); this.saveDrops(drops); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
   protected finishRefreshing(requestId: number): void { if (requestId === this.requestVersion) this.refreshing.set(false); }
   protected updatedLabel(): string {
     const updatedAt = this.updatedAt();
@@ -63,5 +67,30 @@ export class DropsPageComponent {
   private filterBySearchTerm(drops: readonly ActiveDrop[]): readonly ActiveDrop[] {
     const searchTerm = this.searchTerm().trim().toLocaleLowerCase();
     return searchTerm ? drops.filter((drop) => drop.gameName.toLocaleLowerCase().includes(searchTerm)) : drops;
+  }
+  private restoreFreshDrops(): boolean {
+    try {
+      const cachedDrops = JSON.parse(sessionStorage.getItem(DROPS_CACHE_KEY) ?? 'null') as CachedDrops | null;
+      if (!cachedDrops || !Array.isArray(cachedDrops.drops) || !Number.isFinite(cachedDrops.updatedAt) || Date.now() - cachedDrops.updatedAt >= DROPS_CACHE_MAX_AGE_MS) return false;
+      this.applyDrops(cachedDrops.drops, new Date(cachedDrops.updatedAt));
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  private hasFreshDrops(): boolean {
+    const updatedAt = this.updatedAt();
+    return updatedAt !== null && Date.now() - updatedAt.getTime() < DROPS_CACHE_MAX_AGE_MS;
+  }
+  private applyDrops(drops: readonly ActiveDrop[], updatedAt: Date): void {
+    const requestVersion = ++this.requestVersion;
+    this.celebrations.reconcileActiveCampaigns(drops);
+    this.changesState.updateDrops(drops);
+    this.favoritePreloadRequestId.set(requestVersion);
+    this.updatedAt.set(updatedAt);
+    this.loading.set(false);
+  }
+  private saveDrops(drops: readonly ActiveDrop[]): void {
+    try { sessionStorage.setItem(DROPS_CACHE_KEY, JSON.stringify({ drops, updatedAt: this.updatedAt()!.getTime() } satisfies CachedDrops)); } catch { /* Browser storage can be unavailable. */ }
   }
 }

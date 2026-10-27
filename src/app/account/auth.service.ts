@@ -133,7 +133,8 @@ export class AuthService {
   }
 
   private applySession(session: Session | null): void {
-    this.user.set(session ? { id: session.user.id, email: session.user.email ?? null } : null);
+    const user = session ? { id: session.user.id, email: session.user.email ?? null } : null;
+    if (this.user()?.id !== user?.id || this.user()?.email !== user?.email) this.user.set(user);
     this.status.set(session ? 'authenticated' : 'guest');
     this.error.set(null);
   }

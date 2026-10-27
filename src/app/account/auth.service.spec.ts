@@ -28,6 +28,27 @@ describe('AuthService', () => {
     expect(service.user()).toEqual({ id: 'user-123', email: 'viewer@example.test' });
   });
 
+  it('preserves the signed-in user when a token refresh reports the same account', () => {
+    let listener: ((event: string, session: { user: { id: string; email: string } } | null) => void) | undefined;
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: (callback: typeof listener) => {
+          listener = callback;
+          return { data: { subscription: { unsubscribe: () => undefined } } };
+        },
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+    listener?.('SIGNED_IN', { user: { id: 'user-123', email: 'viewer@example.test' } });
+    const signedInUser = service.user();
+
+    listener?.('TOKEN_REFRESHED', { user: { id: 'user-123', email: 'viewer@example.test' } });
+
+    expect(service.user()).toBe(signedInUser);
+  });
+
   it('sends a password-reset email back to the current app origin', async () => {
     const resetPasswordForEmail = vi.fn().mockResolvedValue({ data: {}, error: null });
     const client = {

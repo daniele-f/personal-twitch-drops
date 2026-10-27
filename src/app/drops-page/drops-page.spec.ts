@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Subject } from 'rxjs';
@@ -8,6 +9,8 @@ import { DropsProvider } from '../drops/drops-provider';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
 import { DropDetails } from '../drops/drop-details';
+import { AuthService } from '../account/auth.service';
+import { TrackerSyncService } from '../account/tracker-sync.service';
 import { DropsPageComponent } from './drops-page';
 
 class TestDropsProvider extends DropsProvider {
@@ -18,6 +21,72 @@ class TestDropsProvider extends DropsProvider {
 }
 
 describe('DropsPageComponent', () => {
+  beforeEach(() => sessionStorage.clear());
+
+  it('reuses the current drops when the page is recreated within five minutes', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 3, 20));
+    sessionStorage.clear();
+    try {
+      const provider = new TestDropsProvider();
+      await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+      const fixture = TestBed.createComponent(DropsPageComponent);
+      fixture.detectChanges();
+      provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+      fixture.detectChanges();
+      fixture.destroy();
+
+      vi.advanceTimersByTime(4 * 60 * 1000);
+      const recreatedFixture = TestBed.createComponent(DropsPageComponent);
+      recreatedFixture.detectChanges();
+
+      expect(provider.requests).toHaveLength(1);
+      expect(recreatedFixture.nativeElement.textContent).toContain('Sea of Thieves');
+    } finally {
+      sessionStorage.clear();
+      vi.useRealTimers();
+    }
+  });
+
+  it('does not refetch current drops within five minutes unless the user requests it', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 0, 1, 3, 20));
+    try {
+      const provider = new TestDropsProvider();
+      await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+      const fixture = TestBed.createComponent(DropsPageComponent);
+      fixture.detectChanges();
+      provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+      fixture.detectChanges();
+
+      vi.advanceTimersByTime(4 * 60 * 1000);
+      fixture.componentInstance['loadDrops']();
+      fixture.detectChanges();
+
+      expect(provider.requests).toHaveLength(1);
+      expect((fixture.nativeElement as HTMLElement).querySelector('.load-progress')).toBeNull();
+
+      fixture.componentInstance['loadDrops'](true);
+      expect(provider.requests).toHaveLength(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps loaded drops visible while the account syncs', async () => {
+    const provider = new TestDropsProvider();
+    const auth = { user: signal({ id: 'user-1', email: 'user@example.test' }) };
+    const trackerSync = { status: signal('syncing'), readyForLocalChanges: signal(false) };
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: AuthService, useValue: auth }, { provide: TrackerSyncService, useValue: trackerSync }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Sea of Thieves');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.loading-message')).toBeNull();
+  });
+
   it('places the refresh loader after the button label', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();

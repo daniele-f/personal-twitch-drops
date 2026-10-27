@@ -13,6 +13,16 @@ import { CollapseChevronComponent } from '../ui/collapse-chevron';
 import { GameCardComponent } from '../ui/game-card';
 import { DropCardComponent } from '../ui/drop-card';
 
+const DROP_DETAILS_CACHE_KEY_PREFIX = 'personal-twitch-drops.drop-details.v1.';
+const DROP_DETAILS_CACHE_MAX_AGE_MS = 5 * 60_000;
+
+interface CachedDropDetails {
+  readonly details: DropDetails;
+  readonly signature: string;
+  readonly cachedAt: number;
+  readonly includesGameLinks: boolean;
+}
+
 @Component({
   selector: 'app-drop-list',
   templateUrl: './drop-list.html',
@@ -160,6 +170,14 @@ export class DropListComponent {
       const signature = this.detailsSignature(drop);
       const isCurrent = signaturesById.get(drop.id) === signature;
       const needsGameLinks = includeGameLinks && !this.enrichedGameLinkIds.has(drop.id);
+      const cachedDetails = this.restoreFreshDetails(drop.id, signature, includeGameLinks);
+      if (cachedDetails) {
+        this.detailsByDropId.update((details) => new Map(details).set(drop.id, cachedDetails));
+        this.detailSignaturesById.update((signatures) => new Map(signatures).set(drop.id, signature));
+        if (includeGameLinks) this.enrichedGameLinkIds.add(drop.id);
+        this.completeFavoritePreload(drop.id, favoritePreloadRequestId);
+        continue;
+      }
       if ((detailsById.has(drop.id) || failedIds.has(drop.id)) && !isCurrent) {
         this.detailsByDropId.update((details) => { const next = new Map(details); next.delete(drop.id); return next; });
         this.failedDetailIds.update((ids) => { const next = new Set(ids); next.delete(drop.id); return next; });
@@ -208,6 +226,7 @@ export class DropListComponent {
     detailsRequest.subscribe({
       next: (details) => {
         this.detailsByDropId.update((detailsById) => new Map(detailsById).set(drop.id, details));
+        this.saveDetails(drop.id, signature, details, includeGameLinks);
         if (includeGameLinks) this.logGameLinkResult(drop, details);
         if (this.expandedFavoriteId() === drop.id) this.scrollExpandedCardIntoView(drop.id);
       },
@@ -349,6 +368,24 @@ export class DropListComponent {
 
   private detailsSignature(drop: ActiveDrop): string {
     return `${drop.startsAt ?? ''}\u0000${drop.endsAt}\u0000${(drop.rewards ?? []).join('\u0000')}`;
+  }
+
+  private restoreFreshDetails(id: string, signature: string, requiresGameLinks: boolean): DropDetails | undefined {
+    try {
+      const cachedDetails = JSON.parse(sessionStorage.getItem(this.detailsCacheKey(id)) ?? 'null') as CachedDropDetails | null;
+      if (!cachedDetails || cachedDetails.signature !== signature || !Number.isFinite(cachedDetails.cachedAt) || Date.now() - cachedDetails.cachedAt >= DROP_DETAILS_CACHE_MAX_AGE_MS || (requiresGameLinks && !cachedDetails.includesGameLinks)) return undefined;
+      return cachedDetails.details;
+    } catch {
+      return undefined;
+    }
+  }
+
+  private saveDetails(id: string, signature: string, details: DropDetails, includesGameLinks: boolean): void {
+    try { sessionStorage.setItem(this.detailsCacheKey(id), JSON.stringify({ details, signature, cachedAt: Date.now(), includesGameLinks } satisfies CachedDropDetails)); } catch { /* Browser storage can be unavailable. */ }
+  }
+
+  private detailsCacheKey(id: string): string {
+    return `${DROP_DETAILS_CACHE_KEY_PREFIX}${encodeURIComponent(id)}`;
   }
 
   private restoreToggleFocus(id: string): void {
