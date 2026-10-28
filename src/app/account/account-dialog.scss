@@ -11,5 +11,6 @@
 .account-dialog__hint { color: #cfc8dc; font-size: .9rem; line-height: 1.45; }
 .account-dialog__error { color: #ff9b9b; margin: 0; }
 .account-dialog__link-button { width: fit-content; margin-top: .85rem; padding: 0; border: 0; background: transparent; color: var(--color-accent-text); cursor: pointer; text-decoration: underline; }
+.account-dialog__oauth-button { width: 100%; margin-top: .75rem; }
 .account-dialog__sync-choice { display: grid; gap: .65rem; margin: 1rem 0; padding: 1rem; border: 1px solid #746b82; border-radius: .5rem; }
 .account-dialog__sync-choice h3 { margin: 0; font-size: 1rem; }
