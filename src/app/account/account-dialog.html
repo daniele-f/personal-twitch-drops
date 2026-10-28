@@ -18,7 +18,11 @@
           </form>
         }
       } @else if (auth.user(); as user) {
-        <p>Signed in as <strong>{{ user.email }}</strong>.</p>
+        @if (user.email; as email) {
+          <p>Signed in as <strong>{{ email }}</strong>.</p>
+        } @else {
+          <p>Signed in.</p>
+        }
         <p class="account-dialog__hint">Your favorites, ignored games, collected rewards, and display preferences can sync across your devices.</p>
         @if (trackerSync.summary(); as summary) { <p class="account-dialog__hint" role="status">{{ summary }}</p> }
         @if (trackerSync.status() === 'pending-retry' || trackerSync.status() === 'error') {
