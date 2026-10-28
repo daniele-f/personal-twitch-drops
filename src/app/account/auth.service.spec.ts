@@ -71,6 +71,79 @@ describe('AuthService', () => {
     });
   });
 
+  it('starts Twitch OAuth with the current app as the return URL', async () => {
+    const signInWithOAuth = vi.fn().mockResolvedValue({ data: { provider: 'twitch', url: 'https://id.twitch.tv/oauth2/authorize' }, error: null });
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+        signInWithOAuth,
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+
+    const result = await service.signInWithTwitch();
+
+    expect(result).toEqual({ outcome: 'redirect-started' });
+    expect(signInWithOAuth).toHaveBeenCalledWith({ provider: 'twitch', options: { redirectTo: globalThis.location.origin } });
+  });
+
+  it('starts Twitch identity linking with the current app as the return URL', async () => {
+    const linkIdentity = vi.fn().mockResolvedValue({ data: { provider: 'twitch', url: 'https://id.twitch.tv/oauth2/authorize' }, error: null });
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+        linkIdentity,
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+
+    const result = await service.linkTwitchIdentity();
+
+    expect(result).toEqual({ outcome: 'redirect-started' });
+    expect(linkIdentity).toHaveBeenCalledWith({ provider: 'twitch', options: { redirectTo: globalThis.location.origin } });
+  });
+
+  it('reports a Twitch OAuth error without changing the authenticated user', async () => {
+    const signInWithOAuth = vi.fn().mockResolvedValue({ data: { provider: 'twitch', url: null }, error: { message: 'Twitch is unavailable' } });
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+        signInWithOAuth,
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+
+    const result = await service.signInWithTwitch();
+
+    expect(result).toEqual({ outcome: 'error', message: 'We could not start Twitch sign-in. Please try again.' });
+    expect(service.user()).toBeNull();
+    expect(service.error()).toBe('We could not start Twitch sign-in. Please try again.');
+  });
+
+  it('reports a Twitch link error', async () => {
+    const linkIdentity = vi.fn().mockResolvedValue({ data: { provider: 'twitch', url: null }, error: { message: 'Identity already linked' } });
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+        linkIdentity,
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+
+    const result = await service.linkTwitchIdentity();
+
+    expect(result).toEqual({ outcome: 'error', message: 'We could not link your Twitch account. Please try again.' });
+    expect(service.error()).toBe('We could not link your Twitch account. Please try again.');
+  });
+
   it('keeps the password-recovery state when session restoration finishes afterward', async () => {
     let resolveSession: (value: { data: { session: { user: { id: string; email: string } } }; error: null }) => void;
     const session = new Promise<{ data: { session: { user: { id: string; email: string } } }; error: null }>((resolve) => { resolveSession = resolve; });

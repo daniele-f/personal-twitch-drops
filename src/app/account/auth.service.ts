@@ -10,7 +10,7 @@ export interface AccountUser {
 }
 
 export interface AuthResult {
-  outcome: 'signed-in' | 'confirmation-required' | 'reset-email-sent' | 'password-updated' | 'error';
+  outcome: 'signed-in' | 'confirmation-required' | 'reset-email-sent' | 'password-updated' | 'redirect-started' | 'error';
   message?: string;
 }
 
@@ -73,6 +73,38 @@ export class AuthService {
       return { outcome: 'signed-in' };
     } catch {
       return this.fail('We could not sign you in. Please try again.');
+    }
+  }
+
+  async signInWithTwitch(): Promise<AuthResult> {
+    this.beginRequest();
+
+    try {
+      const { error } = await this.client.auth.signInWithOAuth({
+        provider: 'twitch',
+        options: { redirectTo: globalThis.location?.origin },
+      });
+      if (error) return this.fail('We could not start Twitch sign-in. Please try again.');
+
+      return { outcome: 'redirect-started' };
+    } catch {
+      return this.fail('We could not start Twitch sign-in. Please try again.');
+    }
+  }
+
+  async linkTwitchIdentity(): Promise<AuthResult> {
+    this.beginRequest();
+
+    try {
+      const { error } = await this.client.auth.linkIdentity({
+        provider: 'twitch',
+        options: { redirectTo: globalThis.location?.origin },
+      });
+      if (error) return this.fail('We could not link your Twitch account. Please try again.');
+
+      return { outcome: 'redirect-started' };
+    } catch {
+      return this.fail('We could not link your Twitch account. Please try again.');
     }
   }
 
