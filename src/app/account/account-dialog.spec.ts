@@ -153,4 +153,26 @@ describe('AccountDialogComponent', () => {
     expect(linkTwitchIdentity).toHaveBeenCalledOnce();
   });
 
+  it('does not render a null email for an OAuth account', () => {
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal({ id: 'user-123', email: null }),
+          status: signal('authenticated'),
+          error: signal(null),
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: { summary: signal(null), status: signal('idle') },
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Signed in.');
+    expect(fixture.nativeElement.textContent).not.toContain('null');
+  });
+
 });
