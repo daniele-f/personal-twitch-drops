@@ -15,5 +15,7 @@
 .account-dialog__oauth-button { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; flex: 0 0 auto; border-color: #9147ff; background: linear-gradient(135deg, #9147ff, #5d2ea6); color: #fff; box-shadow: inset 0 1px rgb(255 255 255 / 15%), 0 .3rem .8rem rgb(145 71 255 / 18%); font-weight: 750; }
 .account-dialog__oauth-button:hover:not(:disabled) { border-color: #bf94ff; background: linear-gradient(135deg, #a970ff, #6f35bd); }
 .account-dialog__oauth-icon { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; }
+.account-dialog__account-actions { display: flex; align-items: stretch; gap: .5rem; }
+.account-dialog__account-actions .app-button { display: inline-flex; align-items: center; justify-content: center; }
 .account-dialog__sync-choice { display: grid; gap: .65rem; margin: 1rem 0; padding: 1rem; border: 1px solid #746b82; border-radius: .5rem; }
 .account-dialog__sync-choice h3 { margin: 0; font-size: 1rem; }
