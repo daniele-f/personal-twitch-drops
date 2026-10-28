@@ -41,6 +41,14 @@ export class AccountDialogComponent {
     if (result.outcome === 'reset-email-sent') this.resetEmailSent.set(true);
   }
 
+  protected async signInWithTwitch(): Promise<void> {
+    await this.auth.signInWithTwitch();
+  }
+
+  protected async linkTwitchIdentity(): Promise<void> {
+    await this.auth.linkTwitchIdentity();
+  }
+
   protected async updatePassword(): Promise<void> {
     if (!this.password() || this.password() !== this.confirmPassword()) {
       this.localError.set('Enter the same new password twice.');

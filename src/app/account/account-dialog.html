@@ -25,6 +25,7 @@
           <p class="account-dialog__error" role="status">Changes are waiting to sync.</p>
           <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
         }
+        <button type="button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'">Link Twitch account</button>
         <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>
@@ -54,6 +55,7 @@
           @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
           <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">{{ mode() === 'sign-up' ? 'Create account' : 'Sign in' }}</button>
         </form>
+        <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="signInWithTwitch()" [disabled]="auth.status() === 'authenticating'">Continue with Twitch</button>
         @if (mode() === 'sign-in') { <button type="button" class="account-dialog__link-button" (click)="selectMode('request-reset')">Forgot password?</button> }
       }
     </section>

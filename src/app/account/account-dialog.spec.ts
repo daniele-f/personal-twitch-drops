@@ -97,4 +97,60 @@ describe('AccountDialogComponent', () => {
     expect(closed).toBe(true);
   });
 
+  it('starts Twitch sign-in from the guest account dialog', async () => {
+    const signInWithTwitch = vi.fn().mockResolvedValue({ outcome: 'redirect-started' });
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal(null),
+          status: signal('guest'),
+          error: signal(null),
+          signInWithTwitch,
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: {},
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    const twitchButton = [...fixture.nativeElement.querySelectorAll('button')]
+      .find((button: HTMLButtonElement) => button.textContent?.trim() === 'Continue with Twitch') as HTMLButtonElement;
+    twitchButton.click();
+    await fixture.whenStable();
+
+    expect(signInWithTwitch).toHaveBeenCalledOnce();
+  });
+
+  it('starts Twitch identity linking from an authenticated account dialog', async () => {
+    const linkTwitchIdentity = vi.fn().mockResolvedValue({ outcome: 'redirect-started' });
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal({ id: 'user-123', email: 'viewer@example.test' }),
+          status: signal('authenticated'),
+          error: signal(null),
+          linkTwitchIdentity,
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: { summary: signal(null), status: signal('idle') },
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    const linkButton = [...fixture.nativeElement.querySelectorAll('button')]
+      .find((button: HTMLButtonElement) => button.textContent?.trim() === 'Link Twitch account') as HTMLButtonElement;
+    linkButton.click();
+    await fixture.whenStable();
+
+    expect(linkTwitchIdentity).toHaveBeenCalledOnce();
+  });
+
 });
