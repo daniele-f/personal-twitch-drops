@@ -6,6 +6,17 @@ The SQL migrations in `supabase/migrations/` are the version-controlled source o
 
 Each tracker row belongs to `auth.users` through `user_id`. Row Level Security is enabled on every table and policies limit reads and writes to `auth.uid()`. Browser code may use only the Supabase project URL and publishable key; service-role keys never belong in the frontend.
 
+## Twitch sign-in
+
+The app can use Twitch as a Supabase Auth OAuth provider for account creation,
+sign-in, and linking an existing account. Enable Twitch in Supabase Auth and
+provide the Twitch application client ID and client secret in the Supabase
+dashboard; never place the secret in this repository or the browser app.
+
+Add each deployed application origin to Supabase Auth's allowed redirect URLs.
+Manual identity linking must also be enabled in Supabase Auth for a signed-in
+email/password user to link a Twitch identity.
+
 ## Tracker tables
 
 - `user_settings` stores the synced display toggles for one user. Theme color remains browser-local; the legacy `theme_color` column is retained for compatibility but is ignored by current clients.
