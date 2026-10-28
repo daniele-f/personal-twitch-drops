@@ -48,9 +48,12 @@
           <button type="button" class="account-dialog__link-button" (click)="selectMode('sign-in')">Back to sign in</button>
         }
       } @else {
-        <div class="account-dialog__tabs" role="tablist" aria-label="Account action">
-          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-in'" (click)="selectMode('sign-in')">Sign in</button>
-          <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="selectMode('sign-up')">Create account</button>
+        <div class="account-dialog__auth-actions">
+          <div class="account-dialog__tabs" role="tablist" aria-label="Account action">
+            <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-in'" (click)="selectMode('sign-in')">Sign in</button>
+            <button type="button" role="tab" [attr.aria-selected]="mode() === 'sign-up'" (click)="selectMode('sign-up')">Create account</button>
+          </div>
+          <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="signInWithTwitch()" [disabled]="auth.status() === 'authenticating'"><svg class="account-dialog__oauth-icon" aria-hidden="true" viewBox="0 0 18 18" fill="currentColor"><path d="M4.265 0 1.043 3.22v11.59h4.076v3.22l3.222-3.22h2.578l5.8-5.8V0H4.265Zm11.38 8.9-2.577 2.577h-2.577L8.236 13.73v-2.254H5.658V1.61h9.987V8.9Zm-2.9-4.51v4.51h-1.61V4.39h1.61Zm-4.51 0v4.51H6.625V4.39h1.61Z" /></svg><span>Continue with Twitch</span></button>
         </div>
         <p class="account-dialog__hint">You can keep using the tracker without an account. Signing in preserves and syncs this device’s tracker settings.</p>
         <form (ngSubmit)="submit()">
@@ -59,7 +62,6 @@
           @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
           <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">{{ mode() === 'sign-up' ? 'Create account' : 'Sign in' }}</button>
         </form>
-        <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="signInWithTwitch()" [disabled]="auth.status() === 'authenticating'"><svg class="account-dialog__oauth-icon" aria-hidden="true" viewBox="0 0 18 18" fill="currentColor"><path d="M4.265 0 1.043 3.22v11.59h4.076v3.22l3.222-3.22h2.578l5.8-5.8V0H4.265Zm11.38 8.9-2.577 2.577h-2.577L8.236 13.73v-2.254H5.658V1.61h9.987V8.9Zm-2.9-4.51v4.51h-1.61V4.39h1.61Zm-4.51 0v4.51H6.625V4.39h1.61Z" /></svg><span>Continue with Twitch</span></button>
         @if (mode() === 'sign-in') { <button type="button" class="account-dialog__link-button" (click)="selectMode('request-reset')">Forgot password?</button> }
       }
     </section>
