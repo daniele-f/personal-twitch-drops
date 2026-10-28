@@ -29,8 +29,10 @@
           <p class="account-dialog__error" role="status">Changes are waiting to sync.</p>
           <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
         }
-        <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><svg class="account-dialog__oauth-icon" aria-hidden="true" viewBox="0 0 18 18" fill="currentColor"><path d="M4.265 0 1.043 3.22v11.59h4.076v3.22l3.222-3.22h2.578l5.8-5.8V0H4.265Zm11.38 8.9-2.577 2.577h-2.577L8.236 13.73v-2.254H5.658V1.61h9.987V8.9Zm-2.9-4.51v4.51h-1.61V4.39h1.61Zm-4.51 0v4.51H6.625V4.39h1.61Z" /></svg><span>Link Twitch account</span></button>
-        <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
+        <div class="account-dialog__account-actions">
+          <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><svg class="account-dialog__oauth-icon" aria-hidden="true" viewBox="0 0 18 18" fill="currentColor"><path d="M4.265 0 1.043 3.22v11.59h4.076v3.22l3.222-3.22h2.578l5.8-5.8V0H4.265Zm11.38 8.9-2.577 2.577h-2.577L8.236 13.73v-2.254H5.658V1.61h9.987V8.9Zm-2.9-4.51v4.51h-1.61V4.39h1.61Zm-4.51 0v4.51H6.625V4.39h1.61Z" /></svg><span>Link Twitch account</span></button>
+          <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
+        </div>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>
         <button type="button" appButton="default" (click)="selectMode('sign-in')">Go to sign in</button>
