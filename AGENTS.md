@@ -8,7 +8,7 @@
 
 ## Collaboration defaults
 
-* Present one combined feature proposal covering behavior, approach, UI impact, error handling, and tests. Get one approval before implementation.
+* Implement requested changes without asking for additional approval. Ask for clarification only when essential information is missing or the requested behavior is genuinely ambiguous.
 * Use native execution for every feature or fix.
 * Never create or use Git worktrees for this project; work in the current checkout.
 
@@ -21,7 +21,11 @@
 
 * Put each normal feature or fix on its own `feature/...`, `fix/...`, or `refactor/...` branch from the latest `main`.
 * Keep unrelated changes out of the branch and prefer squash merges into `main`.
-* Never merge feature or fix code into `main` without the user's explicit approval.
+* When the user requests a change, treat that request as authorization to implement, commit, and merge it into `main` without additional approval.
+* Create a feature or fix branch when appropriate.
+* Before merging, verify that required checks pass and that there are no merge conflicts.
+* Push completed changes to `main` automatically.
+* Request separate approval for destructive operations, security-sensitive changes, or changes outside the original request.
 * Documentation-only or workflow-rule changes may be committed directly to `main` when the user asks.
 * Before merging a feature or fix, confirm CI passes, the PR targets `main`, and there are no merge conflicts. After merging, update local `main` and run a production build.
 * After a feature or fix is merged and pushed, rename the current conversation to a concise summary prefixed with its type, such as `feat: ...`, `fix: ...`, or `refactor: ...`.
