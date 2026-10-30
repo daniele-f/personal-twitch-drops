@@ -309,7 +309,7 @@ describe('App', () => {
 
     const footer = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.data-attribution');
     const link = footer?.querySelector<HTMLAnchorElement>('a');
-    expect(footer?.textContent).toContain('All data is from');
+    expect(footer?.textContent).toContain('All data is loaded from');
     expect(footer?.textContent).toContain('Information could be wrong or incomplete.');
     expect(link?.textContent).toBe('twitchdrops.app');
     expect(link?.href).toBe('https://twitchdrops.app/');
