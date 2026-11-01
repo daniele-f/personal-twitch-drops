@@ -86,7 +86,8 @@ export class PreferencesPageComponent {
   }
   protected openPasswordDialog(): void {
     this.passwordError.set(null);
-    this.passwordDialog()?.nativeElement.showModal();
+    // Keep extension-injected autofill menus outside the browser's modal top layer.
+    this.passwordDialog()?.nativeElement.show();
   }
   protected closePasswordDialog(): void {
     this.passwordDialog()?.nativeElement.close();

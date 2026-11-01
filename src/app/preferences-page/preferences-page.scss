@@ -6,6 +6,10 @@
 .account-setting__twitch { border-color:#9147ff; background:#9147ff; color:#fff; }
 .password-change-dialog { box-sizing:border-box; width:min(26rem,calc(100% - 2rem)); max-height:calc(100dvh - 2rem); overflow:auto; padding:1.5rem; border:1px solid var(--color-accent); border-radius:.75rem; background:#17141f; color:#fff; box-shadow:0 1rem 4rem rgb(0 0 0 / 45%); }
 .password-change-dialog::backdrop { background:rgb(0 0 0 / 65%); }
+.password-change-overlay { display:none; }
+.password-change-overlay:has(dialog[open]) { position:fixed; inset:0; z-index:30; display:grid; place-items:center; padding:1rem; background:rgb(0 0 0 / 65%); }
+.password-change-overlay .password-change-dialog { position:relative; margin:auto; }
+.password-change-username { position:absolute; width:1px !important; height:1px; min-height:0 !important; padding:0 !important; opacity:0; pointer-events:none; }
 .password-change-dialog h2 { margin:0 0 1rem; }
 .password-change-dialog form,.password-change-dialog label { display:grid; gap:.45rem; }
 .password-change-dialog form { gap:1rem; }

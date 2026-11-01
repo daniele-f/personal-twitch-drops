@@ -65,14 +65,15 @@ describe('PreferencesPageComponent', () => {
     // jsdom does not implement native dialog lifecycle methods.
     const showModal = vi.fn(() => dialog.setAttribute('open', ''));
     const close = vi.fn(() => dialog.removeAttribute('open'));
-    dialog.showModal = showModal;
+    dialog.show = showModal;
     dialog.close = close;
     const button = [...fixture.nativeElement.querySelectorAll('button')].find((element) => (element as HTMLButtonElement).textContent?.trim() === 'Change password') as HTMLButtonElement;
     button.click();
     fixture.detectChanges();
     await fixture.whenStable();
     expect(showModal).toHaveBeenCalledOnce();
-    const inputs = [...dialog.querySelectorAll('input')];
+    expect(dialog.querySelector('input[autocomplete="username"]')?.getAttribute('name')).toBe('username');
+    const inputs = [...dialog.querySelectorAll<HTMLInputElement>('input[type="password"]')];
     for (const [index, value] of ['current-secret', 'new-secret-123', 'different-secret'].entries()) {
       inputs[index].value = value;
       inputs[index].dispatchEvent(new Event('input'));
