@@ -144,6 +144,26 @@ describe('AuthService', () => {
     expect(service.error()).toBe('We could not link your Twitch account. Please try again.');
   });
 
+  it('exposes the providers linked to the authenticated user', async () => {
+    const getUserIdentities = vi.fn().mockResolvedValue({
+      data: { identities: [{ provider: 'email', identity_id: 'email-1' }, { provider: 'twitch', identity_id: 'twitch-1' }] },
+      error: null,
+    });
+    const client = {
+      auth: {
+        getSession: async () => ({ data: { session: null }, error: null }),
+        getUserIdentities,
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => undefined } } }),
+      },
+    };
+    TestBed.configureTestingModule({ providers: [AuthService, { provide: SUPABASE_AUTH_CLIENT, useValue: client }] });
+    const service = TestBed.inject(AuthService);
+
+    await service.refreshIdentities();
+
+    expect(service.identities()).toEqual([{ provider: 'email', identityId: 'email-1' }, { provider: 'twitch', identityId: 'twitch-1' }]);
+  });
+
   it('keeps the password-recovery state when session restoration finishes afterward', async () => {
     let resolveSession: (value: { data: { session: { user: { id: string; email: string } } }; error: null }) => void;
     const session = new Promise<{ data: { session: { user: { id: string; email: string } } }; error: null }>((resolve) => { resolveSession = resolve; });

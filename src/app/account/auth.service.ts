@@ -9,6 +9,11 @@ export interface AccountUser {
   email: string | null;
 }
 
+export interface AccountIdentity {
+  provider: string;
+  identityId: string;
+}
+
 export interface AuthResult {
   outcome: 'signed-in' | 'confirmation-required' | 'reset-email-sent' | 'password-updated' | 'redirect-started' | 'error';
   message?: string;
@@ -23,6 +28,7 @@ export class AuthService {
   private readonly client = inject(SUPABASE_AUTH_CLIENT);
 
   readonly user = signal<AccountUser | null>(null);
+  readonly identities = signal<readonly AccountIdentity[] | null>(null);
   readonly status = signal<AuthStatus>('guest');
   readonly error = signal<string | null>(null);
 
@@ -108,6 +114,39 @@ export class AuthService {
     }
   }
 
+  async refreshIdentities(): Promise<void> {
+    try {
+      const { data, error } = await this.client.auth.getUserIdentities();
+      if (error) throw error;
+      this.identities.set((data.identities ?? []).map((identity) => ({ provider: identity.provider, identityId: identity.identity_id })));
+    } catch {
+      this.identities.set(null);
+    }
+  }
+
+  async unlinkTwitchIdentity(): Promise<AuthResult> {
+    const { data, error } = await this.client.auth.getUserIdentities();
+    if (error) return this.fail('We could not update your Twitch link. Please try again.');
+    const twitchIdentity = data.identities.find((identity) => identity.provider === 'twitch');
+    if (!twitchIdentity || data.identities.length < 2) return this.fail('Keep another sign-in method before unlinking Twitch.');
+    const result = await this.client.auth.unlinkIdentity(twitchIdentity);
+    if (result.error) return this.fail('We could not update your Twitch link. Please try again.');
+    await this.refreshIdentities();
+    return { outcome: 'signed-in' };
+  }
+
+  async addEmail(email: string): Promise<AuthResult> {
+    this.beginRequest();
+    try {
+      const { error } = await this.client.auth.updateUser({ email }, { emailRedirectTo: globalThis.location?.origin });
+      if (error) return this.fail('We could not add that email address. Please try again.');
+      this.status.set('authenticated');
+      return { outcome: 'confirmation-required' };
+    } catch {
+      return this.fail('We could not add that email address. Please try again.');
+    }
+  }
+
   async requestPasswordReset(email: string): Promise<AuthResult> {
     this.beginRequest();
 
@@ -169,5 +208,7 @@ export class AuthService {
     if (this.user()?.id !== user?.id || this.user()?.email !== user?.email) this.user.set(user);
     this.status.set(session ? 'authenticated' : 'guest');
     this.error.set(null);
+    if (session) void this.refreshIdentities();
+    else this.identities.set(null);
   }
 }
