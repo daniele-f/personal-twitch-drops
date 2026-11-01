@@ -200,7 +200,7 @@ describe('AccountDialogComponent', () => {
     expect(fixture.nativeElement.textContent).toContain('We could not link your Twitch account. Please try again.');
   });
 
-  it('does not render a null email for an OAuth account', () => {
+  it('keeps account details out of the popup and links to account preferences', () => {
     TestBed.configureTestingModule({
       providers: [{
         provide: AuthService,
@@ -218,8 +218,9 @@ describe('AccountDialogComponent', () => {
     fixture.componentRef.setInput('opened', true);
     fixture.detectChanges();
 
-    expect(fixture.nativeElement.textContent).toContain('Signed in.');
+    expect(fixture.nativeElement.textContent).toContain('Twitch not linked.');
     expect(fixture.nativeElement.textContent).not.toContain('null');
+    expect(fixture.nativeElement.querySelector('a[href="/preferences#account"]')?.textContent?.trim()).toBe('Manage account');
   });
 
 });

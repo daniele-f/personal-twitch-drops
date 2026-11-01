@@ -18,11 +18,7 @@
           </form>
         }
       } @else if (auth.user(); as user) {
-        @if (user.email; as email) {
-          <p>Signed in as <strong>{{ email }}</strong>.</p>
-        } @else {
-          <p>Signed in.</p>
-        }
+        @if (auth.identities?.()?.some((identity) => identity.provider === 'twitch')) { <p>Twitch linked.</p> } @else { <p>Twitch not linked.</p> }
         @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
         <p class="account-dialog__hint">Your favorites, ignored games, collected rewards, and display preferences can sync across your devices.</p>
         @if (trackerSync.summary(); as summary) { <p class="account-dialog__hint" role="status">{{ summary }}</p> }
@@ -31,7 +27,8 @@
           <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
         }
         <div class="account-dialog__account-actions">
-          <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><svg class="account-dialog__oauth-icon" aria-hidden="true" viewBox="0 0 18 18" fill="currentColor"><path d="M4.265 0 1.043 3.22v11.59h4.076v3.22l3.222-3.22h2.578l5.8-5.8V0H4.265Zm11.38 8.9-2.577 2.577h-2.577L8.236 13.73v-2.254H5.658V1.61h9.987V8.9Zm-2.9-4.51v4.51h-1.61V4.39h1.61Zm-4.51 0v4.51H6.625V4.39h1.61Z" /></svg><span>Link Twitch account</span></button>
+          @if (!(auth.identities?.()?.some((identity) => identity.provider === 'twitch'))) { <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><span>Link Twitch account</span></button> }
+          <a class="account-dialog__link-button" href="/preferences#account">Manage account</a>
           <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
         </div>
       } @else if (auth.status() === 'awaiting-confirmation') {
