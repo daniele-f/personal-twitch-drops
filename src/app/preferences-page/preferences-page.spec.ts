@@ -8,6 +8,24 @@ import { PreferencesPageComponent } from './preferences-page';
 import { AuthService } from '../account/auth.service';
 
 describe('PreferencesPageComponent', () => {
+  it('only offers email linking after identities confirm a Twitch-only account', () => {
+    const identities = signal<{ provider: string; identityId: string }[] | null>(null);
+    TestBed.configureTestingModule({ providers: [
+      provideRouter([]),
+      { provide: PREFERENCES_STORAGE, useValue: localStorage },
+      { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
+      { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: null }), identities, error: signal(null) } },
+    ] });
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[type="email"]')).toBeNull();
+    identities.set([{ provider: 'twitch', identityId: 'twitch-1' }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[type="email"]')).not.toBeNull();
+    identities.set([{ provider: 'twitch', identityId: 'twitch-1' }, { provider: 'email', identityId: 'email-1' }]);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('input[type="email"]')).toBeNull();
+  });
   afterEach(() => {
     localStorage.clear();
     TestBed.resetTestingModule();

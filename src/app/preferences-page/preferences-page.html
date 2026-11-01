@@ -22,7 +22,7 @@
       <div class="account-setting__email">
         @if (hasEmailIdentity()) {
           <button type="button" appButton="default" (click)="openPasswordDialog()">Change password</button>
-        } @else {
+        } @else if (auth.identities() !== null && hasTwitch()) {
           <label>Add email address <input type="email" [ngModel]="emailToAdd()" (ngModelChange)="emailToAdd.set($event)" /></label><button type="button" appButton="default" (click)="addEmail()">Add email</button>
         }
       </div>
