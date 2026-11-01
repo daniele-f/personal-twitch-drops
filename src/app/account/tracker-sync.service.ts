@@ -140,6 +140,11 @@ export class TrackerSyncService {
         this.rememberLinkedAccount(user.id);
         return { status: 'synced' };
       }
+      if (browserHasData && accountHasData && this.accountHasOnlyAdditionalGamePreferences(local, account)) {
+        this.adoptAccountSnapshot(remote, local);
+        this.rememberLinkedAccount(user.id);
+        return { status: 'synced' };
+      }
       if (browserHasData && accountHasData) {
         const browserPreferenceCount = this.preferenceCount(local);
         const accountPreferenceCount = this.preferenceCount(remote);
@@ -332,6 +337,29 @@ export class TrackerSyncService {
       collectedRewards: snapshot.collectedRewards.filter((row) => !row.clearedAt).map((row) => [row.campaignId, row.rewardName]).sort(),
     });
     return profile(left) === profile(right);
+  }
+
+  private accountHasOnlyAdditionalGamePreferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): boolean {
+    const activeGameIds = <T extends { gameId: string; removedAt?: string | null }>(rows: readonly T[]) =>
+      new Set(rows.filter((row) => !row.removedAt).map((row) => row.gameId));
+    const activeRewardIds = (rows: readonly TrackerCollectedReward[]) =>
+      new Set(rows.filter((row) => !row.clearedAt).map((row) => `${row.campaignId}\u0000${row.rewardName}`));
+    const sameValues = (left: ReadonlySet<string>, right: ReadonlySet<string>) =>
+      left.size === right.size && [...left].every((value) => right.has(value));
+
+    const browserFavorites = activeGameIds(browser.favorites);
+    const browserIgnoredGames = activeGameIds(browser.ignoredGames);
+    const accountFavorites = activeGameIds(account.favorites);
+    const accountIgnoredGames = activeGameIds(account.ignoredGames);
+    const hasCrossListConflict = [...new Set([...browserFavorites, ...accountFavorites])]
+      .some((gameId) => browserIgnoredGames.has(gameId) || accountIgnoredGames.has(gameId));
+
+    return !hasCrossListConflict
+      && [...browserFavorites].every((gameId) => accountFavorites.has(gameId))
+      && [...browserIgnoredGames].every((gameId) => accountIgnoredGames.has(gameId))
+      && browser.settings.showSubscriptions === account.settings.showSubscriptions
+      && browser.settings.showBadges === account.settings.showBadges
+      && sameValues(activeRewardIds(browser.collectedRewards), activeRewardIds(account.collectedRewards));
   }
 
   private profileDifferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): readonly string[] {

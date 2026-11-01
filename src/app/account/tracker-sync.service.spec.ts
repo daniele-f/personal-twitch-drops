@@ -227,4 +227,70 @@ describe('TrackerSyncService', () => {
     expect(sync.reconciliation()).toMatchObject({ accountId: 'user-1', browserPreferenceCount: 1, accountPreferenceCount: 1 });
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/browser']);
   });
+
+  it('adopts the account when its game lists contain every local game plus extras', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [
+        { game_id: '/game/local', game_name: 'Local game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null },
+        { game_id: '/game/account-extra', game_name: 'Account extra', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null },
+      ],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/local', 'Local game');
+
+    const result = await sync.syncAfterAuthentication();
+
+    expect(result.status).toBe('synced');
+    expect(sync.reconciliation()).toBeNull();
+    expect([...preferences.favoriteIds()]).toEqual(['/game/local', '/game/account-extra']);
+  });
+
+  it('requires a source choice when a game is favorite in one profile and ignored in the other', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [{ game_id: '/game/shared', game_name: 'Shared game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null }],
+      user_ignored_games: [{ game_id: '/game/shared', game_name: 'Shared game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null }],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/shared', 'Shared game');
+
+    const result = await sync.syncAfterAuthentication();
+
+    expect(result.status).toBe('skipped');
+    expect(sync.status()).toBe('needs-reconciliation');
+  });
 });
