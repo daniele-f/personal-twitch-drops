@@ -179,6 +179,27 @@ describe('AccountDialogComponent', () => {
     expect(linkTwitchIdentity).toHaveBeenCalledOnce();
   });
 
+  it('shows a Twitch linking error to an authenticated user', () => {
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal({ id: 'user-123', email: 'viewer@example.test' }),
+          status: signal('error'),
+          error: signal('We could not link your Twitch account. Please try again.'),
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: { summary: signal(null), status: signal('idle') },
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('We could not link your Twitch account. Please try again.');
+  });
+
   it('does not render a null email for an OAuth account', () => {
     TestBed.configureTestingModule({
       providers: [{
