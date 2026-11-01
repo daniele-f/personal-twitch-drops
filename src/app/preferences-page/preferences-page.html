@@ -21,7 +21,7 @@
       </div>
       <div class="account-setting__email">
         @if (hasEmailIdentity()) {
-          <button type="button" appButton="default" (click)="passwordDialogOpen.set(true)">Change password</button>
+          <button type="button" appButton="default" (click)="openPasswordDialog()">Change password</button>
         } @else {
           <label>Add email address <input type="email" [ngModel]="emailToAdd()" (ngModelChange)="emailToAdd.set($event)" /></label><button type="button" appButton="default" (click)="addEmail()">Add email</button>
         }
@@ -29,7 +29,19 @@
       @if (accountMessage(); as message) { <p class="account-setting__message" role="status">{{ message }}</p> }
       @if (auth.error(); as error) { <p class="account-setting__error" role="alert">{{ error }}</p> }
     </section>
-    @if (passwordDialogOpen()) { <div class="account-dialog-backdrop"><section class="account-dialog" role="dialog" aria-modal="true"><h2>Change password</h2><label>Current password <input type="password" [ngModel]="currentPassword()" (ngModelChange)="currentPassword.set($event)" /></label><label>New password <input type="password" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" /></label><label>Confirm new password <input type="password" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" /></label><button type="button" appButton="primary" (click)="setPassword()">Update password</button><button type="button" appButton="default" (click)="passwordDialogOpen.set(false)">Cancel</button></section></div> }
+    <dialog #passwordDialog class="password-change-dialog" aria-labelledby="password-change-title" (cancel)="closePasswordDialog()">
+      <h2 id="password-change-title">Change password</h2>
+      <form (ngSubmit)="setPassword()">
+        <label>Current password <input name="current-password" type="password" autocomplete="current-password" required autofocus [ngModel]="currentPassword()" (ngModelChange)="currentPassword.set($event)" /></label>
+        <label>New password <input name="new-password" type="password" autocomplete="new-password" required minlength="8" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)" /></label>
+        <label>Confirm new password <input name="confirm-password" type="password" autocomplete="new-password" required minlength="8" [ngModel]="confirmPassword()" (ngModelChange)="confirmPassword.set($event)" /></label>
+        @if (passwordError(); as error) { <p role="alert">{{ error }}</p> }
+        <div class="password-change-dialog__actions">
+          <button type="button" appButton="default" [disabled]="passwordSaving()" (click)="closePasswordDialog()">Cancel</button>
+          <button type="submit" appButton="primary" [disabled]="passwordSaving()">{{ passwordSaving() ? 'Updating…' : 'Update password' }}</button>
+        </div>
+      </form>
+    </dialog>
   }
   <div class="list-summary-grid">
     <section id="favorites" class="favorites-preferences list-summary-card"><app-disclosure class="favorites-disclosure" icon="★" [starIcon]="true" [count]="favoriteRows().length" [expanded]="favoritesExpanded()" (toggled)="favoritesExpanded.set(!favoritesExpanded())">Favorites List</app-disclosure>@if (favoritesExpanded()) { <div class="favorites-list-content list-content--enter" animate.leave="list-content--leave">@if (favoriteRows().length) { <table><thead><tr><th>Game</th><th>Status</th><th>Action</th></tr></thead><tbody>@for (entry of favoriteRows(); track entry.id) { <tr [attr.data-favorite-id]="entry.id"><td class="game-name"><span class="game-name__text" [title]="entry.gameName">{{ entry.gameName }}</span></td><td>@if (dropStatusUnavailable()) { <app-status-badge status="unavailable">Status unavailable</app-status-badge> } @else if (activeDropIds() === null) { <app-status-badge status="pending">Checking…</app-status-badge> } @else if (activeDropIds()?.has(entry.id)) { <app-status-badge status="active">Active</app-status-badge> } @else { <app-status-badge status="inactive">Inactive</app-status-badge> }</td><td><div class="remove-action"><button class="remove-favorite" [class.remove-favorite--armed]="armedFavoriteId() === entry.id" type="button" [attr.aria-label]="armedFavoriteId() === entry.id ? 'Confirm removal of ' + entry.gameName : 'Remove ' + entry.gameName + ' from favorites'" (click)="removeFavorite(entry.id)" (mouseleave)="cancelRemoveFavorite(entry.id)" (focusout)="cancelRemoveFavorite(entry.id)">{{ armedFavoriteId() === entry.id ? 'Confirm?' : 'Remove' }}</button></div></td></tr> }</tbody></table> } @else { <p class="empty-list">No favorite games yet.</p> }</div> }</section>

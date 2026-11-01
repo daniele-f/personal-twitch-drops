@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { DropsProvider } from '../drops/drops-provider';
@@ -27,7 +27,9 @@ export class PreferencesPageComponent {
   protected readonly unlinkArmed = signal(false);
   protected readonly emailToAdd = signal('');
   protected readonly newPassword = signal('');
-  protected readonly passwordDialogOpen = signal(false);
+  private readonly passwordDialog = viewChild<ElementRef<HTMLDialogElement>>('passwordDialog');
+  protected readonly passwordError = signal<string | null>(null);
+  protected readonly passwordSaving = signal(false);
   protected readonly currentPassword = signal('');
   protected readonly confirmPassword = signal('');
   protected readonly accountMessage = signal<string | null>(null);
@@ -63,8 +65,34 @@ export class PreferencesPageComponent {
     this.accountMessage.set(result.outcome === 'confirmation-required' ? 'Check your email to confirm it, then return here to set a password.' : result.message ?? null);
   }
   protected async setPassword(): Promise<void> {
-    if (!this.currentPassword() || this.newPassword() !== this.confirmPassword()) { this.accountMessage.set('Enter your current password and matching new passwords.'); return; }
-    const result = await this.auth.updatePassword(this.newPassword(), this.currentPassword());
-    this.accountMessage.set(result.outcome === 'password-updated' ? 'Password updated.' : result.message ?? null);
+    if (this.passwordSaving()) return;
+    if (!this.currentPassword() || this.newPassword().length < 8 || this.newPassword() !== this.confirmPassword()) {
+      this.passwordError.set('Enter your current password and matching new passwords of at least 8 characters.');
+      return;
+    }
+    this.passwordSaving.set(true);
+    this.passwordError.set(null);
+    try {
+      const result = await this.auth.updatePassword(this.newPassword(), this.currentPassword());
+      if (result.outcome === 'password-updated') {
+        this.closePasswordDialog();
+        this.accountMessage.set('Password updated.');
+      } else this.passwordError.set(result.message ?? 'We could not update your password. Please try again.');
+    } catch {
+      this.passwordError.set('We could not update your password. Please try again.');
+    } finally {
+      this.passwordSaving.set(false);
+    }
+  }
+  protected openPasswordDialog(): void {
+    this.passwordError.set(null);
+    this.passwordDialog()?.nativeElement.showModal();
+  }
+  protected closePasswordDialog(): void {
+    this.passwordDialog()?.nativeElement.close();
+    this.currentPassword.set('');
+    this.newPassword.set('');
+    this.confirmPassword.set('');
+    this.passwordError.set(null);
   }
 }
