@@ -61,6 +61,7 @@
         <form (ngSubmit)="submit()">
           <label>Email <input name="email" type="email" autocomplete="email" required [ngModel]="email()" (ngModelChange)="email.set($event)" /></label>
           <label>Password <input name="password" type="password" [attr.autocomplete]="mode() === 'sign-up' ? 'new-password' : 'current-password'" minlength="8" required [ngModel]="password()" (ngModelChange)="password.set($event)" /></label>
+          @if (mode() === 'sign-up') { <p class="account-dialog__hint">By creating an account, you acknowledge the <a href="/privacy">Privacy Policy</a>.</p> }
           @if (auth.error(); as error) { <p class="account-dialog__error" role="alert">{{ error }}</p> }
           <button type="submit" appButton="primary" [disabled]="auth.status() === 'authenticating'">{{ mode() === 'sign-up' ? 'Create account' : 'Sign in' }}</button>
         </form>
