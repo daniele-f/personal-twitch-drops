@@ -65,6 +65,32 @@ describe('AccountDialogComponent', () => {
     expect(password.autocomplete).toBe('current-password');
   });
 
+  it('links the privacy notice from account creation', () => {
+    TestBed.configureTestingModule({
+      providers: [{
+        provide: AuthService,
+        useValue: {
+          user: signal(null),
+          status: signal('guest'),
+          error: signal(null),
+        },
+      }, {
+        provide: TrackerSyncService,
+        useValue: {},
+      }],
+    });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+
+    const createAccount = [...fixture.nativeElement.querySelectorAll('button')]
+      .find((button: HTMLButtonElement) => button.textContent?.trim() === 'Create account') as HTMLButtonElement;
+    createAccount.click();
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a[href="/privacy"]')?.textContent?.trim()).toBe('Privacy Policy');
+  });
+
   it('closes after a successful sign-in', async () => {
     const signIn = vi.fn().mockResolvedValue({ outcome: 'signed-in' });
     TestBed.configureTestingModule({
