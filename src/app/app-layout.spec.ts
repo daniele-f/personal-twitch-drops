@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { App } from './app';
 import { appConfig } from './app.config';
@@ -93,5 +94,15 @@ describe('App layout', () => {
 
     expect(main).toBeTruthy();
     expect(main?.compareDocumentPosition(footer!)).toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+  });
+
+  it('hides the footer on the privacy policy route', async () => {
+    const fixture = TestBed.createComponent(App);
+    const router = TestBed.inject(Router);
+
+    await router.navigateByUrl('/privacy');
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('footer.data-attribution')).toBeNull();
   });
 });
