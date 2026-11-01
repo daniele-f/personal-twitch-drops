@@ -143,6 +143,14 @@ export class App implements AfterViewInit {
       matrixParams: 'ignored',
     });
   }
+  protected isPrivacyRoute(): boolean {
+    return this.router.isActive('/privacy', {
+      paths: 'exact',
+      queryParams: 'ignored',
+      fragment: 'ignored',
+      matrixParams: 'ignored',
+    });
+  }
   protected toggleChangesPanel(): void {
     const opening = !this.changesOpen();
     if (opening) {
