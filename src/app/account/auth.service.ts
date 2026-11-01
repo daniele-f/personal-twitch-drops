@@ -163,11 +163,11 @@ export class AuthService {
     }
   }
 
-  async updatePassword(password: string): Promise<AuthResult> {
+  async updatePassword(password: string, currentPassword?: string): Promise<AuthResult> {
     this.beginRequest();
 
     try {
-      const { error } = await this.client.auth.updateUser({ password });
+      const { error } = await this.client.auth.updateUser({ password, ...(currentPassword ? { current_password: currentPassword } : {}) });
       if (error) return this.fail('We could not update your password. Please try again.');
 
       this.status.set('authenticated');

@@ -27,9 +27,9 @@
           <button type="button" appButton="default" (click)="retrySync()">Retry sync</button>
         }
         <div class="account-dialog__account-actions">
-          @if (!(auth.identities?.()?.some((identity) => identity.provider === 'twitch'))) { <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><span>Link Twitch account</span></button> }
-          <a class="account-dialog__link-button" href="/preferences#account">Manage account</a>
           <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
+          @if (!(auth.identities?.()?.some((identity) => identity.provider === 'twitch'))) { <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><span>Link Twitch account</span></button> }
+          @if (!onPreferences()) { <a appButton="default" href="/preferences#account">Manage account</a> }
         </div>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>

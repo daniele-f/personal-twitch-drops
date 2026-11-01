@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ButtonDirective } from '../ui/button.directive';
 import { AuthService } from './auth.service';
 import { TrackerSyncService } from './tracker-sync.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-account-dialog',
@@ -16,6 +17,7 @@ export class AccountDialogComponent {
   readonly closed = output<void>();
   protected readonly auth = inject(AuthService);
   protected readonly trackerSync = inject(TrackerSyncService);
+  private readonly router = inject(Router);
   protected readonly mode = signal<'sign-in' | 'sign-up' | 'request-reset'>('sign-in');
   protected readonly email = signal('');
   protected readonly password = signal('');
@@ -73,4 +75,5 @@ export class AccountDialogComponent {
   protected async retrySync(): Promise<void> {
     await this.trackerSync.retryPending();
   }
+  protected onPreferences(): boolean { return this.router.url.startsWith('/preferences'); }
 }

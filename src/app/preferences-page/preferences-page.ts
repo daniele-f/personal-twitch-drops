@@ -27,6 +27,9 @@ export class PreferencesPageComponent {
   protected readonly unlinkArmed = signal(false);
   protected readonly emailToAdd = signal('');
   protected readonly newPassword = signal('');
+  protected readonly passwordDialogOpen = signal(false);
+  protected readonly currentPassword = signal('');
+  protected readonly confirmPassword = signal('');
   protected readonly accountMessage = signal<string | null>(null);
   protected readonly hasTwitch = computed(() => this.auth.identities()?.some((identity) => identity.provider === 'twitch') ?? false);
   protected readonly hasEmailIdentity = computed(() => this.auth.identities()?.some((identity) => identity.provider === 'email') ?? false);
@@ -60,7 +63,8 @@ export class PreferencesPageComponent {
     this.accountMessage.set(result.outcome === 'confirmation-required' ? 'Check your email to confirm it, then return here to set a password.' : result.message ?? null);
   }
   protected async setPassword(): Promise<void> {
-    const result = await this.auth.updatePassword(this.newPassword());
+    if (!this.currentPassword() || this.newPassword() !== this.confirmPassword()) { this.accountMessage.set('Enter your current password and matching new passwords.'); return; }
+    const result = await this.auth.updatePassword(this.newPassword(), this.currentPassword());
     this.accountMessage.set(result.outcome === 'password-updated' ? 'Password updated.' : result.message ?? null);
   }
 }
