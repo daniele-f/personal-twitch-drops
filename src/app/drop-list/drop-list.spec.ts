@@ -170,6 +170,16 @@ describe('DropListComponent', () => {
     expect(rowEnd?.querySelector('.blacklist-button')).toBeTruthy();
   });
 
+  it('uses a fixed SVG icon for the active-row ignore action', () => {
+    render();
+
+    const ignoreButton = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.active-section .blacklist-button');
+    const icon = ignoreButton?.querySelector<SVGElement>('.blacklist-button__icon');
+    expect(icon?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(icon?.querySelector('circle')).toBeTruthy();
+    expect(icon?.querySelector('path')).toBeTruthy();
+  });
+
   it('renders Favorites before Active Drops without duplicating rows', () => {
     render([sea], [valorant]);
     const headings = [...fixture.nativeElement.querySelectorAll('h2')].map((heading: HTMLElement) => heading.textContent?.trim());
