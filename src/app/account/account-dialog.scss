@@ -19,3 +19,8 @@
 .account-dialog__account-actions .app-button { display: inline-flex; align-items: center; justify-content: center; }
 .account-dialog__sync-choice { display: grid; gap: .65rem; margin: 1rem 0; padding: 1rem; border: 1px solid #746b82; border-radius: .5rem; }
 .account-dialog__sync-choice h3 { margin: 0; font-size: 1rem; }
+
+@media (max-width: 520px) {
+  .account-dialog-backdrop { grid-template-columns: minmax(0, 1fr); }
+  .account-dialog { box-sizing: border-box; min-width: 0; }
+}
