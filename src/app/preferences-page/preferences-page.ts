@@ -8,6 +8,9 @@ import { StatusBadgeComponent } from '../ui/status-badge';
 import { AuthService } from '../account/auth.service';
 import { ButtonDirective } from '../ui/button.directive';
 
+type ListStatusFilter = 'all' | 'active' | 'inactive';
+type ListRow = { readonly id: string; readonly gameName: string };
+
 @Component({ imports: [RouterLink, FormsModule, ButtonDirective, DisclosureComponent, StatusBadgeComponent], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
@@ -18,6 +21,12 @@ export class PreferencesPageComponent {
     .sort((left, right) => left.gameName.localeCompare(right.gameName, undefined, { sensitivity: 'base' })));
   protected readonly ignoredRows = computed(() => [...this.preferences.blacklistEntries()]
     .sort((left, right) => left.gameName.localeCompare(right.gameName, undefined, { sensitivity: 'base' })));
+  protected readonly favoriteSearch = signal('');
+  protected readonly ignoredSearch = signal('');
+  protected readonly favoriteStatusFilter = signal<ListStatusFilter>('all');
+  protected readonly ignoredStatusFilter = signal<ListStatusFilter>('all');
+  protected readonly filteredFavoriteRows = computed(() => this.filterRows(this.favoriteRows(), this.favoriteSearch(), this.favoriteStatusFilter()));
+  protected readonly filteredIgnoredRows = computed(() => this.filterRows(this.ignoredRows(), this.ignoredSearch(), this.ignoredStatusFilter()));
   protected readonly favoritesExpanded = signal(false);
   protected readonly activeDropIds = signal<ReadonlySet<string> | null>(null);
   protected readonly dropStatusUnavailable = signal(false);
@@ -50,6 +59,20 @@ export class PreferencesPageComponent {
   protected selectThemeColor(theme: ThemeColor): void { this.preferences.setThemeColor(theme); }
   protected removeFavorite(id: string): void { if (this.armedFavoriteId() === id) { this.preferences.removeFavorite(id); this.armedFavoriteId.set(null); } else this.armedFavoriteId.set(id); }
   protected cancelRemoveFavorite(id: string): void { if (this.armedFavoriteId() === id) this.armedFavoriteId.set(null); }
+  private filterRows(rows: readonly ListRow[], query: string, statusFilter: ListStatusFilter): readonly ListRow[] {
+    const activeIds = this.activeDropIds();
+    return rows.filter((row) => this.matchesFuzzyQuery(row.gameName, query) && (statusFilter === 'all' || activeIds === null || (statusFilter === 'active') === activeIds.has(row.id)));
+  }
+  private matchesFuzzyQuery(gameName: string, query: string): boolean {
+    const queryCharacters = query.trim().toLocaleLowerCase();
+    if (!queryCharacters) return true;
+    let nextMatchAt = 0;
+    for (const character of gameName.toLocaleLowerCase()) {
+      if (character === queryCharacters[nextMatchAt]) nextMatchAt++;
+      if (nextMatchAt === queryCharacters.length) return true;
+    }
+    return false;
+  }
   private fallbackName(id: string): string { return (id.split('/').filter(Boolean).at(-1) || id).replace(/[-_]+/g, ' ').replace(/\b[a-z]/g, (letter) => letter.toUpperCase()); }
   protected remove(id: string): void { if (this.armedForId() === id) { this.preferences.removeBlacklist(id); this.armedForId.set(null); } else this.armedForId.set(id); }
   protected cancelRemove(id: string): void { if (this.armedForId() === id) this.armedForId.set(null); }

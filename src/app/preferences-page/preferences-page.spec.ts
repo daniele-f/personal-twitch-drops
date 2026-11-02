@@ -3,7 +3,7 @@ import { signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { DropsProvider } from '../drops/drops-provider';
-import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesPageComponent } from './preferences-page';
 import { AuthService } from '../account/auth.service';
 
@@ -67,6 +67,69 @@ describe('PreferencesPageComponent', () => {
     expect(text).toContain('Account');
     expect(text).toContain('Twitch linked');
     expect(text.indexOf('Account')).toBeLessThan(text.indexOf('Favorites List'));
+  });
+
+  it('filters favorite and ignored lists by fuzzy game name and active status', async () => {
+    const activeDrops = [
+      { id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' },
+      { id: 'ignored-active', gameName: "Baldur's Gate 3", rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' },
+    ];
+    localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, JSON.stringify(['favorite-active', 'favorite-inactive']));
+    localStorage.setItem(FAVORITE_NAMES_STORAGE_KEY, JSON.stringify({ 'favorite-active': 'Hades II', 'favorite-inactive': 'Celeste' }));
+    localStorage.setItem(BLACKLIST_ENTRIES_STORAGE_KEY, JSON.stringify([
+      { id: 'ignored-active', gameName: "Baldur's Gate 3", blacklistedAt: '2026-11-01T00:00:00.000Z' },
+      { id: 'ignored-inactive', gameName: 'League of Legends', blacklistedAt: '2026-11-01T00:00:00.000Z' },
+    ]));
+    await TestBed.configureTestingModule({
+      imports: [PreferencesPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: DropsProvider, useValue: { loadActiveDrops: () => of(activeDrops) } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+    for (const button of page.querySelectorAll<HTMLButtonElement>('.app-disclosure')) button.click();
+    fixture.detectChanges();
+
+    const favoriteSearch = page.querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!;
+    favoriteSearch.value = 'hds';
+    favoriteSearch.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[data-favorite-id]')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('[data-favorite-id]')?.textContent).toContain('Hades II');
+
+    const ignoredStatus = page.querySelector<HTMLSelectElement>('[aria-label="Filter ignored games by status"]')!;
+    ignoredStatus.value = 'inactive';
+    ignoredStatus.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('[data-blacklist-id]')).toHaveLength(1);
+    expect(fixture.nativeElement.querySelector('[data-blacklist-id]')?.textContent).toContain('League of Legends');
+  });
+
+  it('keeps rows visible when a status filter is selected before activity status loads', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PreferencesPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.componentInstance['preferences'].addFavorite('favorite-id', 'Favorite Game');
+    fixture.detectChanges();
+    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.app-disclosure')!.click();
+    fixture.detectChanges();
+
+    const statusFilter = (fixture.nativeElement as HTMLElement).querySelector<HTMLSelectElement>('[aria-label="Filter favorites by status"]')!;
+    statusFilter.value = 'inactive';
+    statusFilter.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('[data-favorite-id]')).toHaveLength(1);
   });
 
   it('opens a modal and validates matching passwords before updating, then closes and clears it', async () => {
