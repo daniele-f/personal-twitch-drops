@@ -69,6 +69,24 @@ describe('PreferencesPageComponent', () => {
     expect(text.indexOf('Account')).toBeLessThan(text.indexOf('Favorites List'));
   });
 
+  it('renders the Ignore List with a fixed SVG icon', async () => {
+    await TestBed.configureTestingModule({
+      imports: [PreferencesPageComponent],
+      providers: [
+        provideRouter([]),
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
+      ],
+    }).compileComponents();
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+
+    const icon = (fixture.nativeElement as HTMLElement).querySelector<SVGElement>('.blacklist-disclosure .app-disclosure__ignore-icon');
+    expect(icon?.getAttribute('viewBox')).toBe('0 0 24 24');
+    expect(icon?.querySelector('circle')).toBeTruthy();
+    expect(icon?.querySelector('path')).toBeTruthy();
+  });
+
   it('filters favorite and ignored lists by fuzzy game name and active status', async () => {
     const activeDrops = [
       { id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' },

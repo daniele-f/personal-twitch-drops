@@ -6,6 +6,7 @@ export class DisclosureComponent {
   readonly expanded = input(false);
   readonly icon = input<string>();
   readonly starIcon = input(false);
+  readonly ignoreIcon = input(false);
   readonly count = input<number>();
   readonly toggled = output<void>();
 }

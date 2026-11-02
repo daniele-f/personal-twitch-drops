@@ -256,7 +256,8 @@
     <section class="list-summary-card">
       <app-disclosure
         class="blacklist-disclosure"
-        icon="⊘"
+        icon="ignore"
+        [ignoreIcon]="true"
         [count]="ignoredRows().length"
         [expanded]="expanded()"
         (toggled)="expanded.set(!expanded())"
