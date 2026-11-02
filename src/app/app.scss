@@ -22,6 +22,7 @@ button.debug-button--active,button.debug-button--active:hover:not(:disabled),but
 button.refresh:hover:not(:disabled),button.refresh:focus-visible { background:var(--color-accent-action-hover); color:var(--color-accent-foreground); }
 .app-header .navigation-toggle { display:none; }
 @media (max-width: 520px) {
+  .data-attribution { padding-bottom:calc(6rem + env(safe-area-inset-bottom, 0px)); }
   .app-header { position:relative; flex-direction:row; align-items:center; min-height:4rem; gap:.5rem; }
   .wordmark { min-width:0; font-size:.9rem; }
   .wordmark__icon { width:2rem; height:2rem; }

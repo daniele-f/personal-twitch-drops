@@ -163,7 +163,7 @@ describe('TrackerSyncService', () => {
     expect(selectedColumns.get('user_settings')).toBe('show_subscriptions,show_badges,updated_at');
   });
 
-  it('sends the theme argument required by the settings RPC', async () => {
+  it('syncs display settings without sending the device theme', async () => {
     localStorage.clear();
     const rpc = vi.fn().mockResolvedValue({ error: null });
     const client = {
@@ -189,7 +189,6 @@ describe('TrackerSyncService', () => {
     await sync.syncLocalChange();
 
     expect(rpc).toHaveBeenCalledWith('set_tracker_settings', {
-      p_theme_color: 'electric-blue',
       p_show_subscriptions: true,
       p_show_badges: false,
     });
