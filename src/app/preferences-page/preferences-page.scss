@@ -120,7 +120,8 @@
   color: inherit;
   font-size: 0;
 }
-.game-search input { color: #fff; -webkit-text-fill-color: #fff; }
+.game-search input { color: #fff; font-size: 1rem; -webkit-text-fill-color: #fff; }
+.game-search input::placeholder { color: #aaa6b4; opacity: 1; }
 .game-search input,
 .game-list-filter-panel select {
   box-sizing: border-box;
