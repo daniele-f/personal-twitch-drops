@@ -133,6 +133,7 @@
   background: #151419;
   color: #fff;
   font: inherit;
+  font-size: 1rem;
 }
 .game-status-filter { display:grid; gap:.25rem; color:#cfc8dc; font-size:.75rem; }.game-status-filter select { min-height:3rem; border:1px solid #746b82; border-radius:.55rem; padding:.65rem .8rem; background:#24232a; color:#fff; font:inherit; font-weight:700; }.game-status-filter .game-status-filter--active { border-color:var(--color-accent); box-shadow:0 0 0 1px var(--color-accent); }
 .game-list {
