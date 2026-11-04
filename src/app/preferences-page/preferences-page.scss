@@ -35,6 +35,8 @@
   padding: 0.85rem 0.9rem;
   border-left: 4px solid transparent;
   border-radius: 0.45rem;
+  min-height: 5rem;
+  box-sizing: border-box;
   color: #fff;
   text-decoration: none;
 }
@@ -52,6 +54,7 @@
   grid-column: 2;
   color: #cfc8dc;
 }
+.settings-navigation a:last-child > svg { width: 1.9rem; height: 1.9rem; }
 .settings-navigation__link--active {
   border-left-color: var(--color-accent) !important;
   background: color-mix(in srgb, var(--color-accent) 22%, transparent);
@@ -114,9 +117,10 @@
 .game-search {
   display: grid;
   gap: 0.3rem;
-  color: transparent;
+  color: inherit;
   font-size: 0;
 }
+.game-search input { color: #fff; -webkit-text-fill-color: #fff; }
 .game-search input,
 .game-list-filter-panel select {
   box-sizing: border-box;
@@ -129,42 +133,13 @@
   color: #fff;
   font: inherit;
 }
-.filters-toggle {
-  min-height: 3rem;
-  border: 1px solid #746b82;
-  border-radius: 0.55rem;
-  padding: 0.65rem 1rem;
-  background: #24232a;
-  color: #fff;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.filters-toggle--active { border-color: var(--color-accent); }
-.filters-toggle [data-active-filter-indicator] { color: var(--color-accent-text); font-size: 1.25rem; line-height: 0; }
-.game-list-filter-panel {
-  display: grid;
-  grid-template-columns: 12rem;
-  gap: 0.5rem;
-  margin-top: 0.7rem;
-  padding: 0.85rem;
-  border: 1px solid #4a4652;
-  border-radius: 0.55rem;
-  background: #1b1a20;
-}
-.game-list-filter-panel label {
-  display: grid;
-  gap: 0.35rem;
-  color: #d0cbd6;
-  font-size: 0.85rem;
-}
+.game-status-filter { display:grid; gap:.25rem; color:#cfc8dc; font-size:.75rem; }.game-status-filter select { min-height:3rem; border:1px solid #746b82; border-radius:.55rem; padding:.65rem .8rem; background:#24232a; color:#fff; font:inherit; font-weight:700; }.game-status-filter .game-status-filter--active { border-color:var(--color-accent); box-shadow:0 0 0 1px var(--color-accent); }
 .game-list {
   margin: 0;
   padding: 0;
   list-style: none;
 }
-.game-list__name small { display: block; margin-top: .25rem; color: #cfc8dc; font-size: .78rem; font-weight: 500; }
-.game-list__name .campaign-status--active { color: #83d7ad; }.game-list__name .campaign-status--inactive { color: #ef8c8c; }
+.campaign-status { flex:0 0 auto; margin-left:auto; color:#cfc8dc; font-size:.82rem; font-weight:700; }.campaign-status--active { color:#83d7ad; }.campaign-status--inactive { color:#ef8c8c; }
 .game-list li {
   display: flex;
   align-items: center;
@@ -174,6 +149,7 @@
   border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 52%, #3c3c45);
 }
 .game-list__name {
+  flex: 1 1 auto;
   overflow: hidden;
   font-size: 1.15rem;
   font-weight: 750;

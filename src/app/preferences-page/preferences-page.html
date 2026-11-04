@@ -71,51 +71,21 @@
               placeholder="Search hidden games"
             />
           }</label
-        ><button
-          type="button"
-          class="filters-toggle"
-          [attr.aria-expanded]="filtersOpen()"
-          aria-label="Show game filters"
-          (click)="filtersOpen.set(!filtersOpen())"
-        >
-          ☷ Filters @if (isFilterActive()) { <span data-active-filter-indicator aria-label="Active filter">•</span> }
-        </button>
+        ><label class="game-status-filter">Status
+          @if (selectedGameList() === 'favorites') {
+            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="favoriteStatusFilter()" (ngModelChange)="favoriteStatusFilter.set($event)" aria-label="Filter favorites by status"><option value="all">All games</option><option value="active">Active drops</option><option value="inactive">No active drops</option></select>
+          } @else {
+            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="ignoredStatusFilter()" (ngModelChange)="ignoredStatusFilter.set($event)" aria-label="Filter hidden games by status"><option value="all">All games</option><option value="active">Active drops</option><option value="inactive">No active drops</option></select>
+          }
+        </label>
       </div>
-      @if (filtersOpen()) {
-        <div class="game-list-filter-panel">
-          <label
-            >Status
-            @if (selectedGameList() === 'favorites') {
-              <select
-                [ngModel]="favoriteStatusFilter()"
-                (ngModelChange)="favoriteStatusFilter.set($event)"
-                aria-label="Filter favorites by status"
-              >
-                <option value="all">All games</option>
-                <option value="active">Active drops</option>
-                <option value="inactive">No active drops</option>
-              </select>
-            } @else {
-              <select
-                [ngModel]="ignoredStatusFilter()"
-                (ngModelChange)="ignoredStatusFilter.set($event)"
-                aria-label="Filter hidden games by status"
-              >
-                <option value="all">All games</option>
-                <option value="active">Active drops</option>
-                <option value="inactive">No active drops</option>
-              </select>
-            }
-          </label>
-        </div>
-      }
       @if (selectedGameList() === 'favorites') {
         @if (favoriteRows().length) {
           @if (filteredFavoriteRows().length) {
             <ul class="game-list" aria-label="Favorite games">
               @for (entry of filteredFavoriteRows(); track entry.id) {
                 <li [attr.data-favorite-id]="entry.id">
-                  <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }} <small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small></span
+                  <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }}</span><small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small>
                   ><button
                     class="game-list__remove"
                     type="button"
@@ -145,7 +115,7 @@
             <ul class="game-list" aria-label="Hidden games">
               @for (entry of filteredIgnoredRows(); track entry.id) {
                 <li [attr.data-blacklist-id]="entry.id">
-                  <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }} <small>Hidden {{ formatHiddenDate(entry.blacklistedAt) }}</small> <small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small></span
+                  <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }}</span><small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small>
                   ><button
                     class="game-list__remove"
                     type="button"

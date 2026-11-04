@@ -31,7 +31,6 @@ export class PreferencesPageComponent {
   protected readonly filteredFavoriteRows = computed(() => this.filterRows(this.favoriteRows(), this.favoriteSearch(), this.favoriteStatusFilter()));
   protected readonly filteredIgnoredRows = computed(() => this.filterRows(this.ignoredRows(), this.ignoredSearch(), this.ignoredStatusFilter()));
   protected readonly selectedGameList = signal<GameList>('favorites');
-  protected readonly filtersOpen = signal(false);
   protected readonly activeDropIds = signal<ReadonlySet<string> | null>(null);
   protected readonly dropStatusUnavailable = signal(false);
   protected readonly armedFavoriteId = signal<string | null>(null);
@@ -66,11 +65,9 @@ export class PreferencesPageComponent {
   }
   protected selectGameList(list: GameList): void {
     this.selectedGameList.set(list);
-    this.filtersOpen.set(false);
   }
   protected campaignStatus(id: string): 'active' | 'inactive' | 'checking' { const activeIds = this.activeDropIds(); return activeIds === null ? 'checking' : activeIds.has(id) ? 'active' : 'inactive'; }
   protected isFilterActive(): boolean { return this.selectedGameList() === 'favorites' ? this.favoriteStatusFilter() !== 'all' : this.ignoredStatusFilter() !== 'all'; }
-  protected formatHiddenDate(value: string): string { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)); }
   protected openSignIn(): void { this.accountDialog.open(); }
   protected selectThemeColor(theme: ThemeColor): void { this.preferences.setThemeColor(theme); }
   protected removeFavorite(id: string): void { if (this.armedFavoriteId() === id) { this.preferences.removeFavorite(id); this.armedFavoriteId.set(null); } else this.armedFavoriteId.set(id); }

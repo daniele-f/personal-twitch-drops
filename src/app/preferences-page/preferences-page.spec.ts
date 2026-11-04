@@ -26,7 +26,7 @@ describe('PreferencesPageComponent', () => {
     expect(page.textContent).toContain('Manage games');
     expect(page.textContent).toContain('Hidden');
     expect(page.querySelector<HTMLInputElement>('input[placeholder="Search favorite games"]')).not.toBeNull();
-    expect(page.querySelector<HTMLButtonElement>('[aria-label="Show game filters"]')).not.toBeNull();
+    expect(page.querySelector<HTMLSelectElement>('[aria-label="Filter favorites by status"]')).not.toBeNull();
   });
 
   it('switches from Favorites to Hidden and explains the active list', async () => {
@@ -46,10 +46,9 @@ describe('PreferencesPageComponent', () => {
     const search = page.querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!; search.value = 'hds'; search.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(page.querySelectorAll('[data-favorite-id]')).toHaveLength(1);
     expect(page.querySelector('[data-favorite-id]')?.textContent).toContain('Active');
-    page.querySelector<HTMLButtonElement>('[aria-label="Show game filters"]')!.click(); fixture.detectChanges();
     const filter = page.querySelector<HTMLSelectElement>('[aria-label="Filter favorites by status"]')!;
     filter.value = 'active'; filter.dispatchEvent(new Event('change')); fixture.detectChanges();
-    expect(page.querySelector('[data-active-filter-indicator]')).not.toBeNull();
+    expect(filter.classList).toContain('game-status-filter--active');
   });
 
   it('shows signed-in account controls on the Account route', async () => {
