@@ -135,13 +135,8 @@ export class App implements AfterViewInit {
   }
   protected keepFavorite(id: string): void { this.preferences.removeBlacklist(id); }
   protected hideGame(id: string): void { this.preferences.removeFavorite(id); }
-  protected isPreferencesRoute(): boolean {
-    return this.router.isActive('/preferences', {
-      paths: 'exact',
-      queryParams: 'ignored',
-      fragment: 'ignored',
-      matrixParams: 'ignored',
-    });
+  protected isSettingsRoute(): boolean {
+    return this.router.url.startsWith('/settings');
   }
   protected isPrivacyRoute(): boolean {
     return this.router.isActive('/privacy', {

@@ -63,13 +63,13 @@ describe('App', () => {
     expect(trackerSync.syncAfterAuthentication).toHaveBeenCalledTimes(1);
   });
 
-  it('renders Preferences as a button-styled path route link', () => {
+  it('renders Settings as a button-styled path route link', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');
     expect(link?.classList).toContain('app-button');
-    expect(link?.getAttribute('href')).toBe('/preferences');
+    expect(link?.getAttribute('href')).toBe('/settings/manage-games');
   });
 
   it('applies the saved theme accent to the application host', () => {
@@ -117,7 +117,7 @@ describe('App', () => {
     fixture.detectChanges();
 
     const labels = [...(fixture.nativeElement as HTMLElement).querySelectorAll('.app-header nav > a, .app-header nav > button')].map((control) => control.textContent?.trim());
-    expect(labels.slice(-3)).toEqual(['No Changes', 'Preferences', 'Twitch inventory']);
+    expect(labels.slice(-3)).toEqual(['No Changes', 'Settings', 'Twitch inventory']);
   });
 
   it('uses the shared button styles for Debug and Changes', () => {
@@ -159,9 +159,9 @@ describe('App', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('.scroll-to-top')).toBeTruthy();
   });
 
-  it('marks Preferences active and hides Changes on the Preferences route', async () => {
+  it('marks Settings active and hides Changes on the Manage games route', async () => {
     const fixture = TestBed.createComponent(App);
-    await TestBed.inject(Router).navigateByUrl('/preferences');
+    await TestBed.inject(Router).navigateByUrl('/settings/manage-games');
     fixture.detectChanges();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -169,17 +169,17 @@ describe('App', () => {
     expect(root.querySelector('.changes-button')).toBeNull();
   });
 
-  it('hides Changes when Preferences is opened at its favorites fragment', async () => {
+  it('hides Changes when Settings is opened at the Account route', async () => {
     const fixture = TestBed.createComponent(App);
-    await TestBed.inject(Router).navigateByUrl('/preferences#favorites');
+    await TestBed.inject(Router).navigateByUrl('/settings/account');
     fixture.detectChanges();
 
     expect((fixture.nativeElement as HTMLElement).querySelector('.changes-button')).toBeNull();
   });
 
-  it('makes the active Preferences control non-navigating', async () => {
+  it('makes the active Settings control non-navigating', async () => {
     const fixture = TestBed.createComponent(App);
-    await TestBed.inject(Router).navigateByUrl('/preferences');
+    await TestBed.inject(Router).navigateByUrl('/settings/manage-games');
     fixture.detectChanges();
 
     const link = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.preferences-link');

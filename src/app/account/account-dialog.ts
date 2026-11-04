@@ -75,5 +75,5 @@ export class AccountDialogComponent {
   protected async retrySync(): Promise<void> {
     await this.trackerSync.retryPending();
   }
-  protected onPreferences(): boolean { return this.router.url.startsWith('/preferences'); }
+  protected onSettings(): boolean { return this.router.url.startsWith('/settings'); }
 }

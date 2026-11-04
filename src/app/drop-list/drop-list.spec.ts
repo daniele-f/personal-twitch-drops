@@ -329,7 +329,7 @@ describe('DropListComponent', () => {
 
     const manage = (fixture.nativeElement as HTMLElement).querySelector<HTMLAnchorElement>('.favorites-manage');
     expect(manage?.textContent?.trim()).toBe('Manage');
-    expect(manage?.getAttribute('href')).toBe('/preferences#favorites');
+    expect(manage?.getAttribute('href')).toBe('/settings/manage-games');
   });
 
   it('opens a Filters menu that explains the reward types it can hide', () => {

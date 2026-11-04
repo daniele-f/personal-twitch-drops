@@ -29,7 +29,7 @@
         <div class="account-dialog__account-actions">
           <button type="button" appButton="destructive" (click)="signOut()">Sign out</button>
           @if (!(auth.identities?.()?.some((identity) => identity.provider === 'twitch'))) { <button type="button" class="account-dialog__oauth-button" appButton="default" (click)="linkTwitchIdentity()" [disabled]="auth.status() === 'authenticating'"><span>Link Twitch account</span></button> }
-          @if (!onPreferences()) { <a appButton="default" href="/preferences#account">Manage account</a> }
+          @if (!onSettings()) { <a appButton="default" href="/settings/account">Manage account</a> }
         </div>
       } @else if (auth.status() === 'awaiting-confirmation') {
         <p>Check your email to confirm your account, then sign in here.</p>

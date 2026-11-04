@@ -1,20 +1,21 @@
 import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { DropsProvider } from '../drops/drops-provider';
 import { PreferencesService, ThemeColor } from '../preferences/preferences.service';
-import { DisclosureComponent } from '../ui/disclosure';
-import { StatusBadgeComponent } from '../ui/status-badge';
 import { AuthService } from '../account/auth.service';
 import { ButtonDirective } from '../ui/button.directive';
 
 type ListStatusFilter = 'all' | 'active' | 'inactive';
+type SettingsSection = 'games' | 'account' | 'appearance';
+type GameList = 'favorites' | 'hidden';
 type ListRow = { readonly id: string; readonly gameName: string };
 
-@Component({ imports: [RouterLink, FormsModule, ButtonDirective, DisclosureComponent, StatusBadgeComponent], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
+@Component({ imports: [RouterLink, FormsModule, ButtonDirective], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   protected readonly auth = inject(AuthService);
+  private readonly router = inject(Router);
   private readonly dropsProvider = inject(DropsProvider);
   protected readonly favoriteRows = computed(() => [...this.preferences.favoriteIds()]
     .map((id) => ({ id, gameName: this.preferences.favoriteNames().get(id) ?? this.fallbackName(id) }))
@@ -27,11 +28,11 @@ export class PreferencesPageComponent {
   protected readonly ignoredStatusFilter = signal<ListStatusFilter>('all');
   protected readonly filteredFavoriteRows = computed(() => this.filterRows(this.favoriteRows(), this.favoriteSearch(), this.favoriteStatusFilter()));
   protected readonly filteredIgnoredRows = computed(() => this.filterRows(this.ignoredRows(), this.ignoredSearch(), this.ignoredStatusFilter()));
-  protected readonly favoritesExpanded = signal(false);
+  protected readonly selectedGameList = signal<GameList>('favorites');
+  protected readonly filtersOpen = signal(false);
   protected readonly activeDropIds = signal<ReadonlySet<string> | null>(null);
   protected readonly dropStatusUnavailable = signal(false);
   protected readonly armedFavoriteId = signal<string | null>(null);
-  protected readonly expanded = signal(false);
   protected readonly armedForId = signal<string | null>(null);
   protected readonly unlinkArmed = signal(false);
   protected readonly emailToAdd = signal('');
@@ -55,6 +56,15 @@ export class PreferencesPageComponent {
         error: () => this.dropStatusUnavailable.set(true),
       });
     }
+  }
+  protected section(): SettingsSection {
+    if (this.router.url.startsWith('/settings/account')) return 'account';
+    if (this.router.url.startsWith('/settings/appearance')) return 'appearance';
+    return 'games';
+  }
+  protected selectGameList(list: GameList): void {
+    this.selectedGameList.set(list);
+    this.filtersOpen.set(false);
   }
   protected selectThemeColor(theme: ThemeColor): void { this.preferences.setThemeColor(theme); }
   protected removeFavorite(id: string): void { if (this.armedFavoriteId() === id) { this.preferences.removeFavorite(id); this.armedFavoriteId.set(null); } else this.armedFavoriteId.set(id); }

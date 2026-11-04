@@ -230,7 +230,7 @@ describe('DropsPageComponent', () => {
     const manageLink = activeHeading?.querySelector<HTMLAnchorElement>('.favorites-manage');
     expect(activeHeading?.textContent).toContain('Active Drops');
     expect(manageLink?.textContent?.trim()).toBe('Manage');
-    expect(manageLink?.getAttribute('href')).toBe('/preferences#favorites');
+    expect(manageLink?.getAttribute('href')).toBe('/settings/manage-games');
   });
 
   it('shows the Favorites manager only once when favorite games exist', async () => {

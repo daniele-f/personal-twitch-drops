@@ -220,7 +220,7 @@ describe('AccountDialogComponent', () => {
 
     expect(fixture.nativeElement.textContent).toContain('Twitch not linked.');
     expect(fixture.nativeElement.textContent).not.toContain('null');
-    expect(fixture.nativeElement.querySelector('a[href="/preferences#account"]')?.textContent?.trim()).toBe('Manage account');
+    expect(fixture.nativeElement.querySelector('a[href="/settings/account"]')?.textContent?.trim()).toBe('Manage account');
   });
 
 });

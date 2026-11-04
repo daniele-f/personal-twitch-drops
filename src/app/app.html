@@ -1,6 +1,116 @@
-<header class="app-header"><a class="wordmark" href="./" aria-label="Personal Twitch Drops home"><img class="wordmark__icon" src="personal-twitch-drops-favicon-small.png" alt="" aria-hidden="true" /> <span>Personal <b>Twitch Drops</b></span></a><button #navigationToggle class="navigation-toggle" type="button" appButton="default" aria-controls="header-actions" [attr.aria-expanded]="navigationOpen()" [attr.aria-label]="navigationOpen() ? 'Close navigation' : 'Open navigation'" (click)="toggleNavigation()"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path [attr.d]="navigationOpen() ? 'M6 6l12 12M6 18L18 6' : 'M4 6h16M4 12h16M4 18h16'" /></svg>@if (changesState.hasUnseenChanges()) { <span class="changes-notification-dot" aria-hidden="true"></span> }</button><nav #headerActions id="header-actions" [class.header-actions--open]="navigationOpen()" aria-label="Application actions" (click)="navigationOpen.set(false)"><button type="button" appButton="default" (click)="accountOpen.set(true)">{{ auth.user() ? 'Account' : 'Sign in' }}</button>@if (debugMenuEnabled) { <button class="debug-button" [class.debug-button--active]="debugMenuOpen()" type="button" (click)="debugMenuOpen.set(!debugMenuOpen())" [attr.aria-expanded]="debugMenuOpen()" aria-controls="debug-menu" appButton="default">Debug</button> }@if (!isPreferencesRoute()) { <button #changesButton class="changes-button" [class.changes-button--active]="changesOpen()" type="button" (click)="toggleChangesPanel()" [attr.aria-expanded]="changesOpen()" appButton="default">{{ changesState.changes().length ? 'Changes · ' + changesState.changes().length : 'No Changes' }}@if (changesState.hasUnseenChanges()) { <span class="changes-notification-dot" aria-hidden="true"></span> }</button> }<a class="preferences-link" [class.preferences-link--active]="isPreferencesRoute()" [attr.aria-disabled]="isPreferencesRoute() ? 'true' : null" appButton="default" [routerLink]="isPreferencesRoute() ? null : '/preferences'">Preferences</a><a class="twitch-inventory-link" appButton="default" href="https://www.twitch.tv/drops/inventory" target="_blank" rel="noopener noreferrer"><span class="twitch-inventory-label">Twitch inventory</span> <svg class="external-link-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3h7v7m0-7L10 14m11 0v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg></a></nav></header>
-<app-account-dialog [opened]="accountOpen()" (closed)="accountOpen.set(false)" /><app-sync-choice-dialog [opened]="syncChoiceOpen()" (closed)="syncChoiceOpen.set(false)" />
-@if (syncMessage(); as message) { <p class="account-sync-error" role="status">{{ message }} <button type="button" (click)="syncAccount()">Retry</button></p> }
+<header class="app-header">
+  <a class="wordmark" href="./" aria-label="Personal Twitch Drops home"
+    ><img
+      class="wordmark__icon"
+      src="personal-twitch-drops-favicon-small.png"
+      alt=""
+      aria-hidden="true"
+    />
+    <span>Personal <b>Twitch Drops</b></span></a
+  ><button
+    #navigationToggle
+    class="navigation-toggle"
+    type="button"
+    appButton="default"
+    aria-controls="header-actions"
+    [attr.aria-expanded]="navigationOpen()"
+    [attr.aria-label]="navigationOpen() ? 'Close navigation' : 'Open navigation'"
+    (click)="toggleNavigation()"
+  >
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+    >
+      <path [attr.d]="navigationOpen() ? 'M6 6l12 12M6 18L18 6' : 'M4 6h16M4 12h16M4 18h16'" />
+    </svg>
+    @if (changesState.hasUnseenChanges()) {
+      <span class="changes-notification-dot" aria-hidden="true"></span>
+    }
+  </button>
+  <nav
+    #headerActions
+    id="header-actions"
+    [class.header-actions--open]="navigationOpen()"
+    aria-label="Application actions"
+    (click)="navigationOpen.set(false)"
+  >
+    <button type="button" appButton="default" (click)="accountOpen.set(true)">
+      {{ auth.user() ? 'Account' : 'Sign in' }}
+    </button>
+    @if (debugMenuEnabled) {
+      <button
+        class="debug-button"
+        [class.debug-button--active]="debugMenuOpen()"
+        type="button"
+        (click)="debugMenuOpen.set(!debugMenuOpen())"
+        [attr.aria-expanded]="debugMenuOpen()"
+        aria-controls="debug-menu"
+        appButton="default"
+      >
+        Debug
+      </button>
+    }
+    @if (!isSettingsRoute()) {
+      <button
+        #changesButton
+        class="changes-button"
+        [class.changes-button--active]="changesOpen()"
+        type="button"
+        (click)="toggleChangesPanel()"
+        [attr.aria-expanded]="changesOpen()"
+        appButton="default"
+      >
+        {{
+          changesState.changes().length
+            ? 'Changes · ' + changesState.changes().length
+            : 'No Changes'
+        }}
+        @if (changesState.hasUnseenChanges()) {
+          <span class="changes-notification-dot" aria-hidden="true"></span>
+        }
+      </button>
+    }
+    <a
+      class="preferences-link"
+      [class.preferences-link--active]="isSettingsRoute()"
+      [attr.aria-disabled]="isSettingsRoute() ? 'true' : null"
+      appButton="default"
+      [routerLink]="isSettingsRoute() ? null : '/settings/manage-games'"
+      >Settings</a
+    ><a
+      class="twitch-inventory-link"
+      appButton="default"
+      href="https://www.twitch.tv/drops/inventory"
+      target="_blank"
+      rel="noopener noreferrer"
+      ><span class="twitch-inventory-label">Twitch inventory</span>
+      <svg
+        class="external-link-icon"
+        aria-hidden="true"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      >
+        <path d="M14 3h7v7m0-7L10 14m11 0v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" /></svg
+    ></a>
+  </nav>
+</header>
+<app-account-dialog
+  [opened]="accountOpen()"
+  (closed)="accountOpen.set(false)"
+/><app-sync-choice-dialog [opened]="syncChoiceOpen()" (closed)="syncChoiceOpen.set(false)" />
+@if (syncMessage(); as message) {
+  <p class="account-sync-error" role="status">
+    {{ message }} <button type="button" (click)="syncAccount()">Retry</button>
+  </p>
+}
 @if (debugMenuEnabled && debugMenuOpen()) {
   <aside class="debug-menu" id="debug-menu">
     <h2>Debug menu</h2>
@@ -25,40 +135,102 @@
         <button type="button" (click)="debugRemoveAllIgnored()">Remove all ignored</button>
         <div class="debug-menu__storage-view" data-storage-view="favorites">
           <button type="button" (click)="debugShowFavorites()">Show favorites</button>
-          @if (debugFavoritesInfo() !== null) { <pre class="debug-menu__output">{{ debugFavoritesInfo() }}</pre> }
+          @if (debugFavoritesInfo() !== null) {
+            <pre class="debug-menu__output">{{ debugFavoritesInfo() }}</pre>
+          }
         </div>
         <div class="debug-menu__storage-view" data-storage-view="ignored">
           <button type="button" (click)="debugShowIgnored()">Show ignored games</button>
-          @if (debugIgnoredInfo() !== null) { <pre class="debug-menu__output">{{ debugIgnoredInfo() }}</pre> }
+          @if (debugIgnoredInfo() !== null) {
+            <pre class="debug-menu__output">{{ debugIgnoredInfo() }}</pre>
+          }
         </div>
         <div class="debug-menu__storage-view" data-storage-view="previous-day">
           <button type="button" (click)="debugShowPreviousDay()">Show previous day</button>
-          @if (debugPreviousDayInfo() !== null) { <pre class="debug-menu__output">{{ debugPreviousDayInfo() }}</pre> }
+          @if (debugPreviousDayInfo() !== null) {
+            <pre class="debug-menu__output">{{ debugPreviousDayInfo() }}</pre>
+          }
           <div class="debug-menu__snapshot-fields">
-            <input aria-label="Game name" [value]="debugPreviousGameName()" (input)="debugPreviousGameName.set($any($event.target).value)" placeholder="Game name">
-            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugPreviousRewardCount()" (input)="debugPreviousRewardCount.set($any($event.target).value)" placeholder="Reward count">
-            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugPreviousEndsInDays()" (input)="debugPreviousEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+            <input
+              aria-label="Game name"
+              [value]="debugPreviousGameName()"
+              (input)="debugPreviousGameName.set($any($event.target).value)"
+              placeholder="Game name"
+            />
+            <input
+              aria-label="Reward count"
+              type="number"
+              min="1"
+              step="1"
+              [value]="debugPreviousRewardCount()"
+              (input)="debugPreviousRewardCount.set($any($event.target).value)"
+              placeholder="Reward count"
+            />
+            <input
+              aria-label="Ends in days"
+              type="number"
+              min="0"
+              step="1"
+              [value]="debugPreviousEndsInDays()"
+              (input)="debugPreviousEndsInDays.set($any($event.target).value)"
+              placeholder="Ends in X days"
+            />
           </div>
-          <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustPrevious('add')">Add</button><button type="button" (click)="debugAdjustPrevious('replace')">Replace</button></div>
-          @if (debugPreviousError() !== null) { <p class="debug-menu__error">{{ debugPreviousError() }}</p> }
+          <div class="debug-menu__storage-actions">
+            <button type="button" (click)="debugAdjustPrevious('add')">Add</button
+            ><button type="button" (click)="debugAdjustPrevious('replace')">Replace</button>
+          </div>
+          @if (debugPreviousError() !== null) {
+            <p class="debug-menu__error">{{ debugPreviousError() }}</p>
+          }
         </div>
         <div class="debug-menu__storage-view" data-storage-view="today">
           <button type="button" (click)="debugShowToday()">Show today's latest</button>
-          @if (debugTodayInfo() !== null) { <pre class="debug-menu__output">{{ debugTodayInfo() }}</pre> }
+          @if (debugTodayInfo() !== null) {
+            <pre class="debug-menu__output">{{ debugTodayInfo() }}</pre>
+          }
           <div class="debug-menu__snapshot-fields">
-            <input aria-label="Game name" [value]="debugTodayGameName()" (input)="debugTodayGameName.set($any($event.target).value)" placeholder="Game name">
-            <input aria-label="Reward count" type="number" min="1" step="1" [value]="debugTodayRewardCount()" (input)="debugTodayRewardCount.set($any($event.target).value)" placeholder="Reward count">
-            <input aria-label="Ends in days" type="number" min="0" step="1" [value]="debugTodayEndsInDays()" (input)="debugTodayEndsInDays.set($any($event.target).value)" placeholder="Ends in X days">
+            <input
+              aria-label="Game name"
+              [value]="debugTodayGameName()"
+              (input)="debugTodayGameName.set($any($event.target).value)"
+              placeholder="Game name"
+            />
+            <input
+              aria-label="Reward count"
+              type="number"
+              min="1"
+              step="1"
+              [value]="debugTodayRewardCount()"
+              (input)="debugTodayRewardCount.set($any($event.target).value)"
+              placeholder="Reward count"
+            />
+            <input
+              aria-label="Ends in days"
+              type="number"
+              min="0"
+              step="1"
+              [value]="debugTodayEndsInDays()"
+              (input)="debugTodayEndsInDays.set($any($event.target).value)"
+              placeholder="Ends in X days"
+            />
           </div>
-          <div class="debug-menu__storage-actions"><button type="button" (click)="debugAdjustToday('add')">Add</button><button type="button" (click)="debugAdjustToday('replace')">Replace</button></div>
-          @if (debugTodayError() !== null) { <p class="debug-menu__error">{{ debugTodayError() }}</p> }
+          <div class="debug-menu__storage-actions">
+            <button type="button" (click)="debugAdjustToday('add')">Add</button
+            ><button type="button" (click)="debugAdjustToday('replace')">Replace</button>
+          </div>
+          @if (debugTodayError() !== null) {
+            <p class="debug-menu__error">{{ debugTodayError() }}</p>
+          }
         </div>
       </div>
     </details>
     <details>
       <summary>Celebration</summary>
       <div class="debug-menu__actions">
-        <button type="button" (click)="debugResetConfettiCelebrations()">Reset confetti celebrations</button>
+        <button type="button" (click)="debugResetConfettiCelebrations()">
+          Reset confetti celebrations
+        </button>
       </div>
     </details>
     <button type="button" (click)="debugMenuOpen.set(false)">Close menu</button>
@@ -68,7 +240,13 @@
   <aside #changesPanel class="changes-popover">
     <div class="changes-popover__header">
       <h2>{{ changesState.changes().length ? 'Recent changes' : 'No changes' }}</h2>
-      <app-toggle class="changes-show-hidden" controlId="changes-show-hidden" label="Show ignored games" [checked]="showHiddenChanges()" (checkedChange)="setShowHiddenChanges($event)" />
+      <app-toggle
+        class="changes-show-hidden"
+        controlId="changes-show-hidden"
+        label="Show ignored games"
+        [checked]="showHiddenChanges()"
+        (checkedChange)="setShowHiddenChanges($event)"
+      />
     </div>
     @if (changesState.changes().length) {
       @for (group of changeGroups; track group.type) {
@@ -76,15 +254,68 @@
           @if (changes.length) {
             <section class="changes-group">
               <h3>{{ group.label }}</h3>
-              <ul>@for (change of changes; track change.drop.id) { <li [class.changes-change--ignored]="isIgnoredChange(change)">{{ change.drop.gameName }}@if (changesState.changedSinceLastRefreshIds().has(change.drop.id)) { <span class="change-since-refresh-dot" aria-label="Changed since last refresh"></span> }</li> }</ul>
+              <ul>
+                @for (change of changes; track change.drop.id) {
+                  <li [class.changes-change--ignored]="isIgnoredChange(change)">
+                    {{ change.drop.gameName }}
+                    @if (changesState.changedSinceLastRefreshIds().has(change.drop.id)) {
+                      <span
+                        class="change-since-refresh-dot"
+                        aria-label="Changed since last refresh"
+                      ></span>
+                    }
+                  </li>
+                }
+              </ul>
             </section>
           }
         }
       }
-    } @else { <p>No changes since your last refresh.</p> }
+    } @else {
+      <p>No changes since your last refresh.</p>
+    }
     <button class="changes-close" type="button" (click)="closeChangesPanel()">Close</button>
   </aside>
-}<main class="app-main">@if (conflicts().length) { <app-conflict-resolution [conflicts]="conflicts()" (keepFavoriteRequested)="keepFavorite($event)" (hideRequested)="hideGame($event)" /> } @else { <router-outlet /> }</main>
+}
+<main class="app-main">
+  @if (conflicts().length) {
+    <app-conflict-resolution
+      [conflicts]="conflicts()"
+      (keepFavoriteRequested)="keepFavorite($event)"
+      (hideRequested)="hideGame($event)"
+    />
+  } @else {
+    <router-outlet />
+  }
+</main>
 <app-preference-notifications />
-@if (!isPrivacyRoute()) { <footer class="data-attribution">All data is loaded from <a href="https://twitchdrops.app/" target="_blank" rel="noopener noreferrer">twitchdrops.app</a>. Information could be wrong or incomplete. <a routerLink="/privacy">Privacy Policy</a></footer> }
-@if (showScrollToTop()) { <button class="scroll-to-top" type="button" (click)="scrollToTop()" appButton="default" aria-label="Scroll to top" title="Scroll to top"><svg class="scroll-to-top__chevron" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6" /></svg></button> }
+@if (!isPrivacyRoute()) {
+  <footer class="data-attribution">
+    All data is loaded from
+    <a href="https://twitchdrops.app/" target="_blank" rel="noopener noreferrer">twitchdrops.app</a
+    >. Information could be wrong or incomplete. <a routerLink="/privacy">Privacy Policy</a>
+  </footer>
+}
+@if (showScrollToTop()) {
+  <button
+    class="scroll-to-top"
+    type="button"
+    (click)="scrollToTop()"
+    appButton="default"
+    aria-label="Scroll to top"
+    title="Scroll to top"
+  >
+    <svg
+      class="scroll-to-top__chevron"
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <path d="m6 15 6-6 6 6" />
+    </svg>
+  </button>
+}
