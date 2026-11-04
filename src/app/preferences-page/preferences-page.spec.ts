@@ -51,6 +51,16 @@ describe('PreferencesPageComponent', () => {
     expect(filter.classList).toContain('game-status-filter--active');
   });
 
+  it('clears a game-list search from its in-field control', async () => {
+    configure(); await TestBed.compileComponents();
+    const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges();
+    const search = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!;
+    search.value = 'test'; search.dispatchEvent(new Event('input')); fixture.detectChanges();
+    const clear = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Clear game search"]')!;
+    clear.click(); fixture.detectChanges();
+    expect((fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[aria-label="Search favorites"]')?.value).toBe('');
+  });
+
   it('shows signed-in account controls on the Account route', async () => {
     TestBed.configureTestingModule({ imports: [PreferencesPageComponent], providers: [provideRouter(routes), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }, { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'viewer@example.test' }), identities: signal([{ provider: 'email', identityId: 'email-1' }, { provider: 'twitch', identityId: 'twitch-1' }]), error: signal(null) } }] }); await TestBed.compileComponents();
     await TestBed.inject(Router).navigateByUrl('/settings/account');

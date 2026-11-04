@@ -66,6 +66,10 @@ export class PreferencesPageComponent {
   protected selectGameList(list: GameList): void {
     this.selectedGameList.set(list);
   }
+  protected clearGameSearch(): void {
+    if (this.selectedGameList() === 'favorites') this.favoriteSearch.set('');
+    else this.ignoredSearch.set('');
+  }
   protected campaignStatus(id: string): 'active' | 'inactive' | 'checking' { const activeIds = this.activeDropIds(); return activeIds === null ? 'checking' : activeIds.has(id) ? 'active' : 'inactive'; }
   protected isFilterActive(): boolean { return this.selectedGameList() === 'favorites' ? this.favoriteStatusFilter() !== 'all' : this.ignoredStatusFilter() !== 'all'; }
   protected openSignIn(): void { this.accountDialog.open(); }

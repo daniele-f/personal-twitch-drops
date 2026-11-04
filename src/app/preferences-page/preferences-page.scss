@@ -122,6 +122,9 @@
 }
 .game-search input { color: #fff; font-size: 1rem; -webkit-text-fill-color: #fff; }
 .game-search input::placeholder { color: #756f80; opacity: 1; }
+.game-search__field { position: relative; display: block; }
+.game-search__field input { border-color: #4a4750; border-radius: .5rem; background: #222126; padding: .65rem 2.8rem .65rem .75rem; }
+.game-search__clear { position: absolute; inset: 0 0 0 auto; display: grid; place-items: center; width: 2.5rem; padding: 0; border: 1px solid #4a4750; border-radius: 0 .5rem .5rem 0; background: #222126; color: var(--color-accent); font-size: 1.25rem; line-height: 1; cursor: pointer; }.game-search__clear:hover { background: #303036; }
 .game-search input,
 .game-list-filter-panel select {
   box-sizing: border-box;

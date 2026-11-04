@@ -53,7 +53,7 @@
       </div>
       <div class="game-list-tools">
         <label class="game-search"
-          >Search games
+          >Search games <span class="game-search__field">
           @if (selectedGameList() === 'favorites') {
             <input
               type="search"
@@ -70,7 +70,7 @@
               aria-label="Search hidden games"
               placeholder="Search hidden games"
             />
-          }</label
+          } @if (favoriteSearch() || ignoredSearch()) { <button class="game-search__clear" type="button" aria-label="Clear game search" (click)="clearGameSearch()">×</button> }</span></label
         ><label class="game-status-filter">Status
           @if (selectedGameList() === 'favorites') {
             <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="favoriteStatusFilter()" (ngModelChange)="favoriteStatusFilter.set($event)" aria-label="Filter favorites by status"><option value="all">All games</option><option value="active">Active drops</option><option value="inactive">No active drops</option></select>
