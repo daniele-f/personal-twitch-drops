@@ -40,10 +40,11 @@
   color: #fff;
   text-decoration: none;
 }
-.settings-navigation a > svg {
+.settings-navigation a > :is(svg, img) {
   flex: 0 0 auto;
   width: 1.5rem;
   height: 1.5rem;
+  object-fit: contain;
   fill: none;
   stroke: currentColor;
   stroke-linecap: round;
