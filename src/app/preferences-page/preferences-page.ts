@@ -66,6 +66,9 @@ export class PreferencesPageComponent {
   protected selectGameList(list: GameList): void {
     this.selectedGameList.set(list);
   }
+  protected activeGameSearch(): string {
+    return this.selectedGameList() === 'favorites' ? this.favoriteSearch() : this.ignoredSearch();
+  }
   protected clearGameSearch(): void {
     if (this.selectedGameList() === 'favorites') this.favoriteSearch.set('');
     else this.ignoredSearch.set('');
