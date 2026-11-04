@@ -12,7 +12,7 @@ describe('PreferencesPageComponent', () => {
   function configure(): void {
     TestBed.configureTestingModule({
       imports: [PreferencesPageComponent],
-      providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
+      providers: [provideRouter(routes), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
     });
   }
   afterEach(() => { localStorage.clear(); TestBed.resetTestingModule(); });
@@ -25,7 +25,7 @@ describe('PreferencesPageComponent', () => {
     expect(page.textContent).toContain('Back to drops');
     expect(page.textContent).toContain('Manage games');
     expect(page.textContent).toContain('Hidden');
-    expect(page.querySelector<HTMLInputElement>('input[placeholder="Search games"]')).not.toBeNull();
+    expect(page.querySelector<HTMLInputElement>('input[placeholder="Search favorite games"]')).not.toBeNull();
     expect(page.querySelector<HTMLButtonElement>('[aria-label="Show game filters"]')).not.toBeNull();
   });
 
@@ -45,8 +45,11 @@ describe('PreferencesPageComponent', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges(); const page = fixture.nativeElement as HTMLElement;
     const search = page.querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!; search.value = 'hds'; search.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(page.querySelectorAll('[data-favorite-id]')).toHaveLength(1);
+    expect(page.querySelector('[data-favorite-id]')?.textContent).toContain('Active');
     page.querySelector<HTMLButtonElement>('[aria-label="Show game filters"]')!.click(); fixture.detectChanges();
-    expect(page.querySelector<HTMLSelectElement>('[aria-label="Filter favorites by status"]')).not.toBeNull();
+    const filter = page.querySelector<HTMLSelectElement>('[aria-label="Filter favorites by status"]')!;
+    filter.value = 'active'; filter.dispatchEvent(new Event('change')); fixture.detectChanges();
+    expect(page.querySelector('[data-active-filter-indicator]')).not.toBeNull();
   });
 
   it('shows signed-in account controls on the Account route', async () => {
@@ -55,5 +58,13 @@ describe('PreferencesPageComponent', () => {
     const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('Twitch linked');
     expect(fixture.nativeElement.textContent).toContain('viewer@example.test');
+  });
+
+  it('explains local storage and offers sign-in from the Account section to guests', async () => {
+    configure(); await TestBed.compileComponents();
+    await TestBed.inject(Router).navigateByUrl('/settings/account');
+    const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Everything is stored locally on this device.');
+    expect(fixture.nativeElement.querySelector('button')?.textContent).toContain('Sign in');
   });
 });

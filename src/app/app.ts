@@ -12,6 +12,7 @@ import { CampaignCelebrationsService } from './drops/campaign-celebrations.servi
 import { PreferenceNotificationsComponent } from './ui/preference-notifications';
 import { ToggleComponent } from './ui/toggle';
 import { AccountDialogComponent } from './account/account-dialog';
+import { AccountDialogStateService } from './account/account-dialog-state.service';
 import { AuthService } from './account/auth.service';
 import { TrackerSyncService } from './account/tracker-sync.service';
 import { TrackerMutationDispatcherService } from './account/tracker-mutation-dispatcher.service';
@@ -74,7 +75,8 @@ export class App implements AfterViewInit {
     this.navigationOpen.set(false);
   }
   protected readonly changesOpen = signal(false);
-  protected readonly accountOpen = signal(false);
+  protected readonly accountDialog = inject(AccountDialogStateService);
+  protected readonly accountOpen = this.accountDialog.opened;
   protected readonly syncChoiceOpen = signal(false);
   protected readonly syncMessage = signal<string | null>(null);
   protected readonly showScrollToTop = signal(false);

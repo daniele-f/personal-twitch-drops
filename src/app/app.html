@@ -38,7 +38,7 @@
     aria-label="Application actions"
     (click)="navigationOpen.set(false)"
   >
-    <button type="button" appButton="default" (click)="accountOpen.set(true)">
+    <button type="button" appButton="default" (click)="accountDialog.open()">
       {{ auth.user() ? 'Account' : 'Sign in' }}
     </button>
     @if (debugMenuEnabled) {
@@ -104,7 +104,7 @@
 </header>
 <app-account-dialog
   [opened]="accountOpen()"
-  (closed)="accountOpen.set(false)"
+  (closed)="accountDialog.close()"
 /><app-sync-choice-dialog [opened]="syncChoiceOpen()" (closed)="syncChoiceOpen.set(false)" />
 @if (syncMessage(); as message) {
   <p class="account-sync-error" role="status">

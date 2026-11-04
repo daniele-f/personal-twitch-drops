@@ -5,6 +5,7 @@ import { DropsProvider } from '../drops/drops-provider';
 import { PreferencesService, ThemeColor } from '../preferences/preferences.service';
 import { AuthService } from '../account/auth.service';
 import { ButtonDirective } from '../ui/button.directive';
+import { AccountDialogStateService } from '../account/account-dialog-state.service';
 
 type ListStatusFilter = 'all' | 'active' | 'inactive';
 type SettingsSection = 'games' | 'account' | 'appearance';
@@ -16,6 +17,7 @@ export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   protected readonly auth = inject(AuthService);
   private readonly router = inject(Router);
+  private readonly accountDialog = inject(AccountDialogStateService);
   private readonly dropsProvider = inject(DropsProvider);
   protected readonly favoriteRows = computed(() => [...this.preferences.favoriteIds()]
     .map((id) => ({ id, gameName: this.preferences.favoriteNames().get(id) ?? this.fallbackName(id) }))
@@ -66,10 +68,14 @@ export class PreferencesPageComponent {
     this.selectedGameList.set(list);
     this.filtersOpen.set(false);
   }
+  protected campaignStatus(id: string): 'active' | 'inactive' | 'checking' { const activeIds = this.activeDropIds(); return activeIds === null ? 'checking' : activeIds.has(id) ? 'active' : 'inactive'; }
+  protected isFilterActive(): boolean { return this.selectedGameList() === 'favorites' ? this.favoriteStatusFilter() !== 'all' : this.ignoredStatusFilter() !== 'all'; }
+  protected formatHiddenDate(value: string): string { return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' }).format(new Date(value)); }
+  protected openSignIn(): void { this.accountDialog.open(); }
   protected selectThemeColor(theme: ThemeColor): void { this.preferences.setThemeColor(theme); }
   protected removeFavorite(id: string): void { if (this.armedFavoriteId() === id) { this.preferences.removeFavorite(id); this.armedFavoriteId.set(null); } else this.armedFavoriteId.set(id); }
   protected cancelRemoveFavorite(id: string): void { if (this.armedFavoriteId() === id) this.armedFavoriteId.set(null); }
-  private filterRows(rows: readonly ListRow[], query: string, statusFilter: ListStatusFilter): readonly ListRow[] {
+  private filterRows<T extends ListRow>(rows: readonly T[], query: string, statusFilter: ListStatusFilter): readonly T[] {
     const activeIds = this.activeDropIds();
     return rows.filter((row) => this.matchesFuzzyQuery(row.gameName, query) && (statusFilter === 'all' || activeIds === null || (statusFilter === 'active') === activeIds.has(row.id)));
   }
