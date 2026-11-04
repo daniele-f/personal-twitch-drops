@@ -29,9 +29,9 @@
   border-top: 1px solid color-mix(in srgb, var(--color-accent) 55%, #3c3c45);
 }
 .settings-navigation a {
-  display: grid;
-  grid-template-columns: 2rem 1fr;
-  gap: 0.05rem 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   padding: 0.65rem 0.9rem;
   border-left: 4px solid transparent;
   border-radius: 0.45rem;
@@ -41,7 +41,7 @@
   text-decoration: none;
 }
 .settings-navigation a > svg {
-  grid-row: 1 / span 2;
+  flex: 0 0 auto;
   width: 1.5rem;
   height: 1.5rem;
   fill: none;
