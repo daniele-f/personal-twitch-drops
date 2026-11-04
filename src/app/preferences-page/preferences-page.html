@@ -86,7 +86,7 @@
               @for (entry of filteredFavoriteRows(); track entry.id) {
                 <li [attr.data-favorite-id]="entry.id">
                   <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }}</span><small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small>
-                  ><button
+                  <button
                     class="game-list__remove"
                     type="button"
                     [attr.aria-label]="
@@ -116,7 +116,7 @@
               @for (entry of filteredIgnoredRows(); track entry.id) {
                 <li [attr.data-blacklist-id]="entry.id">
                   <span class="game-list__name" [title]="entry.gameName">{{ entry.gameName }}</span><small class="campaign-status" [class.campaign-status--active]="campaignStatus(entry.id) === 'active'" [class.campaign-status--inactive]="campaignStatus(entry.id) === 'inactive'">{{ campaignStatus(entry.id) === 'active' ? 'Active' : campaignStatus(entry.id) === 'inactive' ? 'Inactive' : 'Checking…' }}</small>
-                  ><button
+                  <button
                     class="game-list__remove"
                     type="button"
                     [attr.aria-label]="
