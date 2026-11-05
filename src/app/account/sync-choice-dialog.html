@@ -1,1 +1,76 @@
-@if (opened() && trackerSync.reconciliation(); as reconciliation) { <div class="account-dialog-backdrop"><section class="account-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-choice-title"><h2 id="sync-choice-title">Choose tracker data</h2><p>This browser and your account have different saved tracker data. Choose one complete profile; the other will be replaced.</p><ul>@for (difference of reconciliation.differences; track difference) { <li>{{ difference }}</li> }</ul><button class="sync-choice-action" type="button" appButton="primary" (click)="choose('account')">Use my account’s data</button><button class="sync-choice-action" type="button" appButton="default" (click)="choose('browser')">Use this browser’s data</button></section></div> }
+@if (opened() && trackerSync.reconciliation(); as reconciliation) {
+  <div class="account-dialog-backdrop">
+    <section class="account-dialog sync-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-choice-title">
+      <h2 id="sync-choice-title">Choose tracker data</h2>
+      <p>Your local data and account data are different. Choose which version to keep.</p>
+      <div class="sync-choice-actions">
+        <button class="sync-choice-action" type="button" appButton="primary" (click)="choose('account')">Use account data</button>
+        <button class="sync-choice-action" type="button" appButton="default" (click)="choose('browser')">Use local data</button>
+      </div>
+      <button class="sync-choice-disclosure" type="button" aria-controls="sync-choice-differences" [attr.aria-expanded]="showDifferences()" (click)="toggleDifferences()">
+        <svg class="sync-choice-icon" viewBox="0 0 24 24" aria-hidden="true">
+          @if (showDifferences()) {
+            <path d="m18 15-6-6-6 6" />
+          } @else {
+            <path d="M4 7h10M4 12h8M4 17h6M17 5v14m-4-4 4 4 4-4" />
+          }
+        </svg>
+        {{ showDifferences() ? 'Hide differences' : 'See what’s different' }}
+      </button>
+      @if (showDifferences()) {
+        <div id="sync-choice-differences" class="sync-choice-differences">
+          @for (side of [{ key: 'account', title: 'Only in account data', groups: reconciliation.differences.account.groups }, { key: 'local', title: 'Only in local data', groups: reconciliation.differences.local.groups }]; track side.key) {
+            @if (side.groups.length) {
+              <section class="sync-choice-side" [class.sync-choice-side--account]="side.key === 'account'" [attr.aria-label]="side.title">
+                <h3 class="sync-choice-side-title">
+                  <svg class="sync-choice-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    @if (side.key === 'account') {
+                      <path d="M20 16.6A4.5 4.5 0 0 0 18 8h-1.2A7 7 0 1 0 5 17h13a4 4 0 0 0 2-0.4Z" />
+                    } @else {
+                      <rect x="6" y="2" width="12" height="20" rx="2" /><path d="M11 18h2" />
+                    }
+                  </svg>
+                  {{ side.title }}
+                </h3>
+                @for (group of side.groups; track group.category) {
+                  <div class="sync-choice-group">
+                    <svg class="sync-choice-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      @switch (group.category) {
+                        @case ('favorites') {
+                          <path d="m12 2 3.1 6.3 7 1-5 4.9 1.2 6.9L12 17.8l-6.3 3.3 1.2-6.9-5-4.9 7-1Z" />
+                        }
+                        @case ('rewards') {
+                          <circle cx="12" cy="12" r="9" /><path d="m8 12 2.5 2.5L16 9" />
+                        }
+                        @case ('ignored') {
+                          <circle cx="12" cy="12" r="9" /><path d="M5.6 5.6 18.4 18.4" />
+                        }
+                        @case ('settings') {
+                          <path d="M4 7h16M4 17h16" /><circle cx="9" cy="7" r="2" /><circle cx="15" cy="17" r="2" />
+                        }
+                      }
+                    </svg>
+                    <div>
+                      <strong>{{ group.label }} ({{ group.items.length }})</strong>
+                      <ul>
+                        @for (item of group.items; track item) {
+                          <li>{{ item }}</li>
+                        }
+                      </ul>
+                    </div>
+                  </div>
+                }
+              </section>
+            }
+          }
+        </div>
+      }
+      <div class="sync-choice-warning">
+        <svg class="sync-choice-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.3 3.9 2.2 18a2 2 0 0 0 1.7 3h16.2a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /><path d="M12 9v4m0 4h.01" />
+        </svg>
+        <span>Choosing one version replaces the other. Differences are not merged.</span>
+      </div>
+    </section>
+  </div>
+}
