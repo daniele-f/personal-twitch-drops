@@ -224,6 +224,10 @@ describe('TrackerSyncService', () => {
     expect(result.status).toBe('skipped');
     expect(sync.status()).toBe('needs-reconciliation');
     expect(sync.reconciliation()).toMatchObject({ accountId: 'user-1', browserPreferenceCount: 1, accountPreferenceCount: 1 });
+    expect(sync.reconciliation()?.differences).toEqual({
+      account: { groups: [{ category: 'favorites', label: 'Favorites', items: ['Account game'] }] },
+      local: { groups: [{ category: 'ignored', label: 'Ignored games', items: ['Browser game'] }] },
+    });
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/browser']);
   });
 
