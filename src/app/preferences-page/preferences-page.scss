@@ -472,3 +472,18 @@
     min-height: 4.5rem;
   }
 }
+
+/* Keep the Games switch and its accent divider directly below mobile settings navigation. */
+@media (max-width: 760px) {
+  .game-list-sticky-controls {
+    position: sticky;
+    top: 9.75rem;
+    z-index: 9;
+    margin-inline: -1rem;
+    padding: 0.75rem 1rem 0.85rem;
+    border-bottom: 2px solid var(--color-accent);
+    background: #151419;
+  }
+  .game-list-sticky-controls .game-list-tabs { margin-bottom: 0; }
+  .game-list-tools { border-top: 0; }
+}
