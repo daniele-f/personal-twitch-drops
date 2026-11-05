@@ -144,7 +144,7 @@ export class TrackerSyncService {
       }
       if (browserHasData && accountHasData) {
         const differences = this.profileDifferences(local, account);
-        if (differences.local.groups.length === 0) {
+        if (differences.local.groups.length === 0 && !this.hasCrossListConflict(local, account)) {
           this.adoptAccountSnapshot(remote, local);
           this.rememberLinkedAccount(user.id);
           return { status: 'synced' };
@@ -340,6 +340,14 @@ export class TrackerSyncService {
       collectedRewards: snapshot.collectedRewards.filter((row) => !row.clearedAt).map((row) => [row.campaignId, row.rewardName]).sort(),
     });
     return profile(left) === profile(right);
+  }
+
+  private hasCrossListConflict(local: LocalTrackerSnapshot, account: LocalTrackerSnapshot): boolean {
+    const activeIds = <T extends { gameId: string; removedAt?: string | null }>(rows: readonly T[]) =>
+      new Set(rows.filter((row) => !row.removedAt).map((row) => row.gameId));
+    const favorites = new Set([...activeIds(local.favorites), ...activeIds(account.favorites)]);
+    const ignored = new Set([...activeIds(local.ignoredGames), ...activeIds(account.ignoredGames)]);
+    return [...favorites].some((gameId) => ignored.has(gameId));
   }
 
   private profileDifferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): TrackerReconciliation['differences'] {
