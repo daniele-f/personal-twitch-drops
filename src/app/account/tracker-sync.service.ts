@@ -1,6 +1,7 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
+import { ChangesStateService } from '../changes/changes-state.service';
 import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
 import { LocalTrackerSnapshot, RemoteTrackerSnapshot, SyncResult, TrackerCollectedReward, TrackerFavorite, TrackerIgnoredGame } from './tracker-sync.models';
 import { TrackerMutation } from './tracker-mutation';
@@ -94,6 +95,7 @@ export class TrackerSyncService {
   private readonly client = inject(SUPABASE_AUTH_CLIENT);
   private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
+  private readonly changesState = inject(ChangesStateService);
   private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   private readonly mutationQueue = inject(TrackerMutationQueueService);
   private readonly storage = inject(PREFERENCES_STORAGE);
@@ -389,9 +391,20 @@ export class TrackerSyncService {
       (row) => row.gameId, (row) => row.gameName || row.gameId);
     append('ignored', 'Ignored games', browser.ignoredGames, account.ignoredGames,
       (row) => row.gameId, (row) => row.gameName || row.gameId);
+    const knownGameNames = new Map(this.changesState.drops().map((drop) => [drop.id, drop.gameName]));
+    for (const row of [...browser.favorites, ...account.favorites, ...browser.ignoredGames, ...account.ignoredGames]) {
+      if (row.gameName && !knownGameNames.has(row.gameId)) knownGameNames.set(row.gameId, row.gameName);
+    }
+    const displayGameName = (campaignId: string): string => {
+      const knownName = knownGameNames.get(campaignId);
+      if (knownName) return knownName;
+      const slug = campaignId.split('/').filter(Boolean).pop() ?? campaignId;
+      const readable = slug.replace(/[-_]+/g, ' ').trim();
+      return readable ? readable.replace(/\b\w/g, (letter) => letter.toUpperCase()) : 'Unknown game';
+    };
     append('rewards', 'Collected rewards', browser.collectedRewards, account.collectedRewards,
       (row) => `${row.campaignId}\u0000${row.rewardName}`,
-      (row) => `${row.campaignId}: ${row.rewardName}`);
+      (row) => `${displayGameName(row.campaignId)}: ${row.rewardName}`);
 
     const localSettings: string[] = [];
     const accountSettings: string[] = [];
