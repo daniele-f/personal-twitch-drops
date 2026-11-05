@@ -7,7 +7,7 @@ import { TrackerMutation } from './tracker-mutation';
 import { TrackerMutationDispatcherService } from './tracker-mutation-dispatcher.service';
 import { TrackerMutationQueueService } from './tracker-mutation-queue.service';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
-import { TrackerReconciliation, TrackerSyncStatus } from './tracker-sync.models';
+import { TrackerDifferenceGroup, TrackerReconciliation, TrackerSyncStatus } from './tracker-sync.models';
 
 const LINKED_ACCOUNT_STORAGE_KEY = 'personal-twitch-drops.tracker-sync-link.v1';
 
@@ -362,20 +362,51 @@ export class TrackerSyncService {
       && sameValues(activeRewardIds(browser.collectedRewards), activeRewardIds(account.collectedRewards));
   }
 
-  private profileDifferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): readonly string[] {
-    const active = <T extends { removedAt?: string | null; clearedAt?: string | null }>(rows: readonly T[], key: (row: T) => string) =>
-      new Set(rows.filter((row) => !row.removedAt && !row.clearedAt).map(key));
-    const differences: string[] = [];
-    if (browser.settings.showSubscriptions !== account.settings.showSubscriptions || browser.settings.showBadges !== account.settings.showBadges) differences.push('Display settings');
-    const append = <T extends { removedAt?: string | null; clearedAt?: string | null }>(label: string, localRows: readonly T[], accountRows: readonly T[], key: (row: T) => string) => {
-      const local = active(localRows, key); const remote = active(accountRows, key);
-      const onlyBrowser = [...local].filter((value) => !remote.has(value)); const onlyAccount = [...remote].filter((value) => !local.has(value));
-      if (onlyBrowser.length || onlyAccount.length) differences.push(`${label}: ${onlyBrowser.length} only in this browser, ${onlyAccount.length} only in your account`);
+  private profileDifferences(browser: LocalTrackerSnapshot, account: LocalTrackerSnapshot): TrackerReconciliation['differences'] {
+    const localGroups: TrackerDifferenceGroup[] = [];
+    const accountGroups: TrackerDifferenceGroup[] = [];
+
+    const append = <T extends { removedAt?: string | null; clearedAt?: string | null }>(
+      category: TrackerDifferenceGroup['category'],
+      label: string,
+      localRows: readonly T[],
+      accountRows: readonly T[],
+      key: (row: T) => string,
+      display: (row: T) => string,
+    ): void => {
+      const active = (rows: readonly T[]) => new Map(
+        rows.filter((row) => !row.removedAt && !row.clearedAt).map((row) => [key(row), row]),
+      );
+      const local = active(localRows);
+      const remote = active(accountRows);
+      const onlyLocal = [...local].filter(([id]) => !remote.has(id)).map(([, row]) => display(row)).sort();
+      const onlyAccount = [...remote].filter(([id]) => !local.has(id)).map(([, row]) => display(row)).sort();
+      if (onlyLocal.length) localGroups.push({ category, label, items: onlyLocal });
+      if (onlyAccount.length) accountGroups.push({ category, label, items: onlyAccount });
     };
-    append('Favorites', browser.favorites, account.favorites, (row) => row.gameId);
-    append('Ignored games', browser.ignoredGames, account.ignoredGames, (row) => row.gameId);
-    append('Collected rewards', browser.collectedRewards, account.collectedRewards, (row) => `${row.campaignId}: ${row.rewardName}`);
-    return differences;
+
+    append('favorites', 'Favorites', browser.favorites, account.favorites,
+      (row) => row.gameId, (row) => row.gameName || row.gameId);
+    append('ignored', 'Ignored games', browser.ignoredGames, account.ignoredGames,
+      (row) => row.gameId, (row) => row.gameName || row.gameId);
+    append('rewards', 'Collected rewards', browser.collectedRewards, account.collectedRewards,
+      (row) => `${row.campaignId}\u0000${row.rewardName}`,
+      (row) => `${row.campaignId}: ${row.rewardName}`);
+
+    const localSettings: string[] = [];
+    const accountSettings: string[] = [];
+    if (browser.settings.showSubscriptions !== account.settings.showSubscriptions) {
+      localSettings.push(`Show subscription-only Drops: ${browser.settings.showSubscriptions ? 'On' : 'Off'}`);
+      accountSettings.push(`Show subscription-only Drops: ${account.settings.showSubscriptions ? 'On' : 'Off'}`);
+    }
+    if (browser.settings.showBadges !== account.settings.showBadges) {
+      localSettings.push(`Show badge rewards: ${browser.settings.showBadges ? 'On' : 'Off'}`);
+      accountSettings.push(`Show badge rewards: ${account.settings.showBadges ? 'On' : 'Off'}`);
+    }
+    if (localSettings.length) localGroups.push({ category: 'settings', label: 'Display settings', items: localSettings });
+    if (accountSettings.length) accountGroups.push({ category: 'settings', label: 'Display settings', items: accountSettings });
+
+    return { account: { groups: accountGroups }, local: { groups: localGroups } };
   }
 
   private linkedAccountId(): string | null {

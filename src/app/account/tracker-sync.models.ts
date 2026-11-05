@@ -46,9 +46,19 @@ export interface SyncResult {
 
 export type TrackerSyncStatus = 'idle' | 'syncing' | 'needs-reconciliation' | 'pending-retry' | 'error';
 
+export interface TrackerDifferenceGroup {
+  category: 'favorites' | 'ignored' | 'rewards' | 'settings';
+  label: string;
+  items: readonly string[];
+}
+
+export interface TrackerDifferenceSide {
+  groups: readonly TrackerDifferenceGroup[];
+}
+
 export interface TrackerReconciliation {
   accountId: string;
   browserPreferenceCount: number;
   accountPreferenceCount: number;
-  differences: readonly string[];
+  differences: { account: TrackerDifferenceSide; local: TrackerDifferenceSide };
 }

@@ -28,3 +28,24 @@
 @media (max-width: 520px) {
   .sync-choice-action { display: block; width: 100%; min-height: 2.75rem; margin-top: .65rem; text-align: center; }
 }
+
+/* Tracker data reconciliation */
+.sync-choice-dialog { max-height: min(90dvh, 46rem); overflow-y: auto; overscroll-behavior: contain; }
+.sync-choice-dialog > p { color: #cfc8dc; line-height: 1.5; }
+.sync-choice-actions { display: grid; gap: .65rem; margin-top: 1.25rem; }
+.sync-choice-actions .sync-choice-action { width: 100%; min-height: 2.75rem; margin: 0; text-align: center; }
+.sync-choice-disclosure { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; width: 100%; min-height: 2.75rem; margin-top: .65rem; border: 1px solid #746b82; border-radius: .5rem; background: transparent; color: inherit; cursor: pointer; font: inherit; }
+.sync-choice-disclosure:hover { background: #25222e; }
+.sync-choice-icon { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.sync-choice-differences { display: grid; gap: 1rem; margin-top: .75rem; padding: 1rem; border-radius: .5rem; background: #201e27; }
+.sync-choice-side { display: grid; gap: .8rem; min-width: 0; }
+.sync-choice-side + .sync-choice-side { border-top: 1px solid #504a5c; padding-top: 1rem; }
+.sync-choice-side-title { display: flex; align-items: center; gap: .5rem; margin: 0; font-size: 1rem; }
+.sync-choice-side--account .sync-choice-side-title { color: #55c78a; }
+.sync-choice-group { display: flex; align-items: flex-start; gap: .55rem; min-width: 0; }
+.sync-choice-group > div { min-width: 0; }
+.sync-choice-group strong { display: block; font-size: .875rem; }
+.sync-choice-group ul { margin: .3rem 0 0; padding-left: 1.1rem; color: #cfc8dc; overflow-wrap: anywhere; font-size: .875rem; }
+.sync-choice-group li + li { margin-top: .25rem; }
+.sync-choice-warning { display: flex; align-items: flex-start; gap: .55rem; margin-top: 1rem; color: #cfc8dc; font-size: .8rem; line-height: 1.5; }
+.sync-choice-warning .sync-choice-icon { color: #e9b65d; }
