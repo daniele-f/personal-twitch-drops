@@ -38,6 +38,16 @@ const SCROLL_TO_TOP_THRESHOLD = 320;
 export class App implements AfterViewInit {
   protected readonly router = inject(Router);
   protected readonly preferences = inject(PreferencesService);
+  // Rotate the original purple artwork toward the selected theme without tinting neutral pixels.
+  protected readonly logoThemeFilter = computed(() => {
+    switch (this.preferences.themeColor()) {
+      case 'electric-blue': return 'hue-rotate(-48deg)';
+      case 'neon-rose': return 'hue-rotate(65deg)';
+      case 'emerald-glow': return 'hue-rotate(-123deg)';
+      case 'golden-amber': return 'hue-rotate(133deg)';
+      default: return 'none';
+    }
+  });
   protected readonly auth = inject(AuthService);
   private readonly trackerSync = inject(TrackerSyncService);
   private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
