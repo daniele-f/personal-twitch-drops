@@ -268,6 +268,73 @@ describe('TrackerSyncService', () => {
     }]);
   });
 
+  it('automatically uses account data when the only difference is an account-side reward', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [{ game_id: '/game/shared', game_name: 'Shared game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null }],
+      user_ignored_games: [],
+      user_collected_rewards: [{ campaign_id: '/game/crimson-desert', reward_name: 'Pet Parrot in Pirate Hat', updated_at: '2026-10-18T12:00:00.000Z', cleared_at: null }],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite('/game/shared', 'Shared game');
+
+    const sync = TestBed.inject(TrackerSyncService);
+    expect((await sync.syncAfterAuthentication()).status).toBe('synced');
+    expect(sync.reconciliation()).toBeNull();
+    expect(sync.status()).toBe('idle');
+    expect(TestBed.inject(CollectedRewardsService).isCollected('/game/crimson-desert', 'Pet Parrot in Pirate Hat')).toBe(true);
+  });
+
+  it('still asks when local rewards would be lost by using account data', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [{ game_id: '/game/shared', game_name: 'Shared game', updated_at: '2026-10-18T12:00:00.000Z', removed_at: null }],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    TestBed.inject(PreferencesService).addFavorite('/game/shared', 'Shared game');
+    const collected = TestBed.inject(CollectedRewardsService);
+    collected.setCollected('/game/crimson-desert', 'Local reward', true);
+
+    const sync = TestBed.inject(TrackerSyncService);
+    expect((await sync.syncAfterAuthentication()).status).toBe('skipped');
+    expect(sync.status()).toBe('needs-reconciliation');
+    expect(sync.reconciliation()?.differences.local.groups).toEqual([{
+      category: 'rewards',
+      label: 'Collected rewards',
+      items: ['Crimson Desert: Local reward'],
+    }]);
+    expect(collected.isCollected('/game/crimson-desert', 'Local reward')).toBe(true);
+  });
+
   it('adopts the account when its game lists contain every local game plus extras', async () => {
     localStorage.clear();
     const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
