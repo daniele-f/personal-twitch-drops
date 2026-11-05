@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { AuthService, SUPABASE_AUTH_CLIENT } from './auth.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
+import { ChangesStateService } from '../changes/changes-state.service';
 import { PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from '../preferences/preferences-storage';
 import { PreferencesService } from '../preferences/preferences.service';
 import { mergeTrackerSnapshots, TrackerSyncService } from './tracker-sync.service';
@@ -229,6 +230,42 @@ describe('TrackerSyncService', () => {
       local: { groups: [{ category: 'ignored', label: 'Ignored games', items: ['Browser game'] }] },
     });
     expect(preferences.blacklistEntries().map((entry) => entry.id)).toEqual(['/game/browser']);
+  });
+
+  it('shows game names for collected-reward differences and readable names for inactive campaigns', async () => {
+    localStorage.clear();
+    const rowsByTable: Record<string, readonly Record<string, unknown>[]> = {
+      user_settings: [],
+      user_favorite_games: [],
+      user_ignored_games: [],
+      user_collected_rewards: [
+        { campaign_id: '/game/crimson-desert', reward_name: 'Pet Parrot in Pirate Hat', updated_at: '2026-10-18T12:00:00.000Z', cleared_at: null },
+        { campaign_id: '/game/older-game', reward_name: 'Old reward', updated_at: '2026-10-18T12:00:00.000Z', cleared_at: null },
+      ],
+    };
+    const client = {
+      from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rowsByTable[table], error: null }) }) }),
+    };
+    TestBed.configureTestingModule({
+      providers: [
+        TrackerSyncService,
+        PreferencesService,
+        CollectedRewardsService,
+        { provide: ChangesStateService, useValue: { drops: signal([{ id: '/game/crimson-desert', gameName: 'Crimson Desert' }]) } },
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: AuthService, useValue: { user: signal({ id: 'user-1', email: 'person@example.com' }) } },
+        { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+      ],
+    });
+    const sync = TestBed.inject(TrackerSyncService);
+    TestBed.inject(PreferencesService).addFavorite('/game/local-game', 'Local Game');
+
+    expect((await sync.syncAfterAuthentication()).status).toBe('skipped');
+    expect(sync.reconciliation()?.differences.account.groups).toEqual([{
+      category: 'rewards',
+      label: 'Collected rewards',
+      items: ['Crimson Desert: Pet Parrot in Pirate Hat', 'Older Game: Old reward'],
+    }]);
   });
 
   it('adopts the account when its game lists contain every local game plus extras', async () => {
