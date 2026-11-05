@@ -366,29 +366,80 @@
   opacity: 0;
   pointer-events: none;
 }
+/* The sidebar remains unchanged on desktop; mobile uses a compact segmented tab bar. */
+.settings-navigation__mobile-label { display: none; }
 @media (max-width: 760px) {
   .settings-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .settings-sidebar {
-    padding: 1.2rem 1rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    padding: 0.75rem 1rem 0.85rem;
     border-right: 0;
-    border-bottom: 1px solid var(--color-accent);
+    border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 45%, #3c3c45);
+    background: #151419;
+  }
+  .settings-back {
+    margin-bottom: 0.4rem;
+    font-size: 0.82rem;
   }
   .settings-sidebar h1 {
+    margin: 0 0 0.75rem;
     font-size: 1.5rem;
   }
   .settings-navigation {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-    padding-top: 1rem;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid #4a4652;
+    border-radius: 0.8rem;
+    background: #232128;
   }
   .settings-navigation a {
-    grid-template-columns: 1fr;
-    padding: 0.65rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.25rem;
+    min-width: 0;
+    min-height: 3.5rem;
+    padding: 0.45rem 0.2rem;
+    border: 0;
+    border-radius: 0.6rem;
+    color: #cfc8dc;
+    text-align: center;
+    transition: background-color 150ms ease, color 150ms ease;
   }
-  .settings-navigation a > svg,
-  .settings-navigation small {
-    display: none;
+  .settings-navigation a > :is(svg, img) {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+  .settings-navigation a:last-child > svg {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+  .settings-navigation a > span[aria-hidden] {
+    flex: none;
+    width: auto;
+    font-size: 1.35rem;
+    line-height: 1;
+  }
+  .settings-navigation a strong {
+    font-size: 0.78rem;
+    line-height: 1.15;
+  }
+  .settings-navigation__desktop-label { display: none; }
+  .settings-navigation__mobile-label { display: inline; }
+  .settings-navigation .settings-navigation__link--active {
+    border-left: 0 !important;
+    background: color-mix(in srgb, var(--color-accent) 25%, #343039);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, transparent);
+  }
+  .settings-navigation a:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   .settings-content {
     padding: 1.8rem 1rem 3rem;
@@ -396,11 +447,11 @@
   .theme-color-options {
     grid-template-columns: repeat(3, 1fr);
   }
+  @media (prefers-reduced-motion: reduce) {
+    .settings-navigation a { transition: none; }
+  }
 }
 @media (max-width: 460px) {
-  .settings-navigation strong {
-    font-size: 0.82rem;
-  }
   .game-list-tools {
     grid-template-columns: 1fr;
   }
