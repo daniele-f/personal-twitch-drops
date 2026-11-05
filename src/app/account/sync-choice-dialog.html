@@ -7,6 +7,7 @@
         <button class="sync-choice-action" type="button" appButton="primary" (click)="choose('account')">Use account data</button>
         <button class="sync-choice-action" type="button" appButton="default" (click)="choose('browser')">Use local data</button>
       </div>
+      <hr class="sync-choice-divider" />
       <button class="sync-choice-disclosure" type="button" aria-controls="sync-choice-differences" [attr.aria-expanded]="showDifferences()" (click)="toggleDifferences()">
         <svg class="sync-choice-icon" viewBox="0 0 24 24" aria-hidden="true">
           @if (showDifferences()) {

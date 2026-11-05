@@ -34,6 +34,7 @@
 .sync-choice-dialog > p { color: #cfc8dc; line-height: 1.5; }
 .sync-choice-actions { display: grid; gap: .65rem; margin-top: 1.25rem; }
 .sync-choice-actions .sync-choice-action { width: 100%; min-height: 2.75rem; margin: 0; text-align: center; }
+.sync-choice-divider { height: 0; margin: 1rem 0 .4rem; border: 0; border-top: 1px solid #504a5c; }
 .sync-choice-disclosure { display: inline-flex; align-items: center; justify-content: center; gap: .55rem; width: 100%; min-height: 2.75rem; margin-top: .65rem; border: 1px solid #746b82; border-radius: .5rem; background: transparent; color: inherit; cursor: pointer; font: inherit; }
 .sync-choice-disclosure:hover { background: #25222e; }
 .sync-choice-icon { width: 1.1rem; height: 1.1rem; flex: 0 0 auto; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
