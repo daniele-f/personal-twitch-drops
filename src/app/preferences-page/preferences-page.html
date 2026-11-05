@@ -6,17 +6,20 @@
       <a
         routerLink="/settings/manage-games"
         [class.settings-navigation__link--active]="section() === 'games'"
-        ><img src="/manage-games-controller.png" alt="" aria-hidden="true" /><strong>Manage games</strong></a
+        [attr.aria-current]="section() === 'games' ? 'page' : null"
+        ><img src="/manage-games-controller.png" alt="" aria-hidden="true" /><strong><span class="settings-navigation__desktop-label">Manage games</span><span class="settings-navigation__mobile-label">Games</span></strong></a
       >
       <a
         routerLink="/settings/account"
         [class.settings-navigation__link--active]="section() === 'account'"
+        [attr.aria-current]="section() === 'account' ? 'page' : null"
         ><svg aria-hidden="true" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg><strong>Account</strong
         ></a
       >
       <a
         routerLink="/settings/appearance"
         [class.settings-navigation__link--active]="section() === 'appearance'"
+        [attr.aria-current]="section() === 'appearance' ? 'page' : null"
         ><span aria-hidden="true">◐</span><strong>Appearance</strong
         ></a
       >
