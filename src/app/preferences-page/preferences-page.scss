@@ -487,3 +487,17 @@
   .game-list-sticky-controls .game-list-tabs { margin-bottom: 0; }
   .game-list-tools { border-top: 0; }
 }
+
+/* Allow long saved-game names up to two lines on narrow layouts. */
+@media (max-width: 760px) {
+  .game-list__name--long {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    font-size: 1rem;
+    line-height: 1.3;
+  }
+}
