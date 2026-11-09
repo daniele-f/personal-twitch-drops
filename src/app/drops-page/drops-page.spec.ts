@@ -87,15 +87,16 @@ describe('DropsPageComponent', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('.loading-message')).toBeNull();
   });
 
-  it('places the refresh loader after the button label', async () => {
+  it('shows a static Refresh button and three skeleton cards while loading', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
     const fixture = TestBed.createComponent(DropsPageComponent);
     fixture.detectChanges();
 
     const refresh = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.refresh')!;
-    const childNodes = Array.from(refresh.childNodes);
-    expect(childNodes.findIndex((node) => node.nodeName === 'APP-REFRESH-LOADER')).toBeGreaterThan(childNodes.findIndex((node) => node.textContent?.trim() === 'Refresh'));
+    expect(refresh.textContent?.trim()).toBe('Refresh');
+    expect(refresh.querySelector('app-refresh-loader')).toBeNull();
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.drop-row--skeleton')).toHaveLength(3);
   });
 
   it('uses the shared primary button styles for Refresh', async () => {
@@ -109,7 +110,7 @@ describe('DropsPageComponent', () => {
     expect(refresh).toContain('app-button--primary');
   });
 
-  it('stops Refresh spinning after the active list loads when there are no favorites', async () => {
+  it('removes skeleton cards after the active list loads when there are no favorites', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
     const fixture = TestBed.createComponent(DropsPageComponent);
@@ -117,10 +118,10 @@ describe('DropsPageComponent', () => {
     provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
     fixture.detectChanges();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('.refresh')?.classList).not.toContain('refresh--spinning');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.drop-row--skeleton')).toHaveLength(0);
   });
 
-  it('keeps Refresh spinning until favorite details finish preloading', async () => {
+  it('keeps three skeleton cards until favorite details finish preloading', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
     const preferences = TestBed.inject(PreferencesService);
@@ -130,14 +131,34 @@ describe('DropsPageComponent', () => {
     provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
     fixture.detectChanges();
 
-    const refresh = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.refresh')!;
-    expect(refresh.classList).toContain('refresh--spinning');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.drop-row--skeleton')).toHaveLength(3);
 
     provider.detailRequests[0].next({ requirementByReward: {}, badgeRewardNames: [] });
     provider.detailRequests[0].complete();
     fixture.detectChanges();
 
-    expect(refresh.classList).not.toContain('refresh--spinning');
+    expect((fixture.nativeElement as HTMLElement).querySelectorAll('.drop-row--skeleton')).toHaveLength(0);
+  });
+
+  it('keeps existing cards visible alongside three skeleton cards during a manual refresh', async () => {
+    const provider = new TestDropsProvider();
+    await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
+    const fixture = TestBed.createComponent(DropsPageComponent);
+    fixture.detectChanges();
+    provider.requests[0].next([{ id: '/game/sea-of-thieves', gameName: 'Sea of Thieves', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+
+    fixture.componentInstance['loadDrops'](true);
+    fixture.detectChanges();
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.textContent).toContain('Sea of Thieves');
+    expect(root.querySelectorAll('.drop-row--skeleton')).toHaveLength(3);
+    expect(root.querySelector<HTMLButtonElement>('.refresh')?.disabled).toBe(true);
+
+    provider.requests[1].next([{ id: '/game/valorant', gameName: 'VALORANT', rewardCount: 1, endsAt: '2026-09-28T12:00:00.000Z' }]);
+    fixture.detectChanges();
+    expect(root.textContent).toContain('VALORANT');
+    expect(root.querySelectorAll('.drop-row--skeleton')).toHaveLength(0);
   });
 
   it('keeps collected reward state when a refreshed campaign is no longer active', async () => {
@@ -168,15 +189,16 @@ describe('DropsPageComponent', () => {
     expect(TestBed.inject(CampaignCelebrationsService).markCelebrated('/game/current')).toBe(false);
   });
 
-  it('announces an indeterminate source fetch while Drops are loading', async () => {
+  it('announces loading using three decorative skeleton cards', async () => {
     const provider = new TestDropsProvider();
     await TestBed.configureTestingModule({ imports: [DropsPageComponent], providers: [provideRouter([]), { provide: DropsProvider, useValue: provider }, { provide: PREFERENCES_STORAGE, useValue: localStorage }] }).compileComponents();
     const fixture = TestBed.createComponent(DropsPageComponent);
     fixture.detectChanges();
 
-    const progress = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('[role="progressbar"]');
-    expect(progress?.getAttribute('aria-label')).toBe('Fetching current Drops from TwitchDrops.app');
-    expect(progress?.hasAttribute('aria-valuenow')).toBe(false);
+    const root = fixture.nativeElement as HTMLElement;
+    expect(root.querySelectorAll('.drop-row--skeleton')).toHaveLength(3);
+    expect(root.querySelector('.loading-message')?.textContent).toContain('Loading active Drops');
+    expect(root.querySelector('[role="progressbar"]')).toBeNull();
   });
 
   it('confirms the loaded Drop count after a successful fetch', async () => {
