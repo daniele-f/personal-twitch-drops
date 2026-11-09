@@ -40,6 +40,7 @@ export class DropListComponent {
   readonly activeDrops = input.required<readonly ActiveDrop[]>();
   readonly favoritePreloadRequestId = input(1);
   readonly loading = input.required<boolean>();
+  readonly refreshing = input(false);
   readonly newDropIds = input<ReadonlySet<string>>(new Set());
   readonly updatedDropIds = input<ReadonlySet<string>>(new Set());
   readonly searchActive = input(false);
