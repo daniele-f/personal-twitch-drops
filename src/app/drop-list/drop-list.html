@@ -273,3 +273,21 @@
     </ul>
   </section>
 }
+
+@if (refreshing() && !loading()) {
+  <div role="status" aria-label="Refreshing active Drops">
+  <ul class="drop-list" aria-hidden="true">
+    @for (skeleton of [0, 1, 2]; track skeleton) {
+      <li>
+        <article class="drop-row drop-row--skeleton">
+          <div class="skeleton-block skeleton-cover"></div>
+          <div class="skeleton-copy">
+            <span class="skeleton-block skeleton-title"></span
+            ><span class="skeleton-block skeleton-description"></span>
+          </div>
+        </article>
+      </li>
+    }
+  </ul>
+  </div>
+}
