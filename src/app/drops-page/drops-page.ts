@@ -5,7 +5,6 @@ import { PreferencesService } from '../preferences/preferences.service';
 import { ChangesStateService } from '../changes/changes-state.service';
 import { ActiveDrop } from '../drops/active-drop';
 import { CampaignCelebrationsService } from '../drops/campaign-celebrations.service';
-import { RefreshLoaderComponent } from '../ui/refresh-loader';
 import { ButtonDirective } from '../ui/button.directive';
 
 const DROPS_CACHE_KEY = 'personal-twitch-drops.active-drops.v1';
@@ -16,7 +15,7 @@ interface CachedDrops {
   readonly updatedAt: number;
 }
 
-@Component({ imports: [ButtonDirective, DropListComponent, RefreshLoaderComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
+@Component({ imports: [ButtonDirective, DropListComponent], selector: 'app-drops-page', templateUrl: './drops-page.html' })
 export class DropsPageComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly destroyRef = inject(DestroyRef);
