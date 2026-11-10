@@ -57,6 +57,17 @@
               "optimization": false,
               "extractLicenses": false,
               "sourceMap": true
+            },
+            "test": {
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/supabase.ts",
+                  "with": "src/environments/supabase.testing.ts"
+                }
+              ],
+              "optimization": false,
+              "extractLicenses": false,
+              "sourceMap": true
             }
           },
           "defaultConfiguration": "production"
@@ -74,7 +85,10 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "personal-twitch-drops:build:test"
+          }
         }
       }
     }

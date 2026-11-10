@@ -9,10 +9,15 @@ import { AuthService } from '../account/auth.service';
 import { routes } from '../app.routes';
 
 describe('PreferencesPageComponent', () => {
+  const guestAuthProvider = {
+    provide: AuthService,
+    useFactory: () => ({ user: signal(null), identities: signal(null), error: signal(null) }),
+  };
+
   function configure(): void {
     TestBed.configureTestingModule({
       imports: [PreferencesPageComponent],
-      providers: [provideRouter(routes), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
+      providers: [provideRouter(routes), guestAuthProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
     });
   }
   afterEach(() => { localStorage.clear(); TestBed.resetTestingModule(); });
@@ -41,7 +46,7 @@ describe('PreferencesPageComponent', () => {
   it('keeps fuzzy search and status filtering available for favorite games', async () => {
     localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, JSON.stringify(['favorite-active', 'favorite-inactive']));
     localStorage.setItem(FAVORITE_NAMES_STORAGE_KEY, JSON.stringify({ 'favorite-active': 'Hades II', 'favorite-inactive': 'Celeste' }));
-    TestBed.configureTestingModule({ imports: [PreferencesPageComponent], providers: [provideRouter([]), { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([{ id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' }]) } }] }); await TestBed.compileComponents();
+    TestBed.configureTestingModule({ imports: [PreferencesPageComponent], providers: [provideRouter([]), guestAuthProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([{ id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' }]) } }] }); await TestBed.compileComponents();
     const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges(); const page = fixture.nativeElement as HTMLElement;
     const search = page.querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!; search.value = 'hds'; search.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(page.querySelectorAll('[data-favorite-id]')).toHaveLength(1);
