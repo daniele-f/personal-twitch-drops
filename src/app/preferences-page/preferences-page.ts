@@ -1,3 +1,4 @@
+import { supabaseConfig } from '../../environments/supabase';
 import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -16,6 +17,7 @@ type ListRow = { readonly id: string; readonly gameName: string };
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   protected readonly auth = inject(AuthService);
+  protected readonly accountEnabled = supabaseConfig.enabled;
   private readonly router = inject(Router);
   private readonly accountDialog = inject(AccountDialogStateService);
   private readonly dropsProvider = inject(DropsProvider);

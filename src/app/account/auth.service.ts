@@ -25,7 +25,7 @@ export const SUPABASE_AUTH_CLIENT = new InjectionToken<SupabaseClient>('Supabase
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly client = inject(SUPABASE_AUTH_CLIENT);
+  private readonly client = supabaseConfig.enabled ? inject(SUPABASE_AUTH_CLIENT) : null;
 
   readonly user = signal<AccountUser | null>(null);
   readonly identities = signal<readonly AccountIdentity[] | null>(null);
@@ -33,7 +33,8 @@ export class AuthService {
   readonly error = signal<string | null>(null);
 
   constructor() {
-    this.client.auth.onAuthStateChange((event, session) => {
+    if (!supabaseConfig.enabled) return;
+    this.client!.auth.onAuthStateChange((event, session) => {
       if (event === 'PASSWORD_RECOVERY' && session) {
         this.user.set({ id: session.user.id, email: session.user.email ?? null });
         this.status.set('password-recovery');
@@ -49,7 +50,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { data, error } = await this.client.auth.signUp({
+      const { data, error } = await this.client!.auth.signUp({
         email,
         password,
         options: { emailRedirectTo: globalThis.location?.origin },
@@ -72,7 +73,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { data, error } = await this.client.auth.signInWithPassword({ email, password });
+      const { data, error } = await this.client!.auth.signInWithPassword({ email, password });
       if (error) return this.fail('Incorrect email or password.');
 
       this.applySession(data.session);
@@ -86,7 +87,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { error } = await this.client.auth.signInWithOAuth({
+      const { error } = await this.client!.auth.signInWithOAuth({
         provider: 'twitch',
         options: { redirectTo: globalThis.location?.origin },
       });
@@ -102,7 +103,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { error } = await this.client.auth.linkIdentity({
+      const { error } = await this.client!.auth.linkIdentity({
         provider: 'twitch',
         options: { redirectTo: globalThis.location?.origin },
       });
@@ -116,7 +117,7 @@ export class AuthService {
 
   async refreshIdentities(): Promise<void> {
     try {
-      const { data, error } = await this.client.auth.getUserIdentities();
+      const { data, error } = await this.client!.auth.getUserIdentities();
       if (error) throw error;
       this.identities.set((data.identities ?? []).map((identity) => ({ provider: identity.provider, identityId: identity.identity_id })));
     } catch {
@@ -125,11 +126,11 @@ export class AuthService {
   }
 
   async unlinkTwitchIdentity(): Promise<AuthResult> {
-    const { data, error } = await this.client.auth.getUserIdentities();
+    const { data, error } = await this.client!.auth.getUserIdentities();
     if (error) return this.fail('We could not update your Twitch link. Please try again.');
     const twitchIdentity = data.identities.find((identity) => identity.provider === 'twitch');
     if (!twitchIdentity || data.identities.length < 2) return this.fail('Keep another sign-in method before unlinking Twitch.');
-    const result = await this.client.auth.unlinkIdentity(twitchIdentity);
+    const result = await this.client!.auth.unlinkIdentity(twitchIdentity);
     if (result.error) return this.fail('We could not update your Twitch link. Please try again.');
     await this.refreshIdentities();
     return { outcome: 'signed-in' };
@@ -138,7 +139,7 @@ export class AuthService {
   async addEmail(email: string): Promise<AuthResult> {
     this.beginRequest();
     try {
-      const { error } = await this.client.auth.updateUser({ email }, { emailRedirectTo: globalThis.location?.origin });
+      const { error } = await this.client!.auth.updateUser({ email }, { emailRedirectTo: globalThis.location?.origin });
       if (error) return this.fail('We could not add that email address. Please try again.');
       this.status.set('authenticated');
       return { outcome: 'confirmation-required' };
@@ -151,7 +152,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { error } = await this.client.auth.resetPasswordForEmail(email, {
+      const { error } = await this.client!.auth.resetPasswordForEmail(email, {
         redirectTo: globalThis.location?.origin,
       });
       if (error) return this.fail('We could not send a reset email. Please try again.');
@@ -167,7 +168,7 @@ export class AuthService {
     this.beginRequest();
 
     try {
-      const { error } = await this.client.auth.updateUser({ password, ...(currentPassword ? { current_password: currentPassword } : {}) });
+      const { error } = await this.client!.auth.updateUser({ password, ...(currentPassword ? { current_password: currentPassword } : {}) });
       if (error) return this.fail('We could not update your password. Please try again.');
 
       this.status.set('authenticated');
@@ -178,7 +179,7 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
-    const { error } = await this.client.auth.signOut();
+    const { error } = await this.client!.auth.signOut();
     if (error) {
       this.error.set('We could not sign you out. Please try again.');
       return;
@@ -188,7 +189,7 @@ export class AuthService {
   }
 
   private async restoreSession(): Promise<void> {
-    const { data } = await this.client.auth.getSession();
+    const { data } = await this.client!.auth.getSession();
     if (this.status() !== 'password-recovery' && (data.session || this.status() === 'guest')) this.applySession(data.session);
   }
 

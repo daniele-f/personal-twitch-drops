@@ -3,6 +3,7 @@
  * the Angular development build (`npm start`).
  */
 export const supabaseConfig = {
+  enabled: false,
   url: 'https://gghryywzomeauksbryly.supabase.co',
   publishableKey: 'sb_publishable_jdIPMmPRyYa3FBeSHqxsvA_7a-5JFPg',
 } as const;

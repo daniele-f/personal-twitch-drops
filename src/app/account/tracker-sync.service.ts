@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { supabaseConfig } from '../../environments/supabase';
 import { PreferencesService } from '../preferences/preferences.service';
 import { CollectedRewardsService } from '../drops/collected-rewards.service';
 import { ChangesStateService } from '../changes/changes-state.service';
@@ -92,7 +93,7 @@ export function mergeTrackerSnapshots(local: LocalTrackerSnapshot, remote: Remot
 @Injectable({ providedIn: 'root' })
 export class TrackerSyncService {
   private readonly auth = inject(AuthService);
-  private readonly client = inject(SUPABASE_AUTH_CLIENT);
+  private readonly client = supabaseConfig.enabled ? inject(SUPABASE_AUTH_CLIENT) : null;
   private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly changesState = inject(ChangesStateService);
@@ -254,13 +255,13 @@ export class TrackerSyncService {
   }
 
   private async select(table: string, userId: string): Promise<Record<string, unknown>[]> {
-    const { data, error } = await this.client.from(table).select('*').eq('user_id', userId);
+    const { data, error } = await this.client!.from(table).select('*').eq('user_id', userId);
     if (error) throw error;
     return (data ?? []) as Record<string, unknown>[];
   }
 
   private async selectSettings(userId: string): Promise<Record<string, unknown>[]> {
-    const { data, error } = await this.client.from('user_settings').select('show_subscriptions,show_badges,updated_at').eq('user_id', userId);
+    const { data, error } = await this.client!.from('user_settings').select('show_subscriptions,show_badges,updated_at').eq('user_id', userId);
     if (error) throw error;
     return (data ?? []) as Record<string, unknown>[];
   }
@@ -279,10 +280,10 @@ export class TrackerSyncService {
 
   private async applyMutation(mutation: TrackerMutation): Promise<void> {
     let result: { error: unknown };
-    if (mutation.type === 'favorite' || mutation.type === 'ignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId, p_game_name: mutation.gameName });
-    else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
-    else if (mutation.type === 'settings') result = await this.client.rpc('set_tracker_settings', { p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
-    else if (mutation.type === 'set-collected') result = await this.client.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
+    if (mutation.type === 'favorite' || mutation.type === 'ignore') result = await this.client!.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId, p_game_name: mutation.gameName });
+    else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client!.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
+    else if (mutation.type === 'settings') result = await this.client!.rpc('set_tracker_settings', { p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges });
+    else if (mutation.type === 'set-collected') result = await this.client!.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
     else {
       const unsupported: never = mutation;
       throw new Error(`Unsupported tracker mutation: ${JSON.stringify(unsupported)}`);
@@ -291,7 +292,7 @@ export class TrackerSyncService {
   }
 
   private async importInitialSnapshot(snapshot: LocalTrackerSnapshot, replaceExisting = false): Promise<void> {
-    const { error } = await this.client.rpc('import_tracker_preferences', { p_snapshot: snapshot, p_replace_existing: replaceExisting });
+    const { error } = await this.client!.rpc('import_tracker_preferences', { p_snapshot: snapshot, p_replace_existing: replaceExisting });
     if (error) throw error;
   }
 
@@ -421,7 +422,7 @@ export class TrackerSyncService {
   }
 
   private async upsert(table: string, row: Record<string, unknown>): Promise<void> {
-    const { error } = await this.client.from(table).upsert(row);
+    const { error } = await this.client!.from(table).upsert(row);
     if (error) throw error;
   }
 

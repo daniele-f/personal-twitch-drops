@@ -52,6 +52,6 @@ The external source is isolated behind a provider abstraction so it can be chang
 
 The Supabase project URL and publishable key are browser-safe configuration. Do not add a Supabase secret/service-role key, database password, or provider OAuth secret to Cloudflare Pages, the frontend bundle, or the repository.
 
-`npm start` uses the separate `personal-twitch-drops-dev` Supabase project. Production builds use the production project configured in `src/environments/supabase.ts`, so Cloudflare deployments do not access development accounts or tracker data.
+`npm start` runs entirely without Supabase authentication or account sync. Favorites, ignored games, collected rewards, and preferences remain in browser storage while developing. Account controls are hidden in development. Production builds continue using the production Supabase project configured in `src/environments/supabase.ts`.
 
 For contributor guidance and technical details, see [AGENTS.md](AGENTS.md), [the architecture overview](docs/ARCHITECTURE.md), [the code map](docs/CODEMAP.md), and [testing notes](docs/TESTING.md).

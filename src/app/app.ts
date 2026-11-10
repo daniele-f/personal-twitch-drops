@@ -1,3 +1,4 @@
+import { supabaseConfig } from '../environments/supabase';
 import { AfterViewInit, Component, computed, effect, ElementRef, HostListener, inject, isDevMode, signal, untracked, viewChild } from '@angular/core';
 import { CollectedRewardsService } from './drops/collected-rewards.service';
 import { ActiveDrop } from './drops/active-drop';
@@ -49,6 +50,7 @@ export class App implements AfterViewInit {
     }
   });
   protected readonly auth = inject(AuthService);
+  protected readonly accountEnabled = supabaseConfig.enabled;
   private readonly trackerSync = inject(TrackerSyncService);
   private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   private readonly collectedRewards = inject(CollectedRewardsService);
