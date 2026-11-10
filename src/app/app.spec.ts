@@ -1,5 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+import { guestSupabaseClientProvider } from '../test/fixtures/guest-supabase-client';
 import { DropsProvider } from './drops/drops-provider';
 import { PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences/preferences-storage';
 import { PreferencesService } from './preferences/preferences.service';
@@ -17,7 +18,15 @@ const originalScrollYDescriptor = Object.getOwnPropertyDescriptor(window, 'scrol
 describe('App', () => {
   beforeEach(async () => {
     localStorage.clear();
-    await TestBed.configureTestingModule({ imports: [App], providers: [...appConfig.providers, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }] }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [App],
+      providers: [
+        ...appConfig.providers,
+        guestSupabaseClientProvider,
+        { provide: PREFERENCES_STORAGE, useValue: localStorage },
+        { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
+      ],
+    }).compileComponents();
   });
 
   afterEach(() => {

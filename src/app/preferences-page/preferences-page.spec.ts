@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { signal } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
+import { guestSupabaseClientProvider } from '../../test/fixtures/guest-supabase-client';
 import { DropsProvider } from '../drops/drops-provider';
 import { FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { PreferencesPageComponent } from './preferences-page';
@@ -9,15 +10,10 @@ import { AuthService } from '../account/auth.service';
 import { routes } from '../app.routes';
 
 describe('PreferencesPageComponent', () => {
-  const guestAuthProvider = {
-    provide: AuthService,
-    useFactory: () => ({ user: signal(null), identities: signal(null), error: signal(null) }),
-  };
-
   function configure(): void {
     TestBed.configureTestingModule({
       imports: [PreferencesPageComponent],
-      providers: [provideRouter(routes), guestAuthProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
+      providers: [provideRouter(routes), guestSupabaseClientProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } }],
     });
   }
   afterEach(() => { localStorage.clear(); TestBed.resetTestingModule(); });
@@ -46,7 +42,7 @@ describe('PreferencesPageComponent', () => {
   it('keeps fuzzy search and status filtering available for favorite games', async () => {
     localStorage.setItem(FAVORITE_IDS_STORAGE_KEY, JSON.stringify(['favorite-active', 'favorite-inactive']));
     localStorage.setItem(FAVORITE_NAMES_STORAGE_KEY, JSON.stringify({ 'favorite-active': 'Hades II', 'favorite-inactive': 'Celeste' }));
-    TestBed.configureTestingModule({ imports: [PreferencesPageComponent], providers: [provideRouter([]), guestAuthProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([{ id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' }]) } }] }); await TestBed.compileComponents();
+    TestBed.configureTestingModule({ imports: [PreferencesPageComponent], providers: [provideRouter([]), guestSupabaseClientProvider, { provide: PREFERENCES_STORAGE, useValue: localStorage }, { provide: DropsProvider, useValue: { loadActiveDrops: () => of([{ id: 'favorite-active', gameName: 'Hades II', rewardCount: 1, endsAt: '2026-12-01T00:00:00.000Z' }]) } }] }); await TestBed.compileComponents();
     const fixture = TestBed.createComponent(PreferencesPageComponent); fixture.detectChanges(); const page = fixture.nativeElement as HTMLElement;
     const search = page.querySelector<HTMLInputElement>('[aria-label="Search favorites"]')!; search.value = 'hds'; search.dispatchEvent(new Event('input')); fixture.detectChanges();
     expect(page.querySelectorAll('[data-favorite-id]')).toHaveLength(1);

@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
+import { guestSupabaseClientProvider } from '../test/fixtures/guest-supabase-client';
 import { App } from './app';
 import { appConfig } from './app.config';
 import { DropsProvider } from './drops/drops-provider';
@@ -13,6 +14,7 @@ describe('App layout', () => {
       imports: [App],
       providers: [
         ...appConfig.providers,
+        guestSupabaseClientProvider,
         { provide: PREFERENCES_STORAGE, useValue: localStorage },
         { provide: DropsProvider, useValue: { loadActiveDrops: () => of([]) } },
       ],
