@@ -1,5 +1,5 @@
 export type TrackerMutation =
-  | { readonly type: 'settings'; readonly showSubscriptions: boolean; readonly showBadges: boolean }
+  | { readonly type: 'settings'; readonly showSubscriptions: boolean; readonly showBadges: boolean; readonly showEmotes?: boolean }
   | { readonly type: 'favorite'; readonly gameId: string; readonly gameName: string }
   | { readonly type: 'ignore'; readonly gameId: string; readonly gameName: string }
   | { readonly type: 'unfavorite'; readonly gameId: string }

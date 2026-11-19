@@ -9,12 +9,14 @@ import { ChangeDetectionStrategy, Component, ElementRef, HostListener, ViewChild
 export class RewardFilterMenuComponent {
   readonly showSubscriptions = input.required<boolean>();
   readonly showBadges = input.required<boolean>();
+  readonly showEmotes = input.required<boolean>();
   readonly hiddenGameCount = input.required<number>();
   readonly hiddenRewardCount = input.required<number>();
   readonly showSubscriptionsChange = output<boolean>();
   readonly showBadgesChange = output<boolean>();
+  readonly showEmotesChange = output<boolean>();
   protected readonly open = signal(false);
-  protected readonly activeFilterCount = computed(() => Number(this.showSubscriptions()) + Number(this.showBadges()));
+  protected readonly activeFilterCount = computed(() => Number(this.showSubscriptions()) + Number(this.showBadges()) + Number(this.showEmotes()));
   @ViewChild('trigger') private readonly trigger?: ElementRef<HTMLButtonElement>;
 
   constructor(private readonly elementRef: ElementRef<HTMLElement>) {}
@@ -24,6 +26,8 @@ export class RewardFilterMenuComponent {
   protected setShowSubscriptions(checked: boolean): void { this.showSubscriptionsChange.emit(checked); }
 
   protected setShowBadges(checked: boolean): void { this.showBadgesChange.emit(checked); }
+
+  protected setShowEmotes(checked: boolean): void { this.showEmotesChange.emit(checked); }
 
   @HostListener('document:click', ['$event'])
   protected closeOnOutsideClick(event: MouseEvent): void {

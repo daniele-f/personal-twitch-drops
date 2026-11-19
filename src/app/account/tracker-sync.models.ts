@@ -1,6 +1,7 @@
 export interface TrackerSettings {
   showSubscriptions: boolean;
   showBadges: boolean;
+  showEmotes?: boolean;
   updatedAt: string;
 }
 

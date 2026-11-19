@@ -15,6 +15,10 @@
         <span><strong>Badge rewards</strong><small>Hide rewards that grant a Twitch badge</small></span>
         <input type="checkbox" [checked]="showBadges()" aria-label="Hide badge rewards" (change)="setShowBadges(badge.checked)" #badge />
       </label>
+      <label class="reward-filter-option">
+        <span><strong>Emote rewards</strong><small>Hide rewards that grant a Twitch emote</small></span>
+        <input type="checkbox" [checked]="showEmotes()" aria-label="Hide emote rewards" (change)="setShowEmotes(emote.checked)" #emote />
+      </label>
       <p class="reward-filter-summary" aria-live="polite"><strong>{{ hiddenGameCount() }} {{ hiddenGameCount() === 1 ? 'game' : 'games' }}</strong> hidden · <strong>{{ hiddenRewardCount() }} {{ hiddenRewardCount() === 1 ? 'reward' : 'rewards' }}</strong> hidden</p>
     </section>
   }
