@@ -97,6 +97,16 @@ export class TwitchDropsAppProvider extends DropsProvider {
       const description = card.querySelector('.cb-desc')?.textContent?.trim().toLowerCase();
       const name = card.querySelector('.drop-name, .cb-name, h4')?.textContent?.trim();
       if (!name) continue;
+      // Editorial reward tiles omit the type suffix used by the live game list.
+      // Keep both source names so either representation matches without renaming rewards.
+      if (card.matches('.reward-tile') && (type === 'badge' || type === 'emote')) {
+        const names = type === 'badge' ? badgeRewardNames : emoteRewardNames;
+        const suffix = type === 'badge' ? 'Badge' : 'Emote';
+        for (const alias of [name, name.endsWith(` ${suffix}`) ? name : `${name} ${suffix}`]) {
+          if (!names.includes(alias)) names.push(alias);
+        }
+        continue;
+      }
       if (type === 'badge' && !badgeRewardNames.includes(name)) badgeRewardNames.push(name);
       if (type === 'emote' || description?.startsWith('this emote')) emoteRewardNames.push(name);
     }

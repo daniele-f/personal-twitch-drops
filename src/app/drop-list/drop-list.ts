@@ -13,7 +13,7 @@ import { CollapseChevronComponent } from '../ui/collapse-chevron';
 import { GameCardComponent } from '../ui/game-card';
 import { DropCardComponent } from '../ui/drop-card';
 
-const DROP_DETAILS_CACHE_KEY_PREFIX = 'personal-twitch-drops.drop-details.v1.';
+const DROP_DETAILS_CACHE_KEY_PREFIX = 'personal-twitch-drops.drop-details.v2.';
 const DROP_DETAILS_CACHE_MAX_AGE_MS = 5 * 60_000;
 
 interface CachedDropDetails {

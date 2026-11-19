@@ -1,3 +1,6 @@
+import { GTA_VI_ACTIVE_FIXTURE } from '../../test/fixtures/gta-vi-active.fixture';
+import { ActiveDrop } from './active-drop';
+import { DropDetails } from './drop-details';
 import { GTA_VI_REWARDS_FIXTURE } from '../../test/fixtures/gta-vi-rewards.fixture';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -21,13 +24,27 @@ describe('TwitchDropsAppProvider', () => {
 
   afterEach(() => httpTesting.verify());
 
+  it('matches GTA VI classifications to the actual list reward names', () => {
+    let drops: readonly ActiveDrop[] = [];
+    let details!: DropDetails;
+    provider.loadActiveDrops().subscribe((value) => drops = value);
+    httpTesting.expectOne('https://twitchdrops.app/').flush(GTA_VI_ACTIVE_FIXTURE);
+    provider.loadDropDetails(drops[0].id).subscribe((value) => details = value);
+    httpTesting.expectOne('https://twitchdrops.app/game/grand-theft-auto-vi').flush(GTA_VI_REWARDS_FIXTURE);
+    const badges = drops[0].rewards!.filter((name) => details.badgeRewardNames.includes(name));
+    const emotes = drops[0].rewards!.filter((name) => details.emoteRewardNames?.includes(name));
+    expect(badges).toHaveLength(10);
+    expect(emotes).toEqual(['BustedPlz Emote', 'DinoBusted Emote', 'SabaBusted Emote']);
+    expect(drops[0].rewards!.filter((name) => !badges.includes(name) && !emotes.includes(name))).toEqual(['Jordan x Space Jam TCSD']);
+  });
+
   it('recognizes all GTA VI badges and emotes from explicit reward types', () => {
     let result: unknown;
     provider.loadDropDetails('/game/grand-theft-auto-vi').subscribe((details) => result = details);
     httpTesting.expectOne('https://twitchdrops.app/game/grand-theft-auto-vi').flush(GTA_VI_REWARDS_FIXTURE);
     expect(result).toEqual(expect.objectContaining({
-      badgeRewardNames: ['Purple Chain', 'Bronze Chain', 'Silver Chain', 'Gold Chain', 'Diamond Chain', 'Miami Chain', 'Welcome 2 Miami', 'Scored Big', 'Bleed Miami', 'Golden Iguana'],
-      emoteRewardNames: ['BustedPlz', 'DinoBusted', 'SabaBusted'],
+      badgeRewardNames: expect.arrayContaining(['Purple Chain', 'Bronze Chain', 'Silver Chain', 'Gold Chain', 'Diamond Chain', 'Miami Chain', 'Welcome 2 Miami', 'Scored Big', 'Bleed Miami', 'Golden Iguana']),
+      emoteRewardNames: expect.arrayContaining(['BustedPlz', 'DinoBusted', 'SabaBusted']),
     }));
   });
 
