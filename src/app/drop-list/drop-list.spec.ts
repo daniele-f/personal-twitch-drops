@@ -39,6 +39,23 @@ describe('DropListComponent', () => {
     return scope.querySelectorAll<HTMLInputElement>('.reward-filter-menu input[type="checkbox"]');
   }
 
+  it('hides emotes independently and restores them when the filter is cleared', () => {
+    const campaign = { ...sea, rewards: ['Badge Reward', 'Emote Reward'] };
+    loadDropDetails.mockReturnValue(of({ requirementByReward: {}, badgeRewardNames: ['Badge Reward'], emoteRewardNames: ['Emote Reward'] }));
+    render([campaign], []);
+    fixture.nativeElement.querySelector('.favorite-details-toggle').click();
+    fixture.detectChanges();
+    const emoteSwitch = rewardFilterSwitches()[2];
+    expect(emoteSwitch).toBeDefined();
+    emoteSwitch.click();
+    fixture.detectChanges();
+    expect([...fixture.nativeElement.querySelectorAll('.reward-name')].map((reward: Element) => reward.textContent?.trim())).toEqual(['Badge Reward']);
+    expect(JSON.parse(localStorage.getItem('personal-twitch-drops.display-preferences.v1')!).showEmotes).toBe(true);
+    emoteSwitch.click();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.reward-name').length).toBe(2);
+  });
+
   it('reuses active campaign details when the list is recreated within five minutes', () => {
     render();
     expect(loadDropDetails).toHaveBeenCalledTimes(1);
@@ -371,7 +388,7 @@ describe('DropListComponent', () => {
   });
 
   it('restores persisted Subs and Badges switches', () => {
-    localStorage.setItem('personal-twitch-drops.display-preferences.v1', JSON.stringify({ showSubscriptions: true, showBadges: true }));
+    localStorage.setItem('personal-twitch-drops.display-preferences.v1', JSON.stringify({ showSubscriptions: true, showBadges: true, showEmotes: false }));
     fixture.destroy();
     fixture = TestBed.createComponent(DropListComponent);
     render();
@@ -387,7 +404,7 @@ describe('DropListComponent', () => {
     rewardFilterSwitches()[0].click();
     rewardFilterSwitches()[1].click();
 
-    expect(localStorage.getItem('personal-twitch-drops.display-preferences.v1')).toBe(JSON.stringify({ showSubscriptions: true, showBadges: true }));
+    expect(localStorage.getItem('personal-twitch-drops.display-preferences.v1')).toBe(JSON.stringify({ showSubscriptions: true, showBadges: true, showEmotes: false }));
   });
 
   it('hides subscription and badge rewards only when their switches are checked', () => {

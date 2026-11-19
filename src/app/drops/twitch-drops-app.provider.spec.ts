@@ -1,3 +1,4 @@
+import { GTA_VI_REWARDS_FIXTURE } from '../../test/fixtures/gta-vi-rewards.fixture';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -19,6 +20,16 @@ describe('TwitchDropsAppProvider', () => {
   });
 
   afterEach(() => httpTesting.verify());
+
+  it('recognizes all GTA VI badges and emotes from explicit reward types', () => {
+    let result: unknown;
+    provider.loadDropDetails('/game/grand-theft-auto-vi').subscribe((details) => result = details);
+    httpTesting.expectOne('https://twitchdrops.app/game/grand-theft-auto-vi').flush(GTA_VI_REWARDS_FIXTURE);
+    expect(result).toEqual(expect.objectContaining({
+      badgeRewardNames: ['Purple Chain', 'Bronze Chain', 'Silver Chain', 'Gold Chain', 'Diamond Chain', 'Miami Chain', 'Welcome 2 Miami', 'Scored Big', 'Bleed Miami', 'Golden Iguana'],
+      emoteRewardNames: ['BustedPlz', 'DinoBusted', 'SabaBusted'],
+    }));
+  });
 
   it('normalizes valid source cards and ignores incomplete cards', () => {
     let result: unknown;

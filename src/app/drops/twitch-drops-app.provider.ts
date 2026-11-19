@@ -91,6 +91,16 @@ export class TwitchDropsAppProvider extends DropsProvider {
       .map((campaign) => campaign.querySelector<HTMLElement>('.cb-name')?.textContent?.trim() ?? '')
       .filter((name) => name.length > 0);
 
+    const emoteRewardNames: string[] = [];
+    for (const card of document.querySelectorAll<HTMLElement>('.reward-tile, .drop-card, .campaign-banner')) {
+      const type = card.querySelector('.reward-type')?.textContent?.trim().toLowerCase();
+      const description = card.querySelector('.cb-desc')?.textContent?.trim().toLowerCase();
+      const name = card.querySelector('.drop-name, .cb-name, h4')?.textContent?.trim();
+      if (!name) continue;
+      if (type === 'badge' && !badgeRewardNames.includes(name)) badgeRewardNames.push(name);
+      if (type === 'emote' || description?.startsWith('this emote')) emoteRewardNames.push(name);
+    }
+
     const links = [...document.querySelectorAll<HTMLAnchorElement>('a[href]')];
     const steamUrl = this.findUrl(links, (url) => url.hostname === 'store.steampowered.com');
     const officialWebsiteUrl = this.findUrl(links, (url, anchor) =>
@@ -104,6 +114,7 @@ export class TwitchDropsAppProvider extends DropsProvider {
     return {
       requirementByReward,
       badgeRewardNames,
+      ...(emoteRewardNames.length ? { emoteRewardNames: [...new Set(emoteRewardNames)] } : {}),
       ...(steamUrl ? { primaryLink: { label: 'Steam' as const, url: steamUrl } } : officialWebsiteUrl ? { primaryLink: { label: 'Official website' as const, url: officialWebsiteUrl } } : {}),
       ...(detailsUrl ? { detailsUrl } : {}),
       ...(streamersUrl ? { streamersUrl } : {}),

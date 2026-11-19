@@ -68,6 +68,34 @@ describe('mergeTrackerSnapshots', () => {
 describe('TrackerSyncService', () => {
   afterEach(() => TestBed.resetTestingModule());
 
+  it.each([false, true])('preserves an emote-only browser preference when account has data: %s', async (populated) => {
+    localStorage.clear();
+    const rows: Record<string, unknown[]> = {
+      user_settings: [{ show_subscriptions: false, show_badges: false, show_emotes: false, updated_at: '2026-10-18T12:00:00.000Z' }],
+      user_favorite_games: populated ? [{ game_id: '/game/account', game_name: 'Account', updated_at: '2026-10-18T12:00:00.000Z' }] : [],
+      user_ignored_games: [], user_collected_rewards: [],
+    };
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    const client = { rpc, from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rows[table], error: null }) }) }) };
+    TestBed.configureTestingModule({ providers: [
+      TrackerSyncService, PreferencesService, CollectedRewardsService,
+      { provide: PREFERENCES_STORAGE, useValue: localStorage },
+      { provide: AuthService, useValue: { user: signal({ id: 'user-1' }) } },
+      { provide: SUPABASE_AUTH_CLIENT, useValue: client },
+    ] });
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.setShowEmotes(true);
+    const sync = TestBed.inject(TrackerSyncService);
+    await sync.syncAfterAuthentication();
+    expect(preferences.showEmotes()).toBe(true);
+    if (populated) {
+      expect(sync.status()).toBe('needs-reconciliation');
+      expect(sync.reconciliation()?.differences.local.groups).toContainEqual({ category: 'settings', label: 'Display settings', items: ['Hide emote rewards: On'] });
+    } else {
+      expect(rpc).toHaveBeenCalledWith('import_tracker_preferences', expect.objectContaining({ p_snapshot: expect.objectContaining({ settings: expect.objectContaining({ showEmotes: true }) }) }));
+    }
+  });
+
   it('keeps a theme selected while the initial account sync is in progress', async () => {
     localStorage.clear();
     let releaseReads!: () => void;
@@ -161,7 +189,7 @@ describe('TrackerSyncService', () => {
 
     await TestBed.inject(TrackerSyncService).syncAfterAuthentication();
 
-    expect(selectedColumns.get('user_settings')).toBe('show_subscriptions,show_badges,updated_at');
+    expect(selectedColumns.get('user_settings')).toBe('show_subscriptions,show_badges,show_emotes,updated_at');
   });
 
   it('syncs display settings without sending the device theme', async () => {
@@ -187,11 +215,13 @@ describe('TrackerSyncService', () => {
     await sync.syncAfterAuthentication();
 
     preferences.setShowSubscriptions(true);
+    preferences.setShowEmotes(true);
     await sync.syncLocalChange();
 
     expect(rpc).toHaveBeenCalledWith('set_tracker_settings', {
       p_show_subscriptions: true,
       p_show_badges: false,
+      p_show_emotes: true,
     });
   });
 

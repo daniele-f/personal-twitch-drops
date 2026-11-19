@@ -61,6 +61,7 @@ export class DropListComponent {
   private lastFavoritePreloadRequestId = 0;
   protected readonly showSubscriptions = this.preferences.showSubscriptions;
   protected readonly showBadges = this.preferences.showBadges;
+  protected readonly showEmotes = this.preferences.showEmotes;
 
   constructor() {
     this.preferences.restoreDisplayPreferences();
@@ -103,6 +104,11 @@ export class DropListComponent {
 
   protected setShowSubscriptions(checked: boolean): void {
     this.preferences.setShowSubscriptions(checked);
+    this.restoreToggleFocus('reward-filters');
+  }
+
+  protected setShowEmotes(checked: boolean): void {
+    this.preferences.setShowEmotes(checked);
     this.restoreToggleFocus('reward-filters');
   }
 
@@ -286,6 +292,10 @@ export class DropListComponent {
     return this.watchHours(requirement) === undefined ? requirement : `Watch ${requirement?.replace(/\s*watch/i, '')}`;
   }
 
+  protected isEmoteReward(drop: ActiveDrop, reward: string): boolean {
+    return this.detailsFor(drop)?.emoteRewardNames?.includes(reward) ?? false;
+  }
+
   protected isBadgeReward(drop: ActiveDrop, reward: string): boolean {
     return this.detailsFor(drop)?.badgeRewardNames.includes(reward) ?? false;
   }
@@ -293,7 +303,8 @@ export class DropListComponent {
   protected visibleRewards(drop: ActiveDrop): readonly { readonly name: string; readonly imageUrl?: string }[] {
     return this.sortedRewards(drop).filter((reward) =>
       (!this.showSubscriptions() || !this.isSubscriptionReward(drop, reward.name)) &&
-      (!this.showBadges() || !this.isBadgeReward(drop, reward.name)),
+      (!this.showBadges() || !this.isBadgeReward(drop, reward.name)) &&
+      (!this.showEmotes() || !this.isEmoteReward(drop, reward.name)),
     );
   }
 

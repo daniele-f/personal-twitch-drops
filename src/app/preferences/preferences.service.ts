@@ -27,6 +27,7 @@ export class PreferencesService {
   readonly themeColor = signal<ThemeColor>(this.readThemeColor());
   readonly showSubscriptions = signal(this.readDisplayPreferences().showSubscriptions);
   readonly showBadges = signal(this.readDisplayPreferences().showBadges);
+  readonly showEmotes = signal(this.readDisplayPreferences().showEmotes);
   readonly selectedTheme = computed(() => this.themeOptions.find((theme) => theme.id === this.themeColor())!);
   private settingsUpdatedAt = this.readSettingsUpdatedAt();
 
@@ -52,14 +53,23 @@ export class PreferencesService {
     this.recordSettings();
   }
 
+  setShowEmotes(show: boolean): void {
+    if (this.showEmotes() === show) return;
+    this.showEmotes.set(show);
+    this.persistDisplayPreferences();
+    this.touchSettings();
+    this.recordSettings();
+  }
+
   restoreDisplayPreferences(): void {
     const preferences = this.readDisplayPreferences();
     this.showSubscriptions.set(preferences.showSubscriptions);
     this.showBadges.set(preferences.showBadges);
+    this.showEmotes.set(preferences.showEmotes);
   }
 
   trackerSettings(): TrackerSettings {
-    return { showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), updatedAt: this.settingsUpdatedAt };
+    return { showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), showEmotes: this.showEmotes(), updatedAt: this.settingsUpdatedAt };
   }
 
   trackerFavorites(updatedAt: string): readonly TrackerFavorite[] {
@@ -73,6 +83,7 @@ export class PreferencesService {
   applyTrackerSettings(settings: TrackerSettings): void {
     this.showSubscriptions.set(settings.showSubscriptions);
     this.showBadges.set(settings.showBadges);
+    this.showEmotes.set(settings.showEmotes ?? false);
     this.settingsUpdatedAt = settings.updatedAt;
     try {
       this.persistDisplayPreferences();
@@ -212,15 +223,15 @@ export class PreferencesService {
     }
   }
 
-  private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean } {
+  private readDisplayPreferences(): { readonly showSubscriptions: boolean; readonly showBadges: boolean; readonly showEmotes: boolean } {
     try {
       const stored = this.storage?.getItem(DISPLAY_PREFERENCES_STORAGE_KEY);
       const parsed: unknown = stored == null ? {} : JSON.parse(stored);
-      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { showSubscriptions: false, showBadges: false };
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { showSubscriptions: false, showBadges: false, showEmotes: false };
       const preferences = parsed as Record<string, unknown>;
-      return { showSubscriptions: preferences['showSubscriptions'] === true, showBadges: preferences['showBadges'] === true };
+      return { showSubscriptions: preferences['showSubscriptions'] === true, showBadges: preferences['showBadges'] === true, showEmotes: preferences['showEmotes'] === true };
     } catch {
-      return { showSubscriptions: false, showBadges: false };
+      return { showSubscriptions: false, showBadges: false, showEmotes: false };
     }
   }
 
@@ -239,7 +250,7 @@ export class PreferencesService {
   }
 
   private recordSettings(): void {
-    this.mutationDispatcher.record({ type: 'settings', showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() });
+    this.mutationDispatcher.record({ type: 'settings', showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), showEmotes: this.showEmotes() });
   }
 
   private readBlacklistEntries(): readonly BlacklistEntry[] {
@@ -308,7 +319,7 @@ export class PreferencesService {
   }
 
   private persistDisplayPreferences(): void {
-    try { this.storage?.setItem(DISPLAY_PREFERENCES_STORAGE_KEY, JSON.stringify({ showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges() })); } catch { /* Storage is optional. */ }
+    try { this.storage?.setItem(DISPLAY_PREFERENCES_STORAGE_KEY, JSON.stringify({ showSubscriptions: this.showSubscriptions(), showBadges: this.showBadges(), showEmotes: this.showEmotes() })); } catch { /* Storage is optional. */ }
   }
 
   private isBlacklistEntry(value: unknown): value is BlacklistEntry {
