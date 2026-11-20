@@ -12,21 +12,27 @@ type AccountDialogTestApi = {
 };
 
 describe('AccountDialogComponent', () => {
-  it('opens as a native modal and closes it before removal', () => {
+  it('opens as a native modal and restores its opener after conditional removal', () => {
     TestBed.configureTestingModule({ providers: [
       { provide: AuthService, useValue: { user: signal(null), status: signal('guest'), error: signal(null) } },
       { provide: TrackerSyncService, useValue: {} },
     ] });
     const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
     const close = vi.spyOn(HTMLDialogElement.prototype, 'close');
+    const opener = document.createElement('button');
+    document.body.append(opener);
+    opener.focus();
     const fixture = TestBed.createComponent(AccountDialogComponent);
     fixture.componentRef.setInput('opened', true);
     fixture.detectChanges();
     expect(showModal).toHaveBeenCalledOnce();
     expect(fixture.nativeElement.querySelector('dialog')?.open).toBe(true);
+    fixture.nativeElement.querySelector('dialog button').focus();
     fixture.componentRef.setInput('opened', false);
     fixture.detectChanges();
     expect(close).toHaveBeenCalledOnce();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
     showModal.mockRestore();
     close.mockRestore();
   });

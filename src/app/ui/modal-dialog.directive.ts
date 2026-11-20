@@ -16,14 +16,22 @@ export class ModalDialogDirective implements AfterViewInit, OnDestroy {
   readonly modalDismissed = output<void>();
   private readonly dialog = inject<ElementRef<HTMLDialogElement>>(ElementRef).nativeElement;
   private destroying = false;
+  private opener: HTMLElement | null = null;
   protected pressedOutside = false;
 
-  ngAfterViewInit(): void { this.dialog.showModal(); }
+  ngAfterViewInit(): void {
+    this.opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    this.dialog.showModal();
+  }
 
   ngOnDestroy(): void {
     this.destroying = true;
-    // Close before Angular removes the element so the browser restores focus.
     if (this.dialog.open) this.dialog.close();
+    // Angular removes @if views before destruction hooks, so native focus
+    // restoration may already be lost. Never take focus from a stacked dialog
+    // or another control the user/owner has deliberately focused.
+    if (document.activeElement === document.body && this.opener?.isConnected
+      && [...document.querySelectorAll('dialog[open]')].every((dialog) => dialog.contains(this.opener))) this.opener.focus();
   }
 
   protected cancel(event: Event): void {

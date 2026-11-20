@@ -3,11 +3,14 @@ import { TestBed } from '@angular/core/testing';
 import { ModalDialogDirective } from './modal-dialog.directive';
 
 @Component({ imports: [ModalDialogDirective], template: `
+  @if (visible()) {
   <dialog appModalDialog [modalDismissible]="dismissible()" (modalDismissed)="dismissed.set(true)" aria-label="Test dialog">
     <button type="button">Action</button>
-  </dialog>`,
+  </dialog>
+  }`,
 })
 class HostComponent {
+  readonly visible = signal(true);
   readonly dismissible = signal(true);
   readonly dismissed = signal(false);
 }
@@ -47,6 +50,43 @@ describe('ModalDialogDirective', () => {
     pointer(dialog, 'pointerdown', 0, 0);
     pointer(dialog, 'pointerup', 0, 0);
     expect(close).not.toHaveBeenCalled();
+  });
+
+  it('does not restore an old opener over another open dialog', () => {
+    const opener = document.createElement('button');
+    const stacked = document.createElement('dialog');
+    document.body.append(opener);
+    try {
+      opener.focus();
+      const { fixture, dialog } = render();
+      dialog.querySelector('button')!.focus();
+      stacked.open = true;
+      document.body.append(stacked);
+      fixture.componentInstance.visible.set(false);
+      fixture.detectChanges();
+      expect(document.activeElement).not.toBe(opener);
+    } finally {
+      opener.remove();
+      stacked.remove();
+    }
+  });
+
+  it('restores focus into the underlying dialog after a stacked dialog is removed', () => {
+    const underlying = document.createElement('dialog');
+    const opener = document.createElement('button');
+    underlying.append(opener);
+    underlying.open = true;
+    document.body.append(underlying);
+    try {
+      opener.focus();
+      const { fixture, dialog } = render();
+      dialog.querySelector('button')!.focus();
+      fixture.componentInstance.visible.set(false);
+      fixture.detectChanges();
+      expect(document.activeElement).toBe(opener);
+    } finally {
+      underlying.remove();
+    }
   });
 
   it('supports backdrop dismissal when closedby is unavailable', () => {
