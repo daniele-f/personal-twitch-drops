@@ -12,6 +12,39 @@ type AccountDialogTestApi = {
 };
 
 describe('AccountDialogComponent', () => {
+  it('opens as a native modal and closes it before removal', () => {
+    TestBed.configureTestingModule({ providers: [
+      { provide: AuthService, useValue: { user: signal(null), status: signal('guest'), error: signal(null) } },
+      { provide: TrackerSyncService, useValue: {} },
+    ] });
+    const showModal = vi.spyOn(HTMLDialogElement.prototype, 'showModal');
+    const close = vi.spyOn(HTMLDialogElement.prototype, 'close');
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    fixture.detectChanges();
+    expect(showModal).toHaveBeenCalledOnce();
+    expect(fixture.nativeElement.querySelector('dialog')?.open).toBe(true);
+    fixture.componentRef.setInput('opened', false);
+    fixture.detectChanges();
+    expect(close).toHaveBeenCalledOnce();
+    showModal.mockRestore();
+    close.mockRestore();
+  });
+
+  it('notifies its owner when Escape requests dismissal', () => {
+    TestBed.configureTestingModule({ providers: [
+      { provide: AuthService, useValue: { user: signal(null), status: signal('guest'), error: signal(null) } },
+      { provide: TrackerSyncService, useValue: {} },
+    ] });
+    const fixture = TestBed.createComponent(AccountDialogComponent);
+    fixture.componentRef.setInput('opened', true);
+    const closed = vi.fn();
+    fixture.componentInstance.closed.subscribe(closed);
+    fixture.detectChanges();
+    const dialog = fixture.nativeElement.querySelector('.account-dialog') as HTMLElement;
+    dialog.dispatchEvent(new Event('cancel', { cancelable: true }));
+    expect(closed).toHaveBeenCalledOnce();
+  });
   it('offers password recovery from the sign-in form', () => {
     TestBed.configureTestingModule({
       providers: [{

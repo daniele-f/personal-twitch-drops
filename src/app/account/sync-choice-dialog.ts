@@ -1,8 +1,9 @@
 import { Component, inject, input, output, signal } from '@angular/core';
 import { ButtonDirective } from '../ui/button.directive';
 import { TrackerSyncService } from './tracker-sync.service';
+import { ModalDialogDirective } from '../ui/modal-dialog.directive';
 
-@Component({ selector: 'app-sync-choice-dialog', imports: [ButtonDirective], templateUrl: './sync-choice-dialog.html', styleUrl: './account-dialog.scss' })
+@Component({ selector: 'app-sync-choice-dialog', imports: [ButtonDirective, ModalDialogDirective], templateUrl: './sync-choice-dialog.html', styleUrl: './account-dialog.scss' })
 export class SyncChoiceDialogComponent {
   readonly opened = input.required<boolean>();
   readonly closed = output<void>();

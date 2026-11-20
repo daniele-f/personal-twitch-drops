@@ -87,7 +87,8 @@
         "test": {
           "builder": "@angular/build:unit-test",
           "options": {
-            "buildTarget": "personal-twitch-drops:build:test"
+            "buildTarget": "personal-twitch-drops:build:test",
+            "setupFiles": ["src/test/setup.ts"]
           }
         }
       }

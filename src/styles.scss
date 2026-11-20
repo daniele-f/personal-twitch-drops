@@ -27,6 +27,9 @@ body {
   color: var(--color-text);
 }
 
+dialog:modal { overscroll-behavior: contain; }
+dialog::backdrop { overflow: hidden; overscroll-behavior: contain; }
+
 .app-button { border: 1px solid #3c3c45; border-radius: .45rem; padding: .45rem .7rem; background: #242429; color: var(--color-text); font: inherit; font-size: .8rem; font-weight: 650; text-decoration: none; cursor: pointer; transition: background-color .12s ease, border-color .12s ease, transform .12s ease; }.app-button:hover:not(:disabled) { border-color: #555560; background: #303036; }.app-button:active:not(:disabled) { background: #18181b; transform: translateY(1px); }.app-button:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }.app-button:disabled { cursor: default; opacity: .55; }.app-button--primary { border-color: var(--color-accent); background:var(--color-accent-action); color:var(--color-accent-foreground); }.app-button--primary:hover:not(:disabled) { background:var(--color-accent-action-hover); }.app-button--neutral { background: #3c3c45; }.app-button--icon { border: 0; padding: .25rem; background: transparent; font-size: 1.25rem; }
 .app-button--destructive { border-color: #9f3434; background: #9f3434; color: #fff; }.app-button--destructive:hover:not(:disabled) { border-color: #d12f2f; background: #d12f2f; }
 

@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, effect, inject, Injector, input, output, signal, untracked } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, effect, inject, Injector, input, output, signal, untracked, viewChildren } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { ActiveDrop } from '../drops/active-drop';
@@ -32,6 +32,7 @@ interface CachedDropDetails {
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly injector = inject(Injector);
+  private readonly filterMenus = viewChildren(RewardFilterMenuComponent);
   private readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly celebrations = inject(CampaignCelebrationsService);
@@ -103,18 +104,18 @@ export class DropListComponent {
   }
 
   protected setShowSubscriptions(checked: boolean): void {
+    this.restoreFilterFocusIfRemoved();
     this.preferences.setShowSubscriptions(checked);
-    this.restoreToggleFocus('reward-filters');
   }
 
   protected setShowEmotes(checked: boolean): void {
+    this.restoreFilterFocusIfRemoved();
     this.preferences.setShowEmotes(checked);
-    this.restoreToggleFocus('reward-filters');
   }
 
   protected setShowBadges(checked: boolean): void {
+    this.restoreFilterFocusIfRemoved();
     this.preferences.setShowBadges(checked);
-    this.restoreToggleFocus('reward-filters');
   }
 
   protected toggleFavoriteDetails(drop: ActiveDrop): void {
@@ -400,8 +401,11 @@ export class DropListComponent {
     return `${DROP_DETAILS_CACHE_KEY_PREFIX}${encodeURIComponent(id)}`;
   }
 
-  private restoreToggleFocus(id: string): void {
-    afterNextRender(() => document.getElementById(id)?.focus(), { injector: this.injector });
+  private restoreFilterFocusIfRemoved(): void {
+    const focused = document.activeElement;
+    afterNextRender(() => {
+      if (focused && !focused.isConnected) this.filterMenus()[0]?.focusTrigger();
+    }, { injector: this.injector });
   }
 
   protected isIgnored(drop: ActiveDrop): boolean {
