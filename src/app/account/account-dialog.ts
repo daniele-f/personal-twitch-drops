@@ -4,10 +4,11 @@ import { ButtonDirective } from '../ui/button.directive';
 import { AuthService } from './auth.service';
 import { TrackerSyncService } from './tracker-sync.service';
 import { Router } from '@angular/router';
+import { ModalDialogDirective } from '../ui/modal-dialog.directive';
 
 @Component({
   selector: 'app-account-dialog',
-  imports: [FormsModule, ButtonDirective],
+  imports: [FormsModule, ButtonDirective, ModalDialogDirective],
   templateUrl: './account-dialog.html',
   styleUrl: './account-dialog.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,

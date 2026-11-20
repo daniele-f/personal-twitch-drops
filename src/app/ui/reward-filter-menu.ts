@@ -23,6 +23,8 @@ export class RewardFilterMenuComponent {
 
   protected toggle(): void { this.open.update((open) => !open); }
 
+  focusTrigger(): void { this.trigger?.nativeElement.focus(); }
+
   protected setShowSubscriptions(checked: boolean): void { this.showSubscriptionsChange.emit(checked); }
 
   protected setShowBadges(checked: boolean): void { this.showBadgesChange.emit(checked); }

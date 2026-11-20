@@ -6,6 +6,7 @@ actions; these primitives only render state and emit user interaction.
 | Primitive | Source | Use it for | API / variants | Current consumers |
 | --- | --- | --- | --- | --- |
 | `appButton` | `src/app/ui/button.directive.ts` | Semantic buttons and button-like links | `default`, `primary`, `neutral`, `icon`, `destructive` | App header; available to all feature templates |
+| `appModalDialog` | `src/app/ui/modal-dialog.directive.ts` | Native modal `<dialog>` lifecycle and backdrop dismissal | Opens on mount, closes on teardown; `modalDismissible` (default `true`), `modalDismissed`; parent removes the dialog on dismissal | Account; tracker data choice; preference conflict resolution |
 | `appCollapseChevron` | `src/app/ui/collapse-chevron.{ts,html,scss}` | Decorative expanded/collapsed indicator inside an existing control | `expanded` | Drop-list reward detail controls; disclosure |
 | `appDisclosure` | `src/app/ui/disclosure.{ts,html,scss}` | Expandable sections with an icon, label, count, and animated chevron | `expanded`, `icon`, `count`, `toggled` | Preferences Favorites and Ignore List |
 | `appToggle` | `src/app/ui/toggle.{ts,html,scss}` | Accessible labelled on/off switches | `controlId`, `label`, `checked`, `checkedChange` | Changes popover; drop filters |

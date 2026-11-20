@@ -1,8 +1,7 @@
 @if (opened() && trackerSync.reconciliation(); as reconciliation) {
-  <div class="account-dialog-backdrop">
-    <section class="account-dialog sync-choice-dialog" role="dialog" aria-modal="true" aria-labelledby="sync-choice-title">
+    <dialog appModalDialog [modalDismissible]="false" class="account-dialog sync-choice-dialog" aria-labelledby="sync-choice-title" aria-describedby="sync-choice-description">
       <h2 id="sync-choice-title">Choose tracker data</h2>
-      <p>Your local data and account data are different. Choose which version to keep.</p>
+      <p id="sync-choice-description">Your local data and account data are different. Choose which version to keep.</p>
       <div class="sync-choice-actions">
         <button class="sync-choice-action" type="button" appButton="primary" (click)="choose('account')">Use account data</button>
         <button class="sync-choice-action" type="button" appButton="default" (click)="choose('browser')">Use local data</button>
@@ -72,6 +71,5 @@
         </svg>
         <span>Choosing one version replaces the other. Differences are not merged.</span>
       </div>
-    </section>
-  </div>
+    </dialog>
 }

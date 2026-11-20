@@ -557,7 +557,20 @@ describe('DropListComponent', () => {
     favoriteBadgeSwitch.click();
     await fixture.whenStable();
 
-    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelector('.active-section #reward-filters'));
+    expect(document.activeElement).toBe((fixture.nativeElement as HTMLElement).querySelector('.active-section .reward-filter-trigger'));
+  });
+
+  it('keeps focus on the selected filter checkbox when its section remains visible', async () => {
+    render([sea], [valorant]);
+    const page = fixture.nativeElement as HTMLElement;
+    const activeSwitch = rewardFilterSwitches(page.querySelector('.favorites-section')!)[1];
+    activeSwitch.focus();
+    activeSwitch.click();
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(activeSwitch);
+    const ids = [...page.querySelectorAll('[id]')].map((element) => element.id);
+    expect(new Set(ids).size).toBe(ids.length);
   });
 
   it('reclassifies a game when a refresh changes the campaign end time but not its rewards', () => {

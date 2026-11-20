@@ -1,5 +1,5 @@
 <div class="reward-filter-menu-control">
-  <button #trigger id="reward-filters" class="reward-filter-trigger" type="button" [attr.aria-expanded]="open()" aria-haspopup="true" (click)="toggle()">
+  <button #trigger class="reward-filter-trigger" type="button" [attr.aria-expanded]="open()" (click)="toggle()">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M7 12h10M10 18h4" /></svg>
     <span>Filters</span>
     <span class="reward-filter-count">{{ activeFilterCount() }} active</span>
