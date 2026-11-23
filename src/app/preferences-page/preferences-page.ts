@@ -9,7 +9,7 @@ import { ButtonDirective } from '../ui/button.directive';
 import { AccountDialogStateService } from '../account/account-dialog-state.service';
 import { GameNameHistoryComponent } from '../ui/game-name-history';
 
-type ListStatusFilter = 'all' | 'active' | 'inactive';
+type ListStatusFilter = 'all' | 'active' | 'inactive' | 'changed';
 type SettingsSection = 'games' | 'account' | 'appearance';
 type GameList = 'favorites' | 'hidden';
 type ListRow = { readonly id: string; readonly gameName: string };
@@ -84,7 +84,11 @@ export class PreferencesPageComponent {
   protected cancelRemoveFavorite(id: string): void { if (this.armedFavoriteId() === id) this.armedFavoriteId.set(null); }
   private filterRows<T extends ListRow>(rows: readonly T[], query: string, statusFilter: ListStatusFilter): readonly T[] {
     const activeIds = this.activeDropIds();
-    return rows.filter((row) => this.matchesFuzzyQuery(row.gameName, query) && (statusFilter === 'all' || activeIds === null || (statusFilter === 'active') === activeIds.has(row.id)));
+    return rows.filter((row) => {
+      if (!this.matchesFuzzyQuery(row.gameName, query)) return false;
+      if (statusFilter === 'changed') return this.preferences.oldNamesFor(row.id, row.gameName).length > 0;
+      return statusFilter === 'all' || activeIds === null || (statusFilter === 'active') === activeIds.has(row.id);
+    });
   }
   private matchesFuzzyQuery(gameName: string, query: string): boolean {
     const queryCharacters = query.trim().toLocaleLowerCase();
