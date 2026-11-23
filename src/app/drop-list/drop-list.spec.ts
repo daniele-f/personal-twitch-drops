@@ -5,6 +5,7 @@ import { ActiveDrop } from '../drops/active-drop';
 import { DropsProvider } from '../drops/drops-provider';
 import { CelebrationConfettiService } from '../drops/celebration-confetti.service';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PreferencesService } from '../preferences/preferences.service';
 import { DropListComponent } from './drop-list';
 
 describe('DropListComponent', () => {
@@ -38,6 +39,28 @@ describe('DropListComponent', () => {
     fixture.detectChanges();
     return scope.querySelectorAll<HTMLInputElement>('.reward-filter-menu input[type="checkbox"]');
   }
+
+  it('opens name history on favorite and ignored cards without opening rewards', () => {
+    const preferences = TestBed.inject(PreferencesService);
+    preferences.addFavorite(sea.id, 'Old favorite title');
+    preferences.addBlacklist(valorant.id, 'Old ignored title');
+    preferences.rememberGameNames([sea, valorant]);
+    fixture.componentRef.setInput('searchActive', true);
+    fixture.componentRef.setInput('ignoredDropIds', new Set([valorant.id]));
+    render([sea], [valorant]);
+
+    const cards = (fixture.nativeElement as HTMLElement).querySelectorAll('article.drop-row');
+    expect(cards.length).toBe(2);
+    for (const [card, oldName] of [[cards[0], 'Old favorite title'], [cards[1], 'Old ignored title']] as const) {
+      const panel = card.querySelector<HTMLElement>('app-game-name-history [popover]')!;
+      expect(panel.hidden).toBe(true);
+      card.querySelector<HTMLButtonElement>('app-game-name-history button')!.click();
+      fixture.detectChanges();
+      expect(panel.hidden).toBe(false);
+      expect(panel.querySelector('ul')?.textContent).toBe(oldName);
+      expect(card.classList.contains('drop-row--expanded')).toBe(false);
+    }
+  });
 
   it('hides emotes independently and restores them when the filter is cleared', () => {
     const campaign = { ...sea, rewards: ['Badge Reward', 'Emote Reward'] };

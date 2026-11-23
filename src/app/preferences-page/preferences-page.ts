@@ -7,13 +7,14 @@ import { PreferencesService, ThemeColor } from '../preferences/preferences.servi
 import { AuthService } from '../account/auth.service';
 import { ButtonDirective } from '../ui/button.directive';
 import { AccountDialogStateService } from '../account/account-dialog-state.service';
+import { GameNameHistoryComponent } from '../ui/game-name-history';
 
 type ListStatusFilter = 'all' | 'active' | 'inactive';
 type SettingsSection = 'games' | 'account' | 'appearance';
 type GameList = 'favorites' | 'hidden';
 type ListRow = { readonly id: string; readonly gameName: string };
 
-@Component({ imports: [RouterLink, FormsModule, ButtonDirective], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
+@Component({ imports: [RouterLink, FormsModule, ButtonDirective, GameNameHistoryComponent], selector: 'app-preferences-page', templateUrl: './preferences-page.html' })
 export class PreferencesPageComponent {
   protected readonly preferences = inject(PreferencesService);
   protected readonly auth = inject(AuthService);
@@ -54,7 +55,7 @@ export class PreferencesPageComponent {
       this.dropsProvider.loadActiveDrops().subscribe({
         next: (drops) => {
           this.activeDropIds.set(new Set(drops.map((drop) => drop.id)));
-          this.preferences.rememberFavoriteNames(drops);
+          this.preferences.rememberGameNames(drops);
         },
         error: () => this.dropStatusUnavailable.set(true),
       });

@@ -51,7 +51,26 @@ export class DropsPageComponent {
     this.destroyRef.onDestroy(() => window.clearInterval(clockInterval));
     if (!this.restoreFreshDrops()) this.loadDrops();
   }
-  protected loadDrops(force = false): void { if (!force && this.hasFreshDrops()) return; const requestVersion = ++this.requestVersion; this.loading.set(true); this.refreshing.set(true); this.loadFailed.set(false); this.dropsProvider.loadActiveDrops().subscribe({ next: (drops) => { if (requestVersion !== this.requestVersion) return; this.applyDrops(drops, new Date()); this.saveDrops(drops); }, error: () => { if (requestVersion !== this.requestVersion) return; this.loadFailed.set(true); this.loading.set(false); this.refreshing.set(false); } }); }
+  protected loadDrops(force = false): void {
+    if (!force && this.hasFreshDrops()) return;
+    const requestVersion = ++this.requestVersion;
+    this.loading.set(true);
+    this.refreshing.set(true);
+    this.loadFailed.set(false);
+    this.dropsProvider.loadActiveDrops().subscribe({
+      next: (drops) => {
+        if (requestVersion !== this.requestVersion) return;
+        this.applyDrops(drops, new Date());
+        this.saveDrops(drops);
+      },
+      error: () => {
+        if (requestVersion !== this.requestVersion) return;
+        this.loadFailed.set(true);
+        this.loading.set(false);
+        this.refreshing.set(false);
+      },
+    });
+  }
   protected finishRefreshing(requestId: number): void { if (requestId === this.requestVersion) this.refreshing.set(false); }
   protected updatedLabel(): string {
     const updatedAt = this.updatedAt();
@@ -83,6 +102,7 @@ export class DropsPageComponent {
   }
   private applyDrops(drops: readonly ActiveDrop[], updatedAt: Date): void {
     const requestVersion = ++this.requestVersion;
+    this.preferences.rememberGameNames(drops, updatedAt.toISOString());
     this.celebrations.reconcileActiveCampaigns(drops);
     this.changesState.updateDrops(drops);
     this.favoritePreloadRequestId.set(requestVersion);

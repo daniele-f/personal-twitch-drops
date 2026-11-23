@@ -1,9 +1,10 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { BlacklistEntry } from './blacklist-entry';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, DISPLAY_PREFERENCES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, SETTINGS_UPDATED_AT_STORAGE_KEY, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, DISPLAY_PREFERENCES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, FAVORITE_OLD_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, SETTINGS_UPDATED_AT_STORAGE_KEY, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferenceNotificationKind, PreferenceNotificationsService } from './preference-notifications.service';
 import type { TrackerFavorite, TrackerIgnoredGame, TrackerSettings } from '../account/tracker-sync.models';
 import { TrackerMutationDispatcherService } from '../account/tracker-mutation-dispatcher.service';
+import { previousGameNames } from './previous-game-names';
 
 export type ThemeColor = 'twitch-purple' | 'electric-blue' | 'neon-rose' | 'emerald-glow' | 'golden-amber';
 export interface ThemeColorOption { readonly id: ThemeColor; readonly label: string; readonly accent: string; readonly hover: string; readonly text: string; readonly action: string; readonly actionHover: string; readonly foreground: string; readonly soft: string; }
@@ -14,6 +15,7 @@ const THEME_COLOR_OPTIONS: readonly ThemeColorOption[] = [
   { id: 'emerald-glow', label: 'Emerald Glow', accent: '#22c55e', hover: '#4ade80', text: '#86efac', action: '#22c55e', actionHover: '#4ade80', foreground: '#123524', soft: '#143d27' },
   { id: 'golden-amber', label: 'Golden Amber', accent: '#f59e0b', hover: '#fbbf24', text: '#fcd34d', action: '#f59e0b', actionHover: '#fbbf24', foreground: '#18181b', soft: '#4a3212' },
 ];
+const NO_OLD_NAMES: readonly string[] = [];
 
 @Injectable({ providedIn: 'root' })
 export class PreferencesService {
@@ -22,7 +24,11 @@ export class PreferencesService {
   private readonly mutationDispatcher = inject(TrackerMutationDispatcherService);
   readonly favoriteIds = signal<ReadonlySet<string>>(this.readFavoriteIds());
   readonly favoriteNames = signal<ReadonlyMap<string, string>>(this.readFavoriteNames());
+  readonly favoriteOldNames = signal<ReadonlyMap<string, readonly string[]>>(this.readFavoriteOldNames());
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
+  private readonly ignoredById = computed(() => new Map(this.blacklistEntries().map((game) => [game.id, game])));
+  private latestProviderNames: ReadonlyMap<string, string> = new Map();
+  private latestNamesObservedAt = '';
   readonly themeOptions = THEME_COLOR_OPTIONS;
   readonly themeColor = signal<ThemeColor>(this.readThemeColor());
   readonly showSubscriptions = signal(this.readDisplayPreferences().showSubscriptions);
@@ -73,11 +79,14 @@ export class PreferencesService {
   }
 
   trackerFavorites(updatedAt: string): readonly TrackerFavorite[] {
-    return [...this.favoriteIds()].map((gameId) => ({ gameId, gameName: this.favoriteNames().get(gameId) ?? null, updatedAt }));
+    return [...this.favoriteIds()].map((gameId) => {
+      const oldNames = this.favoriteOldNames().get(gameId);
+      return { gameId, gameName: this.favoriteNames().get(gameId) ?? null, updatedAt, ...(oldNames?.length ? { oldNames } : {}) };
+    });
   }
 
   trackerIgnoredGames(updatedAt: string): readonly TrackerIgnoredGame[] {
-    return this.blacklistEntries().map((entry) => ({ gameId: entry.id, gameName: entry.gameName, updatedAt: entry.blacklistedAt || updatedAt }));
+    return this.blacklistEntries().map(({ id, gameName, oldNames, blacklistedAt }) => ({ gameId: id, gameName, updatedAt: blacklistedAt || updatedAt, ...(oldNames?.length ? { oldNames } : {}) }));
   }
 
   applyTrackerSettings(settings: TrackerSettings): void {
@@ -95,14 +104,21 @@ export class PreferencesService {
     if (!id) return;
 
     if (!this.favoriteIds().has(id)) {
+      const ignored = this.ignoredById().get(id);
+      gameName = gameName?.trim() || ignored?.gameName;
       const next = new Set(this.favoriteIds());
       next.add(id);
       this.favoriteIds.set(next);
       this.persist(next);
       this.mutationDispatcher.record({ type: 'favorite', gameId: id, gameName: gameName ?? this.nameFromId(id) });
+      const oldNames = previousGameNames(gameName, [...(ignored?.oldNames ?? []), ignored?.gameName]);
+      if (gameName && oldNames.length) {
+        this.saveFavoriteOldNames(new Map(this.favoriteOldNames()).set(id, oldNames));
+        this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName, oldNames });
+      }
       this.notify('favorite-added', gameName ?? this.nameFromId(id));
     }
-    if (gameName) this.rememberFavoriteNames([{ id, gameName }]);
+    if (gameName) this.updateGameNames(new Map([[id, gameName.trim()]]), new Date().toISOString());
   }
 
   removeFavorite(id: string): void {
@@ -119,6 +135,11 @@ export class PreferencesService {
       this.favoriteNames.set(names);
       this.persistFavoriteNames(names);
     }
+    if (this.favoriteOldNames().has(id)) {
+      const history = new Map(this.favoriteOldNames());
+      history.delete(id);
+      this.saveFavoriteOldNames(history);
+    }
     this.notify('favorite-removed', gameName);
   }
 
@@ -133,31 +154,68 @@ export class PreferencesService {
     this.favoriteNames.set(favoriteNames);
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
+    this.saveFavoriteOldNames(new Map());
     for (const id of removedIds) this.mutationDispatcher.record({ type: 'unfavorite', gameId: id });
     for (const gameName of removed) this.notify('favorite-removed', gameName);
   }
 
-  rememberFavoriteNames(games: readonly { id: string; gameName: string }[]): void {
-    const names = new Map(this.favoriteNames());
-    let changed = false;
-    for (const game of games) {
-      const name = game.gameName.trim();
-      if (!this.favoriteIds().has(game.id) || !name || names.get(game.id) === name) continue;
-      names.set(game.id, name);
-      changed = true;
+  oldNamesFor(id: string, currentName: string): readonly string[] {
+    const favorite = this.favoriteOldNames().get(id) ?? NO_OLD_NAMES;
+    const ignored = this.ignoredById().get(id)?.oldNames ?? NO_OLD_NAMES;
+    return favorite.length || ignored.length ? previousGameNames(currentName, [...favorite, ...ignored]) : NO_OLD_NAMES;
+  }
+
+  rememberGameNames(games: readonly { id: string; gameName: string }[], observedAt = new Date().toISOString()): void {
+    if (observedAt < this.latestNamesObservedAt) return;
+    this.latestNamesObservedAt = observedAt;
+    this.latestProviderNames = new Map(games.map(({ id, gameName }) => [id, gameName.trim()]));
+    this.updateGameNames(this.latestProviderNames, observedAt);
+  }
+
+  private updateGameNames(observed: ReadonlyMap<string, string>, observedAt: string): void {
+    let favoriteNames: Map<string, string> | undefined;
+    let favoriteOldNames: Map<string, readonly string[]> | undefined;
+    for (const id of this.favoriteIds()) {
+      const name = observed.get(id);
+      const previous = this.favoriteNames().get(id);
+      if (!name || name === previous) continue;
+      (favoriteNames ??= new Map(this.favoriteNames())).set(id, name);
+      if (!previous) continue;
+      const oldNames = previousGameNames(name, [...(this.favoriteOldNames().get(id) ?? []), previous === id ? null : previous]);
+      if (oldNames.length) (favoriteOldNames ??= new Map(this.favoriteOldNames())).set(id, oldNames);
+      this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName: name, oldNames, observedAt });
     }
-    if (!changed) return;
-    this.favoriteNames.set(names);
-    this.persistFavoriteNames(names);
+    if (favoriteNames) {
+      this.favoriteNames.set(favoriteNames);
+      this.persistFavoriteNames(favoriteNames);
+    }
+    if (favoriteOldNames) this.saveFavoriteOldNames(favoriteOldNames);
+
+    let ignoredChanged = false;
+    const ignored = this.blacklistEntries().map((entry) => {
+      const gameName = observed.get(entry.id);
+      if (!gameName || gameName === entry.gameName) return entry;
+      const oldNames = previousGameNames(gameName, [...(entry.oldNames ?? []), entry.gameName === entry.id ? null : entry.gameName]);
+      ignoredChanged = true;
+      this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: entry.id, gameName, oldNames, observedAt });
+      return { ...entry, gameName, oldNames };
+    });
+    if (ignoredChanged) {
+      this.blacklistEntries.set(ignored);
+      this.persistBlacklist(ignored);
+    }
   }
 
   addBlacklist(id: string, gameName: string): void {
+    gameName = gameName.trim();
     if (!id || !gameName || this.blacklistEntries().some((entry) => entry.id === id)) return;
 
-    const next = [{ id, gameName, blacklistedAt: new Date().toISOString() }, ...this.blacklistEntries()];
+    const oldNames = previousGameNames(gameName, [...(this.favoriteOldNames().get(id) ?? []), this.favoriteNames().get(id)]);
+    const next = [{ id, gameName, blacklistedAt: new Date().toISOString(), ...(oldNames.length ? { oldNames } : {}) }, ...this.blacklistEntries()];
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
     this.mutationDispatcher.record({ type: 'ignore', gameId: id, gameName });
+    if (oldNames.length) this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: id, gameName, oldNames });
     this.notify('ignored-added', gameName);
   }
 
@@ -184,20 +242,37 @@ export class PreferencesService {
     for (const gameName of removed) this.notify('ignored-removed', gameName);
   }
 
-  replaceLists(favorites: readonly { id: string; gameName?: string }[], blacklist: readonly BlacklistEntry[], origin: 'user' | 'sync' | 'recovery' | 'import' = 'user'): void {
+  replaceLists(
+    favorites: readonly { id: string; gameName?: string; oldNames?: readonly string[] }[],
+    blacklist: readonly BlacklistEntry[],
+    origin: 'user' | 'sync' | 'recovery' | 'import' = 'user',
+    accountNameTimes?: ReadonlyMap<string, number>,
+  ): void {
     const previousFavoriteIds = this.favoriteIds();
     const previousFavoriteNames = this.favoriteNames();
     const previousBlacklist = this.blacklistEntries();
     const favoriteIds = new Set(favorites.map((favorite) => favorite.id));
     const favoriteNames = new Map(favorites.flatMap((favorite) => favorite.gameName ? [[favorite.id, favorite.gameName.trim()] as const] : []));
-    const blacklistEntries = [...blacklist].sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
+    const blacklistEntries = blacklist.map(({ oldNames, ...game }) => {
+      const history = previousGameNames(game.gameName, oldNames);
+      return history.length ? { ...game, oldNames: history } : game;
+    }).sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
 
     this.favoriteIds.set(favoriteIds);
     this.favoriteNames.set(favoriteNames);
     this.blacklistEntries.set(blacklistEntries);
     this.persist(favoriteIds);
     this.persistFavoriteNames(favoriteNames);
+    this.saveFavoriteOldNames(new Map(favorites.flatMap(({ id, gameName, oldNames }) => {
+      const history = previousGameNames(gameName, oldNames);
+      return history.length ? [[id, history] as const] : [];
+    })));
     this.persistBlacklist(blacklistEntries);
+    if (origin === 'sync' && this.latestNamesObservedAt) {
+      const observedAt = Date.parse(this.latestNamesObservedAt);
+      const names = new Map([...this.latestProviderNames].filter(([id]) => observedAt >= (accountNameTimes?.get(id) ?? 0)));
+      this.updateGameNames(names, this.latestNamesObservedAt);
+    }
     if (origin === 'user') this.notifyListReplacement(previousFavoriteIds, previousFavoriteNames, previousBlacklist, favoriteIds, favoriteNames, blacklistEntries);
   }
 
@@ -265,7 +340,11 @@ export class PreferencesService {
       for (const entry of parsed) {
         if (!this.isBlacklistEntry(entry)) continue;
         const current = byId.get(entry.id);
-        if (!current || entry.blacklistedAt > current.blacklistedAt) byId.set(entry.id, entry);
+        if (!current || entry.blacklistedAt > current.blacklistedAt) {
+          const { oldNames, ...game } = entry;
+          const history = previousGameNames(entry.gameName, oldNames);
+          byId.set(entry.id, history.length ? { ...game, oldNames: history } : game);
+        }
       }
 
       return [...byId.values()].sort((left, right) => right.blacklistedAt.localeCompare(left.blacklistedAt));
@@ -295,6 +374,27 @@ export class PreferencesService {
     } catch {
       // Preferences remain available for this browser session.
     }
+  }
+
+  private readFavoriteOldNames(): ReadonlyMap<string, readonly string[]> {
+    try {
+      const parsed: unknown = JSON.parse(this.storage?.getItem(FAVORITE_OLD_NAMES_STORAGE_KEY) ?? '{}');
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return new Map();
+      return new Map(Object.entries(parsed).flatMap(([id, names]) => {
+        const history = previousGameNames(this.favoriteNames().get(id), names);
+        return this.favoriteIds().has(id) && history.length ? [[id, history] as const] : [];
+      }));
+    } catch {
+      return new Map();
+    }
+  }
+
+  private saveFavoriteOldNames(history: ReadonlyMap<string, readonly string[]>): void {
+    this.favoriteOldNames.set(history);
+    try {
+      if (history.size) this.storage?.setItem(FAVORITE_OLD_NAMES_STORAGE_KEY, JSON.stringify(Object.fromEntries(history)));
+      else this.storage?.removeItem(FAVORITE_OLD_NAMES_STORAGE_KEY);
+    } catch { /* Preferences remain available for this browser session. */ }
   }
 
   private persistBlacklist(entries: readonly BlacklistEntry[]): void {

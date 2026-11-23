@@ -81,6 +81,43 @@
   }
 </ng-template>
 
+<ng-template #cardMain let-drop let-favorite="favorite">
+  <div class="drop-card-main">
+    <div class="drop-copy">
+      <h3 class="drop-title">
+        <button
+          class="favorite-details-toggle"
+          type="button"
+          [class.favorite-details-toggle--card]="favorite"
+          [class.active-details-toggle--card]="!favorite"
+          [attr.aria-expanded]="expandedFavoriteId() === drop.id"
+          [attr.aria-controls]="'reward-details-' + drop.id"
+          [attr.aria-label]="(expandedFavoriteId() === drop.id ? 'Hide' : 'Show') + ' rewards for ' + drop.gameName"
+          (click)="toggleFavoriteDetails(drop)"
+        >
+          @if (drop.imageUrl) {
+            <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" loading="lazy" />
+          } @else {
+            <span class="cover-placeholder" aria-hidden="true"></span>
+          }
+          {{ drop.gameName }}
+        </button>
+        <app-game-name-history [gameId]="drop.id" [gameName]="drop.gameName" [oldNames]="preferences.oldNamesFor(drop.id, drop.gameName)" />
+      </h3>
+      <p>{{ rewardSummary(drop) }}@if (hiddenRewardCount(drop); as hiddenCount) {
+        · <span class="hidden-reward-count" title="Hidden by active reward filters">{{ hiddenCount }} hidden</span>
+      } · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>
+      @if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) {
+        <span class="hidden-states">
+          @if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> }
+          @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }
+        </span>
+      }
+    </div>
+  </div>
+</ng-template>
+
+
 @if (loading()) {
   <p class="loading-message" aria-live="polite">Loading active Drops</p>
   <ul class="drop-list" aria-hidden="true">
@@ -122,25 +159,7 @@
               [expanded]="expandedFavoriteId() === drop.id"
               [class.drop-row--expanded]="expandedFavoriteId() === drop.id"
             >
-              <button
-                class="favorite-details-toggle favorite-details-toggle--card"
-                type="button"
-                [attr.aria-expanded]="expandedFavoriteId() === drop.id"
-                [attr.aria-controls]="'reward-details-' + drop.id"
-                [attr.aria-label]="
-                  (expandedFavoriteId() === drop.id ? 'Hide' : 'Show') +
-                  ' rewards for ' +
-                  drop.gameName
-                "
-                (click)="toggleFavoriteDetails(drop)"
-              >
-                @if (drop.imageUrl) {
-                  <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" loading="lazy" />
-                } @else {
-                  <div class="cover-placeholder" aria-hidden="true"></div>
-                }
-                <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }}@if (hiddenRewardCount(drop); as hiddenCount) { · <span class="hidden-reward-count" title="Hidden by active reward filters">{{ hiddenCount }} hidden</span> } · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
-              </button>
+              <ng-container [ngTemplateOutlet]="cardMain" [ngTemplateOutletContext]="{ $implicit: drop, favorite: true }" />
               <div class="row-end">
                 @if (newDropIds().has(drop.id)) {
                   <span class="new-pill">New</span>
@@ -212,25 +231,7 @@
         }
         <li [attr.data-drop-id]="drop.id">
           <article appDropCard class="drop-row drop-row--active" [title]="drop.gameName" [timeLabel]="remainingTime(drop)" [rewardSummary]="rewardSummary(drop)" [imageUrl]="drop.imageUrl" [expanded]="expandedFavoriteId() === drop.id" [class.drop-row--expanded]="expandedFavoriteId() === drop.id">
-            <button
-              class="favorite-details-toggle active-details-toggle--card"
-              type="button"
-              [attr.aria-expanded]="expandedFavoriteId() === drop.id"
-              [attr.aria-controls]="'reward-details-' + drop.id"
-              [attr.aria-label]="
-                (expandedFavoriteId() === drop.id ? 'Hide' : 'Show') +
-                ' rewards for ' +
-                drop.gameName
-              "
-              (click)="toggleFavoriteDetails(drop)"
-            >
-              @if (drop.imageUrl) {
-                <img class="cover-image" [src]="drop.imageUrl" [alt]="drop.gameName" loading="lazy" />
-              } @else {
-                <div class="cover-placeholder" aria-hidden="true"></div>
-              }
-              <span class="drop-copy"><h3>{{ drop.gameName }}</h3><p>{{ rewardSummary(drop) }}@if (hiddenRewardCount(drop); as hiddenCount) { · <span class="hidden-reward-count" title="Hidden by active reward filters">{{ hiddenCount }} hidden</span> } · <time [attr.datetime]="campaignDateTime(drop)" [title]="campaignTimeTitle(drop)">{{ remainingTime(drop) }}</time></p>@if (searchActive() && (isIgnored(drop) || isHiddenByRewardFilter(drop))) { <span class="hidden-states">@if (isIgnored(drop)) { <span class="hidden-pill">Ignored</span> } @if (isHiddenByRewardFilter(drop)) { <span class="hidden-pill">Hidden by reward filter</span> }</span> }</span>
-            </button>
+            <ng-container [ngTemplateOutlet]="cardMain" [ngTemplateOutletContext]="{ $implicit: drop, favorite: false }" />
             <div class="row-end">
               @if (newDropIds().has(drop.id)) {
                 <span class="new-pill">New</span>

@@ -12,6 +12,7 @@ import { RewardFilterMenuComponent } from '../ui/reward-filter-menu';
 import { CollapseChevronComponent } from '../ui/collapse-chevron';
 import { GameCardComponent } from '../ui/game-card';
 import { DropCardComponent } from '../ui/drop-card';
+import { GameNameHistoryComponent } from '../ui/game-name-history';
 
 const DROP_DETAILS_CACHE_KEY_PREFIX = 'personal-twitch-drops.drop-details.v2.';
 const DROP_DETAILS_CACHE_MAX_AGE_MS = 5 * 60_000;
@@ -27,13 +28,13 @@ interface CachedDropDetails {
   selector: 'app-drop-list',
   templateUrl: './drop-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, NgTemplateOutlet, RewardFilterMenuComponent, CollapseChevronComponent, GameCardComponent, DropCardComponent],
+  imports: [RouterLink, NgTemplateOutlet, RewardFilterMenuComponent, CollapseChevronComponent, GameCardComponent, DropCardComponent, GameNameHistoryComponent],
 })
 export class DropListComponent {
   private readonly dropsProvider = inject(DropsProvider);
   private readonly injector = inject(Injector);
   private readonly filterMenus = viewChildren(RewardFilterMenuComponent);
-  private readonly preferences = inject(PreferencesService);
+  protected readonly preferences = inject(PreferencesService);
   private readonly collectedRewards = inject(CollectedRewardsService);
   private readonly celebrations = inject(CampaignCelebrationsService);
   private readonly confetti = inject(CelebrationConfettiService);

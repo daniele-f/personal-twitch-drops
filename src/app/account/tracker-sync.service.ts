@@ -10,6 +10,7 @@ import { TrackerMutationDispatcherService } from './tracker-mutation-dispatcher.
 import { TrackerMutationQueueService } from './tracker-mutation-queue.service';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
 import { TrackerDifferenceGroup, TrackerReconciliation, TrackerSyncStatus } from './tracker-sync.models';
+import { previousGameNames } from '../preferences/previous-game-names';
 
 const LINKED_ACCOUNT_STORAGE_KEY = 'personal-twitch-drops.tracker-sync-link.v1';
 
@@ -101,6 +102,7 @@ export class TrackerSyncService {
   private readonly mutationQueue = inject(TrackerMutationQueueService);
   private readonly storage = inject(PREFERENCES_STORAGE);
   private lastSyncedSnapshot: LocalTrackerSnapshot | null = null;
+  private readonly pendingReplays = new Map<string, Promise<void>>();
   readonly readyForLocalChanges = signal(false);
   readonly status = signal<TrackerSyncStatus>('idle');
   readonly summary = signal<string | null>(null);
@@ -181,7 +183,7 @@ export class TrackerSyncService {
       } else {
         this.mutationDispatcher.clearRecorded();
         this.mutationQueue.clearForAccount(user.id);
-        this.adoptAccountSnapshot(await this.readRemote(user.id), local);
+        this.adoptAccountSnapshot(await this.readRemote(user.id), local, false);
       }
       if (source === 'browser') this.mutationDispatcher.clearRecorded();
       this.rememberLinkedAccount(user.id);
@@ -227,9 +229,14 @@ export class TrackerSyncService {
 
   private applyLocalSnapshot(snapshot: LocalTrackerSnapshot): void {
     this.preferences.applyTrackerSettings(snapshot.settings);
+    const observedAt = new Map<string, number>();
+    for (const { gameId, nameObservedAt, removedAt } of [...snapshot.favorites, ...snapshot.ignoredGames]) {
+      if (nameObservedAt && !removedAt) observedAt.set(gameId, Date.parse(nameObservedAt));
+    }
     this.preferences.replaceLists(
-      snapshot.favorites.filter((favorite) => !favorite.removedAt).map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined })),
-      snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt })), 'sync',
+      snapshot.favorites.filter((favorite) => !favorite.removedAt).map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined, oldNames: favorite.oldNames })),
+      snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt, ...(game.oldNames?.length ? { oldNames: game.oldNames } : {}) })), 'sync',
+      observedAt,
     );
     this.collectedRewards.applyTrackerCollectedRewards(snapshot.collectedRewards);
   }
@@ -249,8 +256,8 @@ export class TrackerSyncService {
         showEmotes: setting['show_emotes'] === true,
         updatedAt: String(setting['updated_at']),
       } : null,
-      favorites: favorites.map((row) => ({ gameId: String(row['game_id']), gameName: asOptionalString(row['game_name']), updatedAt: String(row['updated_at']), removedAt: asOptionalString(row['removed_at']) })),
-      ignoredGames: ignoredGames.map((row) => ({ gameId: String(row['game_id']), gameName: asOptionalString(row['game_name']), updatedAt: String(row['updated_at']), removedAt: asOptionalString(row['removed_at']) })),
+      favorites: favorites.map(readGamePreference),
+      ignoredGames: ignoredGames.map(readGamePreference),
       collectedRewards: collectedRewards.map((row) => ({ campaignId: String(row['campaign_id']), rewardName: String(row['reward_name']), updatedAt: String(row['updated_at']), clearedAt: asOptionalString(row['cleared_at']) })),
     };
   }
@@ -284,6 +291,10 @@ export class TrackerSyncService {
     let result: { error: unknown };
     if (mutation.type === 'favorite' || mutation.type === 'ignore') result = await this.client!.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId, p_game_name: mutation.gameName });
     else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client!.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
+    else if (mutation.type === 'game-name-history') result = await this.client!.rpc('record_tracker_game_name', {
+      p_list: mutation.list, p_game_id: mutation.gameId, p_game_name: mutation.gameName, p_old_names: mutation.oldNames,
+      p_observed_at: mutation.observedAt ?? null,
+    });
     else if (mutation.type === 'settings') result = await this.client!.rpc('set_tracker_settings', { p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges, p_show_emotes: mutation.showEmotes ?? false });
     else if (mutation.type === 'set-collected') result = await this.client!.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
     else {
@@ -299,8 +310,20 @@ export class TrackerSyncService {
   }
 
   private async replayQueuedMutations(userId: string): Promise<void> {
+    const previous = this.pendingReplays.get(userId);
+    const replay = (previous?.catch(() => undefined) ?? Promise.resolve()).then(() => this.flushQueuedMutations(userId));
+    this.pendingReplays.set(userId, replay);
+    try {
+      await replay;
+    } finally {
+      if (this.pendingReplays.get(userId) === replay) this.pendingReplays.delete(userId);
+    }
+  }
+
+  private async flushQueuedMutations(userId: string): Promise<void> {
     const entries = this.mutationQueue.loadForAccount(userId);
     for (const entry of entries) {
+      if (this.auth.user()?.id !== userId) return;
       await this.applyMutation(entry.mutation);
       this.mutationQueue.removeThrough(userId, entry.sequence);
     }
@@ -310,12 +333,29 @@ export class TrackerSyncService {
     this.status.set('idle');
   }
 
-  private adoptAccountSnapshot(remote: RemoteTrackerSnapshot, local: LocalTrackerSnapshot): void {
+  private adoptAccountSnapshot(remote: RemoteTrackerSnapshot, local: LocalTrackerSnapshot, preserveHistory = true): void {
     const snapshot = this.snapshotFromRemote(remote, local);
+    const linkedAccount = this.linkedAccountId();
+    if (preserveHistory && (!linkedAccount || linkedAccount === this.auth.user()?.id)) {
+      snapshot.favorites = this.mergeNameHistories('favorite', local.favorites, snapshot.favorites);
+      snapshot.ignoredGames = this.mergeNameHistories('ignore', local.ignoredGames, snapshot.ignoredGames);
+    }
     this.applyLocalSnapshot(snapshot);
     this.lastSyncedSnapshot = snapshot;
     this.readyForLocalChanges.set(true);
     this.status.set('idle');
+  }
+
+  private mergeNameHistories(list: 'favorite' | 'ignore', local: readonly TrackerFavorite[], account: readonly TrackerFavorite[]): readonly TrackerFavorite[] {
+    const browserById = new Map(local.filter((row) => !row.removedAt).map((row) => [row.gameId, row]));
+    return account.map((row) => {
+      const browser = browserById.get(row.gameId);
+      if (!browser || row.removedAt || !row.gameName) return row;
+      const oldNames = previousGameNames(row.gameName, [...(row.oldNames ?? []), ...(browser.oldNames ?? []), browser.gameName === row.gameId ? null : browser.gameName]);
+      if (oldNames.length === (row.oldNames?.length ?? 0)) return row;
+      this.mutationDispatcher.record({ type: 'game-name-history', list, gameId: row.gameId, gameName: row.gameName, oldNames });
+      return { ...row, oldNames };
+    });
   }
 
   private snapshotFromRemote(remote: RemoteTrackerSnapshot, fallback: LocalTrackerSnapshot): LocalTrackerSnapshot {
@@ -435,6 +475,17 @@ export class TrackerSyncService {
   private async upsertRows(table: string, rows: readonly Record<string, unknown>[]): Promise<void> {
     if (rows.length) await this.upsert(table, rows as unknown as Record<string, unknown>);
   }
+}
+
+function readGamePreference(row: Record<string, unknown>): TrackerFavorite {
+  const gameName = asOptionalString(row['game_name']);
+  const oldNames = previousGameNames(gameName, row['old_names']);
+  const nameObservedAt = asOptionalString(row['name_observed_at']);
+  return {
+    gameId: String(row['game_id']), gameName, updatedAt: String(row['updated_at']), removedAt: asOptionalString(row['removed_at']),
+    ...(oldNames.length ? { oldNames } : {}),
+    ...(nameObservedAt ? { nameObservedAt } : {}),
+  };
 }
 
 function asOptionalString(value: unknown): string | null {
