@@ -28,6 +28,7 @@ export class PreferencesService {
   readonly blacklistEntries = signal<readonly BlacklistEntry[]>(this.readBlacklistEntries());
   private readonly ignoredById = computed(() => new Map(this.blacklistEntries().map((game) => [game.id, game])));
   private latestProviderNames: ReadonlyMap<string, string> = new Map();
+  private latestNamesObservedAt = '';
   readonly themeOptions = THEME_COLOR_OPTIONS;
   readonly themeColor = signal<ThemeColor>(this.readThemeColor());
   readonly showSubscriptions = signal(this.readDisplayPreferences().showSubscriptions);
@@ -103,14 +104,21 @@ export class PreferencesService {
     if (!id) return;
 
     if (!this.favoriteIds().has(id)) {
+      const ignored = this.ignoredById().get(id);
+      gameName = gameName?.trim() || ignored?.gameName;
       const next = new Set(this.favoriteIds());
       next.add(id);
       this.favoriteIds.set(next);
       this.persist(next);
       this.mutationDispatcher.record({ type: 'favorite', gameId: id, gameName: gameName ?? this.nameFromId(id) });
+      const oldNames = previousGameNames(gameName, [...(ignored?.oldNames ?? []), ignored?.gameName]);
+      if (gameName && oldNames.length) {
+        this.saveFavoriteOldNames(new Map(this.favoriteOldNames()).set(id, oldNames));
+        this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName, oldNames });
+      }
       this.notify('favorite-added', gameName ?? this.nameFromId(id));
     }
-    if (gameName) this.updateGameNames(new Map([[id, gameName.trim()]]));
+    if (gameName) this.updateGameNames(new Map([[id, gameName.trim()]]), new Date().toISOString());
   }
 
   removeFavorite(id: string): void {
@@ -157,12 +165,14 @@ export class PreferencesService {
     return favorite.length || ignored.length ? previousGameNames(currentName, [...favorite, ...ignored]) : NO_OLD_NAMES;
   }
 
-  rememberGameNames(games: readonly { id: string; gameName: string }[]): void {
+  rememberGameNames(games: readonly { id: string; gameName: string }[], observedAt = new Date().toISOString()): void {
+    if (observedAt < this.latestNamesObservedAt) return;
+    this.latestNamesObservedAt = observedAt;
     this.latestProviderNames = new Map(games.map(({ id, gameName }) => [id, gameName.trim()]));
-    this.updateGameNames(this.latestProviderNames);
+    this.updateGameNames(this.latestProviderNames, observedAt);
   }
 
-  private updateGameNames(observed: ReadonlyMap<string, string>): void {
+  private updateGameNames(observed: ReadonlyMap<string, string>, observedAt: string): void {
     let favoriteNames: Map<string, string> | undefined;
     let favoriteOldNames: Map<string, readonly string[]> | undefined;
     for (const id of this.favoriteIds()) {
@@ -173,7 +183,7 @@ export class PreferencesService {
       if (!previous) continue;
       const oldNames = previousGameNames(name, [...(this.favoriteOldNames().get(id) ?? []), previous === id ? null : previous]);
       if (oldNames.length) (favoriteOldNames ??= new Map(this.favoriteOldNames())).set(id, oldNames);
-      this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName: name, oldNames });
+      this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName: name, oldNames, observedAt });
     }
     if (favoriteNames) {
       this.favoriteNames.set(favoriteNames);
@@ -187,7 +197,7 @@ export class PreferencesService {
       if (!gameName || gameName === entry.gameName) return entry;
       const oldNames = previousGameNames(gameName, [...(entry.oldNames ?? []), entry.gameName === entry.id ? null : entry.gameName]);
       ignoredChanged = true;
-      this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: entry.id, gameName, oldNames });
+      this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: entry.id, gameName, oldNames, observedAt });
       return { ...entry, gameName, oldNames };
     });
     if (ignoredChanged) {
@@ -197,12 +207,15 @@ export class PreferencesService {
   }
 
   addBlacklist(id: string, gameName: string): void {
+    gameName = gameName.trim();
     if (!id || !gameName || this.blacklistEntries().some((entry) => entry.id === id)) return;
 
-    const next = [{ id, gameName, blacklistedAt: new Date().toISOString() }, ...this.blacklistEntries()];
+    const oldNames = previousGameNames(gameName, [...(this.favoriteOldNames().get(id) ?? []), this.favoriteNames().get(id)]);
+    const next = [{ id, gameName, blacklistedAt: new Date().toISOString(), ...(oldNames.length ? { oldNames } : {}) }, ...this.blacklistEntries()];
     this.blacklistEntries.set(next);
     this.persistBlacklist(next);
     this.mutationDispatcher.record({ type: 'ignore', gameId: id, gameName });
+    if (oldNames.length) this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: id, gameName, oldNames });
     this.notify('ignored-added', gameName);
   }
 
@@ -229,7 +242,12 @@ export class PreferencesService {
     for (const gameName of removed) this.notify('ignored-removed', gameName);
   }
 
-  replaceLists(favorites: readonly { id: string; gameName?: string; oldNames?: readonly string[] }[], blacklist: readonly BlacklistEntry[], origin: 'user' | 'sync' | 'recovery' | 'import' = 'user'): void {
+  replaceLists(
+    favorites: readonly { id: string; gameName?: string; oldNames?: readonly string[] }[],
+    blacklist: readonly BlacklistEntry[],
+    origin: 'user' | 'sync' | 'recovery' | 'import' = 'user',
+    accountNameTimes?: ReadonlyMap<string, number>,
+  ): void {
     const previousFavoriteIds = this.favoriteIds();
     const previousFavoriteNames = this.favoriteNames();
     const previousBlacklist = this.blacklistEntries();
@@ -250,7 +268,11 @@ export class PreferencesService {
       return history.length ? [[id, history] as const] : [];
     })));
     this.persistBlacklist(blacklistEntries);
-    if (origin === 'sync') this.updateGameNames(this.latestProviderNames);
+    if (origin === 'sync' && this.latestNamesObservedAt) {
+      const observedAt = Date.parse(this.latestNamesObservedAt);
+      const names = new Map([...this.latestProviderNames].filter(([id]) => observedAt >= (accountNameTimes?.get(id) ?? 0)));
+      this.updateGameNames(names, this.latestNamesObservedAt);
+    }
     if (origin === 'user') this.notifyListReplacement(previousFavoriteIds, previousFavoriteNames, previousBlacklist, favoriteIds, favoriteNames, blacklistEntries);
   }
 

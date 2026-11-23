@@ -60,7 +60,6 @@ export class DropsPageComponent {
     this.dropsProvider.loadActiveDrops().subscribe({
       next: (drops) => {
         if (requestVersion !== this.requestVersion) return;
-        this.preferences.rememberGameNames(drops);
         this.applyDrops(drops, new Date());
         this.saveDrops(drops);
       },
@@ -103,6 +102,7 @@ export class DropsPageComponent {
   }
   private applyDrops(drops: readonly ActiveDrop[], updatedAt: Date): void {
     const requestVersion = ++this.requestVersion;
+    this.preferences.rememberGameNames(drops, updatedAt.toISOString());
     this.celebrations.reconcileActiveCampaigns(drops);
     this.changesState.updateDrops(drops);
     this.favoritePreloadRequestId.set(requestVersion);

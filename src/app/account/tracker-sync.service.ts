@@ -229,9 +229,14 @@ export class TrackerSyncService {
 
   private applyLocalSnapshot(snapshot: LocalTrackerSnapshot): void {
     this.preferences.applyTrackerSettings(snapshot.settings);
+    const observedAt = new Map<string, number>();
+    for (const { gameId, nameObservedAt, removedAt } of [...snapshot.favorites, ...snapshot.ignoredGames]) {
+      if (nameObservedAt && !removedAt) observedAt.set(gameId, Date.parse(nameObservedAt));
+    }
     this.preferences.replaceLists(
       snapshot.favorites.filter((favorite) => !favorite.removedAt).map((favorite) => ({ id: favorite.gameId, gameName: favorite.gameName ?? undefined, oldNames: favorite.oldNames })),
       snapshot.ignoredGames.filter((game) => !game.removedAt).map((game) => ({ id: game.gameId, gameName: game.gameName ?? game.gameId, blacklistedAt: game.updatedAt, ...(game.oldNames?.length ? { oldNames: game.oldNames } : {}) })), 'sync',
+      observedAt,
     );
     this.collectedRewards.applyTrackerCollectedRewards(snapshot.collectedRewards);
   }
@@ -288,6 +293,7 @@ export class TrackerSyncService {
     else if (mutation.type === 'unfavorite' || mutation.type === 'unignore') result = await this.client!.rpc('apply_tracker_game_preference', { p_action: mutation.type, p_game_id: mutation.gameId });
     else if (mutation.type === 'game-name-history') result = await this.client!.rpc('record_tracker_game_name', {
       p_list: mutation.list, p_game_id: mutation.gameId, p_game_name: mutation.gameName, p_old_names: mutation.oldNames,
+      p_observed_at: mutation.observedAt ?? null,
     });
     else if (mutation.type === 'settings') result = await this.client!.rpc('set_tracker_settings', { p_show_subscriptions: mutation.showSubscriptions, p_show_badges: mutation.showBadges, p_show_emotes: mutation.showEmotes ?? false });
     else if (mutation.type === 'set-collected') result = await this.client!.rpc('set_tracker_reward', { p_campaign_id: mutation.campaignId, p_reward_name: mutation.rewardName, p_collected: mutation.collected });
@@ -474,9 +480,11 @@ export class TrackerSyncService {
 function readGamePreference(row: Record<string, unknown>): TrackerFavorite {
   const gameName = asOptionalString(row['game_name']);
   const oldNames = previousGameNames(gameName, row['old_names']);
+  const nameObservedAt = asOptionalString(row['name_observed_at']);
   return {
     gameId: String(row['game_id']), gameName, updatedAt: String(row['updated_at']), removedAt: asOptionalString(row['removed_at']),
     ...(oldNames.length ? { oldNames } : {}),
+    ...(nameObservedAt ? { nameObservedAt } : {}),
   };
 }
 

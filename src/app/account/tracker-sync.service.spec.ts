@@ -94,7 +94,7 @@ describe('TrackerSyncService', () => {
     await sync.syncLocalChange();
     expect(preferences.favoriteIds().has(gameId)).toBe(true);
     expect(rpc).toHaveBeenCalledExactlyOnceWith('record_tracker_game_name', {
-      p_list: 'favorite', p_game_id: gameId, p_game_name: 'Original title', p_old_names: ['Current title'],
+      p_list: 'favorite', p_game_id: gameId, p_game_name: 'Original title', p_old_names: ['Current title'], p_observed_at: expect.any(String),
     });
   });
 

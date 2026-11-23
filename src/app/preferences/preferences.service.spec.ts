@@ -94,6 +94,18 @@ describe('PreferencesService', () => {
     ]);
   });
 
+  it('carries earlier names through a change from favorite to ignored', () => {
+    const service = configure(createStorage());
+    const id = '/game/one';
+    service.addFavorite(id, 'Old title');
+    service.rememberGameNames([{ id, gameName: 'Current title' }]);
+
+    service.addBlacklist(id, 'Current title');
+    service.removeFavorite(id);
+
+    expect(service.trackerIgnoredGames('now')).toMatchObject([{ oldNames: ['Old title'] }]);
+  });
+
   it('persists a dated blacklist entry and preserves its original timestamp', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-21T10:00:00.000Z'));

@@ -9,6 +9,7 @@ export interface TrackerFavorite {
   gameId: string;
   gameName: string | null;
   oldNames?: readonly string[];
+  nameObservedAt?: string;
   updatedAt: string;
   removedAt?: string | null;
 }
@@ -17,6 +18,7 @@ export interface TrackerIgnoredGame {
   gameId: string;
   gameName: string | null;
   oldNames?: readonly string[];
+  nameObservedAt?: string;
   updatedAt: string;
   removedAt?: string | null;
 }
