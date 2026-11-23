@@ -80,9 +80,19 @@
           } @if (activeGameSearch()) { <button class="game-search__clear" type="button" aria-label="Clear game search" (click)="$event.preventDefault(); $event.stopPropagation(); clearGameSearch()">×</button> }</span></label
         ><label class="game-status-filter">Status
           @if (selectedGameList() === 'favorites') {
-            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="favoriteStatusFilter()" (ngModelChange)="favoriteStatusFilter.set($event)" aria-label="Filter favorites by status"><option value="all">All games</option><option value="active">Active drops</option><option value="inactive">No active drops</option></select>
+            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="favoriteStatusFilter()" (ngModelChange)="favoriteStatusFilter.set($event)" aria-label="Filter favorites by status">
+              <option value="all">All games</option>
+              <option value="active">Active drops</option>
+              <option value="inactive">No active drops</option>
+              <option value="changed">Changed</option>
+            </select>
           } @else {
-            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="ignoredStatusFilter()" (ngModelChange)="ignoredStatusFilter.set($event)" aria-label="Filter hidden games by status"><option value="all">All games</option><option value="active">Active drops</option><option value="inactive">No active drops</option></select>
+            <select [class.game-status-filter--active]="isFilterActive()" [ngModel]="ignoredStatusFilter()" (ngModelChange)="ignoredStatusFilter.set($event)" aria-label="Filter hidden games by status">
+              <option value="all">All games</option>
+              <option value="active">Active drops</option>
+              <option value="inactive">No active drops</option>
+              <option value="changed">Changed</option>
+            </select>
           }
         </label>
       </div>

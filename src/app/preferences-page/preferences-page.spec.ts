@@ -5,6 +5,7 @@ import { of } from 'rxjs';
 import { guestSupabaseClientProvider } from '../../test/fixtures/guest-supabase-client';
 import { DropsProvider } from '../drops/drops-provider';
 import { FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, PREFERENCES_STORAGE } from '../preferences/preferences-storage';
+import { PreferencesService } from '../preferences/preferences.service';
 import { PreferencesPageComponent } from './preferences-page';
 import { AuthService } from '../account/auth.service';
 import { routes } from '../app.routes';
@@ -60,6 +61,45 @@ describe('PreferencesPageComponent', () => {
     const clear = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('[aria-label="Clear game search"]')!;
     clear.click(); fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>('[aria-label="Search favorites"]')?.value).toBe('');
+  });
+
+  it.each(['favorites', 'hidden'] as const)('filters %s by changed names together with search', async (list) => {
+    configure();
+    await TestBed.compileComponents();
+    const preferences = TestBed.inject(PreferencesService);
+    const save = (id: string, name: string) => {
+      if (list === 'favorites') preferences.addFavorite(id, name);
+      else preferences.addBlacklist(id, name);
+    };
+    save('gta', 'Grand Theft Auto');
+    save('doom', 'Doom Eternal');
+    save('online', 'GTA Online');
+    preferences.rememberGameNames([
+      { id: 'gta', gameName: 'GTA VI' },
+      { id: 'doom', gameName: 'DOOM' },
+    ]);
+
+    const fixture = TestBed.createComponent(PreferencesPageComponent);
+    fixture.detectChanges();
+    const page = fixture.nativeElement as HTMLElement;
+    if (list === 'hidden') {
+      page.querySelectorAll<HTMLButtonElement>('[role="tab"]')[1].click();
+      fixture.detectChanges();
+    }
+    const rowAttribute = list === 'favorites' ? 'data-favorite-id' : 'data-blacklist-id';
+    const visibleIds = () => [...page.querySelectorAll(`[${rowAttribute}]`)].map((row) => row.getAttribute(rowAttribute));
+    const filter = page.querySelector<HTMLSelectElement>('.game-status-filter select')!;
+    expect(filter.querySelector('option[value="changed"]')?.textContent).toBe('Changed');
+    filter.value = 'changed';
+    filter.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+    expect(visibleIds()).toEqual(['doom', 'gta']);
+
+    const search = page.querySelector<HTMLInputElement>('input[type="search"]')!;
+    search.value = 'gta';
+    search.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    expect(visibleIds()).toEqual(['gta']);
   });
 
   it('only shows the clear control for the active game-list search', async () => {
