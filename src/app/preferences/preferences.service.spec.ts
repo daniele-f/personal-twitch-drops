@@ -72,6 +72,28 @@ describe('PreferencesService', () => {
     expect(storage.getItem('personal-twitch-drops.favorite-names.v1')).toBeNull();
   });
 
+  it('retains distinct previous names for favorites and ignored games when a name returns', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+    service.addFavorite('/game/one', 'First title');
+    service.addBlacklist('/game/two', 'Ignored title');
+
+    service.rememberGameNames([
+      { id: '/game/one', gameName: 'Second title' },
+      { id: '/game/two', gameName: 'New ignored title' },
+    ]);
+    service.rememberGameNames([{ id: '/game/one', gameName: 'First title' }]);
+
+    TestBed.resetTestingModule();
+    const restored = configure(storage);
+    expect(restored.trackerFavorites('now')).toMatchObject([
+      { gameName: 'First title', oldNames: ['Second title'] },
+    ]);
+    expect(restored.trackerIgnoredGames('now')).toMatchObject([
+      { gameName: 'New ignored title', oldNames: ['Ignored title'] },
+    ]);
+  });
+
   it('persists a dated blacklist entry and preserves its original timestamp', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-09-21T10:00:00.000Z'));

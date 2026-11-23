@@ -165,6 +165,7 @@
   padding-left: 0.75rem;
   border-bottom: 1px solid color-mix(in srgb, var(--color-accent) 52%, #3c3c45);
 }
+.game-list__title { display: flex; align-items: center; min-width: 0; }
 .game-list__name {
   min-width: 0;
   overflow: hidden;

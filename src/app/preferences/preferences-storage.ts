@@ -2,6 +2,7 @@ import { InjectionToken } from '@angular/core';
 
 export const FAVORITE_IDS_STORAGE_KEY = 'personal-twitch-drops.favorite-ids.v1';
 export const FAVORITE_NAMES_STORAGE_KEY = 'personal-twitch-drops.favorite-names.v1';
+export const FAVORITE_OLD_NAMES_STORAGE_KEY = 'personal-twitch-drops.favorite-old-names.v1';
 export const BLACKLIST_ENTRIES_STORAGE_KEY = 'personal-twitch-drops.blacklist-entries.v1';
 export const DISPLAY_PREFERENCES_STORAGE_KEY = 'personal-twitch-drops.display-preferences.v1';
 export const THEME_COLOR_STORAGE_KEY = 'personal-twitch-drops.theme-color.v1';

@@ -68,6 +68,36 @@ describe('mergeTrackerSnapshots', () => {
 describe('TrackerSyncService', () => {
   afterEach(() => TestBed.resetTestingModule());
 
+  it('loads account name history and syncs subsequent observations without changing membership', async () => {
+    localStorage.clear();
+    const gameId = '/game/example';
+    const rows: Record<string, unknown[]> = {
+      user_settings: [],
+      user_favorite_games: [{ game_id: gameId, game_name: 'Current title', old_names: ['Original title', 'Current title'], updated_at: '2026-10-18T12:00:00.000Z' }],
+      user_ignored_games: [],
+      user_collected_rewards: [],
+    };
+    const rpc = vi.fn().mockResolvedValue({ error: null });
+    TestBed.configureTestingModule({ providers: [
+      { provide: PREFERENCES_STORAGE, useValue: localStorage },
+      { provide: AuthService, useValue: { user: signal({ id: 'user-1' }) } },
+      { provide: SUPABASE_AUTH_CLIENT, useValue: {
+        rpc, from: (table: string) => ({ select: () => ({ eq: async () => ({ data: rows[table], error: null }) }) }),
+      } },
+    ] });
+    const sync = TestBed.inject(TrackerSyncService);
+    const preferences = TestBed.inject(PreferencesService);
+    expect((await sync.syncAfterAuthentication()).status).toBe('synced');
+    expect(preferences.oldNamesFor(gameId, 'Current title')).toEqual(['Original title']);
+
+    preferences.rememberGameNames([{ id: gameId, gameName: 'Original title' }]);
+    await sync.syncLocalChange();
+    expect(preferences.favoriteIds().has(gameId)).toBe(true);
+    expect(rpc).toHaveBeenCalledExactlyOnceWith('record_tracker_game_name', {
+      p_list: 'favorite', p_game_id: gameId, p_game_name: 'Original title', p_old_names: ['Current title'],
+    });
+  });
+
   it.each([false, true])('preserves an emote-only browser preference when account has data: %s', async (populated) => {
     localStorage.clear();
     const rows: Record<string, unknown[]> = {
