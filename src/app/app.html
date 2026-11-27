@@ -124,6 +124,7 @@
       <div class="debug-menu__actions">
         <button type="button" (click)="debugNewGame()">New game</button>
         <button type="button" (click)="debugRewardSwap()">Reward swap</button>
+        <button type="button" (click)="debugGameRename()">Game rename</button>
         <button type="button" (click)="debugEndedGame()">Ended game</button>
         <button type="button" (click)="debugMultipleGames()">Multiple games</button>
         <button type="button" (click)="debugNewAndUpdated()">New and updated</button>
@@ -262,7 +263,11 @@
               <ul>
                 @for (change of changes; track change.drop.id) {
                   <li [class.changes-change--ignored]="isIgnoredChange(change)">
-                    {{ change.drop.gameName }}
+                    @if (change.type === 'renamed') {
+                      {{ change.previousGameName }} → {{ change.drop.gameName }}
+                    } @else {
+                      {{ change.drop.gameName }}
+                    }
                     @if (changesState.changedSinceLastRefreshIds().has(change.drop.id)) {
                       <span
                         class="change-since-refresh-dot"

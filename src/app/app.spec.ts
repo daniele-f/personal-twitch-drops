@@ -416,6 +416,25 @@ describe('App', () => {
     expect(fixture.nativeElement.querySelector('.change-since-refresh-dot')).toBeNull();
   });
 
+  it('shows a rename notification with the old and new game name', () => {
+    const changes = TestBed.inject(ChangesStateService);
+    const previous = { id: '/game/renamed', gameName: 'Old Name', rewardCount: 1, rewards: ['Reward'], endsAt: '2026-09-24T00:00:00.000Z' };
+    changes.seed([previous], [{ ...previous, gameName: 'New Name' }]);
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const button = fixture.nativeElement.querySelector('.changes-button') as HTMLButtonElement;
+    expect(button.textContent).toContain('Changes · 1');
+    expect(button.querySelector('.changes-notification-dot')).toBeTruthy();
+    button.click();
+    fixture.detectChanges();
+
+    const group = fixture.nativeElement.querySelector('.changes-group') as HTMLElement;
+    expect(group.querySelector('h3')?.textContent).toContain('Renamed games');
+    expect(group.querySelector('li')?.textContent).toContain('Old Name → New Name');
+    expect(button.querySelector('.changes-notification-dot')).toBeNull();
+  });
+
   it('groups new, updated, and ended games in the Changes panel', () => {
     const changes = TestBed.inject(ChangesStateService);
     changes.seed(

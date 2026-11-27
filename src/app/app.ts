@@ -60,6 +60,7 @@ export class App implements AfterViewInit {
   protected readonly changeGroups: readonly { readonly type: DropChange['type']; readonly label: string }[] = [
     { type: 'new', label: 'Newly added' },
     { type: 'updated', label: 'Updated drops' },
+    { type: 'renamed', label: 'Renamed games' },
     { type: 'ended', label: 'Ended campaign' },
   ];
   private readonly changesButton = viewChild<ElementRef<HTMLElement>>('changesButton');
@@ -200,6 +201,10 @@ export class App implements AfterViewInit {
   }
   protected debugNewGame(): void { this.seed([], [this.drop('Game 01', ['Raider pack'])]); }
   protected debugRewardSwap(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula'])]); }
+  protected debugGameRename(): void {
+    const previous = this.drop('Game 01', ['Atlas']);
+    this.seed([previous], [{ ...previous, gameName: 'Game 01 Remastered' }]);
+  }
   protected debugEndedGame(): void { this.seed([this.drop('Game 01', ['Supply crate'])], []); }
   protected debugMultipleGames(): void { this.seed([], [this.drop('Game 01', ['Raider pack']), this.drop('Game 02', ['Moon dust']), this.drop('Game 03', ['Garage decal'])]); }
   protected debugNewAndUpdated(): void { this.seed([this.drop('Game 01', ['Atlas', 'Cosmic'])], [this.drop('Game 01', ['Atlas', 'Nebula']), this.drop('Game 02', ['Raider pack'])]); }
