@@ -73,8 +73,8 @@ describe('TrackerSyncService', () => {
     const gameId = '/game/example';
     const rows: Record<string, unknown[]> = {
       user_settings: [],
-      user_favorite_games: [{ game_id: gameId, game_name: 'Current title', old_names: ['Original title', 'Current title'], updated_at: '2026-10-18T12:00:00.000Z' }],
-      user_ignored_games: [],
+      user_favorite_games: [{ game_id: gameId, game_name: 'Current title', old_names: ['Original title', 'ORIGINAL TITLE', 'Current title', 'CURRENT TITLE'], updated_at: '2026-10-18T12:00:00.000Z' }],
+      user_ignored_games: [{ game_id: '/game/case-only', game_name: 'Example Game', old_names: ['EXAMPLE GAME', 'example game'], updated_at: '2026-10-18T12:00:00.000Z' }],
       user_collected_rewards: [],
     };
     const rpc = vi.fn().mockResolvedValue({ error: null });
@@ -89,6 +89,7 @@ describe('TrackerSyncService', () => {
     const preferences = TestBed.inject(PreferencesService);
     expect((await sync.syncAfterAuthentication()).status).toBe('synced');
     expect(preferences.oldNamesFor(gameId, 'Current title')).toEqual(['Original title']);
+    expect(preferences.oldNamesFor('/game/case-only', 'Example Game')).toEqual([]);
 
     preferences.rememberGameNames([{ id: gameId, gameName: 'Original title' }]);
     await sync.syncLocalChange();

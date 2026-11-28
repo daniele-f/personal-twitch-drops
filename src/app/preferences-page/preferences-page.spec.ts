@@ -77,6 +77,7 @@ describe('PreferencesPageComponent', () => {
     preferences.rememberGameNames([
       { id: 'gta', gameName: 'GTA VI' },
       { id: 'doom', gameName: 'DOOM' },
+      { id: 'online', gameName: 'GTA ONLINE' },
     ]);
 
     const fixture = TestBed.createComponent(PreferencesPageComponent);
@@ -88,6 +89,8 @@ describe('PreferencesPageComponent', () => {
     }
     const rowAttribute = list === 'favorites' ? 'data-favorite-id' : 'data-blacklist-id';
     const visibleIds = () => [...page.querySelectorAll(`[${rowAttribute}]`)].map((row) => row.getAttribute(rowAttribute));
+    expect(page.querySelector(`[${rowAttribute}="online"] app-game-name-history button`)).toBeNull();
+    expect(page.querySelector(`[${rowAttribute}="gta"] app-game-name-history button`)?.textContent).toContain('*');
     const filter = page.querySelector<HTMLSelectElement>('.game-status-filter select')!;
     expect(filter.querySelector('option[value="changed"]')?.textContent).toBe('Changed');
     filter.value = 'changed';

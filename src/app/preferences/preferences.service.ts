@@ -183,6 +183,7 @@ export class PreferencesService {
       if (!previous) continue;
       const oldNames = previousGameNames(name, [...(this.favoriteOldNames().get(id) ?? []), previous === id ? null : previous]);
       if (oldNames.length) (favoriteOldNames ??= new Map(this.favoriteOldNames())).set(id, oldNames);
+      else if (this.favoriteOldNames().has(id)) (favoriteOldNames ??= new Map(this.favoriteOldNames())).delete(id);
       this.mutationDispatcher.record({ type: 'game-name-history', list: 'favorite', gameId: id, gameName: name, oldNames, observedAt });
     }
     if (favoriteNames) {
@@ -198,7 +199,7 @@ export class PreferencesService {
       const oldNames = previousGameNames(gameName, [...(entry.oldNames ?? []), entry.gameName === entry.id ? null : entry.gameName]);
       ignoredChanged = true;
       this.mutationDispatcher.record({ type: 'game-name-history', list: 'ignore', gameId: entry.id, gameName, oldNames, observedAt });
-      return { ...entry, gameName, oldNames };
+      return { id: entry.id, gameName, blacklistedAt: entry.blacklistedAt, ...(oldNames.length ? { oldNames } : {}) };
     });
     if (ignoredChanged) {
       this.blacklistEntries.set(ignored);
