@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
-import { detectChanges, DropChange } from './change-detection';
+import { detectChanges, DropChange, normalizeGameNameForComparison } from './change-detection';
 
 export const DAILY_SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
 export const CHANGES_VIEWED_SIGNATURE_STORAGE_KEY = 'personal-twitch-drops.changes-viewed-signature.v1';
@@ -11,9 +11,15 @@ interface DatedDropSnapshot {
   readonly drops: readonly ActiveDrop[];
 }
 
+interface RenameOrigin {
+  readonly id: string;
+  readonly gameName: string;
+}
+
 interface DailyDropSnapshots {
   readonly baseline: DatedDropSnapshot | null;
   readonly current: DatedDropSnapshot;
+  readonly renameOrigins?: readonly RenameOrigin[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -36,10 +42,34 @@ export class ChangesStateService {
     const baseline = saved?.current.date === date ? saved.baseline : saved?.current ?? null;
     const previousSameDayDrops = saved?.current.date === date ? saved.current.drops : null;
 
-    this.changes.set(baseline ? detectChanges(baseline.drops, current) : []);
+    // For games without a previous-day baseline, retain the first observed name
+    // when a same-day rename occurs so the notification survives reloads.
+    const baselineIds = new Set(baseline?.drops.map((drop) => drop.id));
+    const renameOrigins = new Map((previousSameDayDrops ? saved?.renameOrigins ?? [] : [])
+      .map((origin) => [origin.id, origin.gameName]));
+    const previousById = new Map(previousSameDayDrops?.map((drop) => [drop.id, drop]));
+    for (const drop of current) {
+      const previous = previousById.get(drop.id);
+      if (!baselineIds.has(drop.id) && previous && normalizeGameNameForComparison(previous.gameName) !== normalizeGameNameForComparison(drop.gameName) && !renameOrigins.has(drop.id)) {
+        renameOrigins.set(drop.id, previous.gameName);
+      }
+    }
+    const dailyChanges = baseline ? detectChanges(baseline.drops, current) : [];
+    const sameDayRenames: DropChange[] = [];
+    for (const drop of current) {
+      const previousGameName = renameOrigins.get(drop.id);
+      if (!baselineIds.has(drop.id) && previousGameName !== undefined && normalizeGameNameForComparison(previousGameName) !== normalizeGameNameForComparison(drop.gameName)) {
+        sameDayRenames.push({ type: 'renamed', drop, previousGameName });
+      }
+    }
+    this.changes.set([...dailyChanges, ...sameDayRenames]);
     this.changedSinceLastRefreshIds.set(previousSameDayDrops ? this.changedDropIds(previousSameDayDrops, current) : new Set());
     this.drops.set(current);
-    this.persistSnapshots({ baseline, current: { date, drops: current } });
+    this.persistSnapshots({
+      baseline,
+      current: { date, drops: current },
+      ...(renameOrigins.size ? { renameOrigins: [...renameOrigins].map(([id, gameName]) => ({ id, gameName })) } : {}),
+    });
   }
 
   seed(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly DropChange[] {
@@ -69,9 +99,10 @@ export class ChangesStateService {
       const parsed: unknown = JSON.parse(raw);
       if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
 
-      const { baseline, current } = parsed as Record<string, unknown>;
+      const { baseline, current, renameOrigins } = parsed as Record<string, unknown>;
       if (!this.isSnapshot(current) || (baseline !== null && !this.isSnapshot(baseline))) return null;
-      return { baseline, current };
+      if (renameOrigins !== undefined && (!Array.isArray(renameOrigins) || !renameOrigins.every((origin) => this.isRenameOrigin(origin)))) return null;
+      return { baseline, current, ...(renameOrigins !== undefined ? { renameOrigins } : {}) };
     } catch {
       return null;
     }
@@ -90,7 +121,9 @@ export class ChangesStateService {
     return JSON.stringify(changes
       .map((change) => change.type === 'updated'
         ? { type: change.type, id: change.drop.id, addedRewards: change.addedRewards, removedRewards: change.removedRewards }
-        : { type: change.type, id: change.drop.id })
+        : change.type === 'renamed'
+          ? { type: change.type, id: change.drop.id, previousGameName: normalizeGameNameForComparison(change.previousGameName), gameName: normalizeGameNameForComparison(change.drop.gameName) }
+          : { type: change.type, id: change.drop.id })
       .sort((left, right) => left.id.localeCompare(right.id) || left.type.localeCompare(right.type)));
   }
 
@@ -108,6 +141,12 @@ export class ChangesStateService {
       this.storageOutOfSync = true;
       // Change detection remains available for this browser session.
     }
+  }
+
+  private isRenameOrigin(value: unknown): value is RenameOrigin {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+    const { id, gameName } = value as Record<string, unknown>;
+    return typeof id === 'string' && !!id && typeof gameName === 'string' && !!gameName;
   }
 
   private isSnapshot(value: unknown): value is DatedDropSnapshot {

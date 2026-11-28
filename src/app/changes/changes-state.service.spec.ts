@@ -183,6 +183,90 @@ describe('ChangesStateService', () => {
     expect(service.hasUnseenChanges()).toBe(true);
   });
 
+  it('notifies about renames and changes the viewed signature when a game is renamed again', () => {
+    const renamed = { ...first, gameName: 'New Name' };
+    const renamedAgain = { ...first, gameName: 'Another Name' };
+    const service = configure(createStorage());
+    service.seed([first], [renamed]);
+    expect(service.hasUnseenChanges()).toBe(true);
+    service.markChangesViewed();
+    service.seed([first], [renamed]);
+    expect(service.hasUnseenChanges()).toBe(false);
+    service.seed([first], [renamedAgain]);
+    expect(service.hasUnseenChanges()).toBe(true);
+  });
+
+  it('ignores same-day capitalization changes without a previous-day baseline', () => {
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    const service = configure(createStorage());
+    const uppercase = { ...first, gameName: first.gameName.toUpperCase() };
+    service.updateDrops([first]);
+    service.updateDrops([uppercase]);
+    expect(service.drops()).toEqual([uppercase]);
+    expect(service.changes()).toEqual([]);
+    expect(service.changedSinceLastRefreshIds().size).toBe(0);
+    expect(service.hasUnseenChanges()).toBe(false);
+  });
+
+  it('ignores capitalization changes to an already viewed same-day rename across reloads', () => {
+    const storage = createStorage();
+    const renamed = { ...first, gameName: 'New Name' };
+    const uppercase = { ...renamed, gameName: 'NEW NAME' };
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    const service = configure(storage);
+    service.updateDrops([first]);
+    service.updateDrops([renamed]);
+    service.markChangesViewed();
+
+    TestBed.resetTestingModule();
+    const reloaded = configure(storage);
+    reloaded.updateDrops([uppercase]);
+    expect(reloaded.changes()).toEqual([{ type: 'renamed', drop: uppercase, previousGameName: first.gameName }]);
+    expect(reloaded.changedSinceLastRefreshIds().size).toBe(0);
+    expect(reloaded.hasUnseenChanges()).toBe(false);
+
+    reloaded.updateDrops([{ ...first, gameName: first.gameName.toUpperCase() }]);
+    expect(reloaded.changes()).toEqual([]);
+    expect(reloaded.hasUnseenChanges()).toBe(false);
+  });
+
+  it('retains first-day same-day renames across reloads and clears them the next day', () => {
+    const storage = createStorage();
+    const renamed = { ...first, gameName: 'New Name' };
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    const service = configure(storage);
+    service.updateDrops([first]);
+    service.updateDrops([renamed]);
+    expect(service.changes()).toEqual([{ type: 'renamed', drop: renamed, previousGameName: first.gameName }]);
+    expect(service.changedSinceLastRefreshIds()).toEqual(new Set([first.id]));
+    service.markChangesViewed();
+
+    TestBed.resetTestingModule();
+    const reloaded = configure(storage);
+    reloaded.updateDrops([renamed]);
+    expect(reloaded.changes()).toEqual([{ type: 'renamed', drop: renamed, previousGameName: first.gameName }]);
+    expect(reloaded.hasUnseenChanges()).toBe(false);
+
+    vi.setSystemTime(new Date('2026-09-24T09:00:00'));
+    reloaded.updateDrops([renamed]);
+    expect(reloaded.changes()).toEqual([]);
+  });
+
+  it('retains renames for games newly added during the day', () => {
+    const storage = createStorage();
+    const renamed = { ...first, gameName: 'New Name' };
+    vi.setSystemTime(new Date('2026-09-22T09:00:00'));
+    const service = configure(storage);
+    service.updateDrops([]);
+    vi.setSystemTime(new Date('2026-09-23T09:00:00'));
+    service.updateDrops([first]);
+    service.updateDrops([renamed]);
+    expect(service.changes()).toEqual([
+      { type: 'new', drop: renamed },
+      { type: 'renamed', drop: renamed, previousGameName: first.gameName },
+    ]);
+  });
+
   it('returns an empty change list when a developer scenario is cleared', () => {
     const service = configure(createStorage());
     service.seed([first], [second]);
