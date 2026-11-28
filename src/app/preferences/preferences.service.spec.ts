@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
+import { BLACKLIST_ENTRIES_STORAGE_KEY, FAVORITE_IDS_STORAGE_KEY, FAVORITE_NAMES_STORAGE_KEY, FAVORITE_OLD_NAMES_STORAGE_KEY, PREFERENCES_STORAGE, THEME_COLOR_STORAGE_KEY } from './preferences-storage';
 import { PreferencesService } from './preferences.service';
 import { PreferenceNotificationsService } from './preference-notifications.service';
 import { TrackerMutationDispatcherService } from '../account/tracker-mutation-dispatcher.service';
@@ -70,6 +70,46 @@ describe('PreferencesService', () => {
     service.removeFavorite('/game/sea-of-thieves');
 
     expect(storage.getItem('personal-twitch-drops.favorite-names.v1')).toBeNull();
+  });
+
+  it('updates saved capitalization without recording a previous name in either list', () => {
+    const storage = createStorage();
+    const service = configure(storage);
+    service.addFavorite('/game/one', 'First Title');
+    service.addBlacklist('/game/two', 'SECOND TITLE');
+    service.rememberGameNames([
+      { id: '/game/one', gameName: 'FIRST TITLE' },
+      { id: '/game/two', gameName: 'Second Title' },
+    ]);
+
+    expect(service.trackerFavorites('now')).toEqual([
+      { gameId: '/game/one', gameName: 'FIRST TITLE', updatedAt: 'now' },
+    ]);
+    expect(service.trackerIgnoredGames('now')[0]).not.toHaveProperty('oldNames');
+    expect(service.trackerIgnoredGames('now')[0].gameName).toBe('Second Title');
+    expect(service.oldNamesFor('/game/one', 'FIRST TITLE')).toEqual([]);
+    expect(service.oldNamesFor('/game/two', 'Second Title')).toEqual([]);
+
+    TestBed.resetTestingModule();
+    const restored = configure(storage);
+    expect(restored.oldNamesFor('/game/one', 'FIRST TITLE')).toEqual([]);
+    expect(restored.oldNamesFor('/game/two', 'Second Title')).toEqual([]);
+  });
+
+  it('filters legacy capitalization-only history and deduplicates genuine previous names on load', () => {
+    const storage = createStorage({
+      [FAVORITE_IDS_STORAGE_KEY]: JSON.stringify(['/game/one', '/game/three']),
+      [FAVORITE_NAMES_STORAGE_KEY]: JSON.stringify({ '/game/one': 'Current Title', '/game/three': 'Third Title' }),
+      [FAVORITE_OLD_NAMES_STORAGE_KEY]: JSON.stringify({ '/game/one': ['CURRENT TITLE', 'current title'], '/game/three': ['Old Title', 'OLD TITLE', 'THIRD TITLE'] }),
+      [BLACKLIST_ENTRIES_STORAGE_KEY]: JSON.stringify([
+        { id: '/game/two', gameName: 'Second Title', oldNames: ['SECOND TITLE', 'second title'], blacklistedAt: '2026-11-27T00:00:00.000Z' },
+      ]),
+    });
+    const service = configure(storage);
+    expect(service.favoriteOldNames().has('/game/one')).toBe(false);
+    expect(service.oldNamesFor('/game/two', 'Second Title')).toEqual([]);
+    expect(service.oldNamesFor('/game/three', 'Third Title')).toEqual(['Old Title']);
+    expect(service.trackerIgnoredGames('now')[0]).not.toHaveProperty('oldNames');
   });
 
   it('retains distinct previous names for favorites and ignored games when a name returns', () => {
