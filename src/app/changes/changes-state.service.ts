@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { ActiveDrop } from '../drops/active-drop';
 import { PREFERENCES_STORAGE } from '../preferences/preferences-storage';
-import { detectChanges, DropChange } from './change-detection';
+import { detectChanges, DropChange, normalizeGameNameForComparison } from './change-detection';
 
 export const DAILY_SNAPSHOTS_STORAGE_KEY = 'personal-twitch-drops.daily-snapshots.v1';
 export const CHANGES_VIEWED_SIGNATURE_STORAGE_KEY = 'personal-twitch-drops.changes-viewed-signature.v1';
@@ -50,7 +50,7 @@ export class ChangesStateService {
     const previousById = new Map(previousSameDayDrops?.map((drop) => [drop.id, drop]));
     for (const drop of current) {
       const previous = previousById.get(drop.id);
-      if (!baselineIds.has(drop.id) && previous && previous.gameName !== drop.gameName && !renameOrigins.has(drop.id)) {
+      if (!baselineIds.has(drop.id) && previous && normalizeGameNameForComparison(previous.gameName) !== normalizeGameNameForComparison(drop.gameName) && !renameOrigins.has(drop.id)) {
         renameOrigins.set(drop.id, previous.gameName);
       }
     }
@@ -58,7 +58,7 @@ export class ChangesStateService {
     const sameDayRenames: DropChange[] = [];
     for (const drop of current) {
       const previousGameName = renameOrigins.get(drop.id);
-      if (!baselineIds.has(drop.id) && previousGameName !== undefined && previousGameName !== drop.gameName) {
+      if (!baselineIds.has(drop.id) && previousGameName !== undefined && normalizeGameNameForComparison(previousGameName) !== normalizeGameNameForComparison(drop.gameName)) {
         sameDayRenames.push({ type: 'renamed', drop, previousGameName });
       }
     }
@@ -122,7 +122,7 @@ export class ChangesStateService {
       .map((change) => change.type === 'updated'
         ? { type: change.type, id: change.drop.id, addedRewards: change.addedRewards, removedRewards: change.removedRewards }
         : change.type === 'renamed'
-          ? { type: change.type, id: change.drop.id, previousGameName: change.previousGameName, gameName: change.drop.gameName }
+          ? { type: change.type, id: change.drop.id, previousGameName: normalizeGameNameForComparison(change.previousGameName), gameName: normalizeGameNameForComparison(change.drop.gameName) }
           : { type: change.type, id: change.drop.id })
       .sort((left, right) => left.id.localeCompare(right.id) || left.type.localeCompare(right.type)));
   }

@@ -23,6 +23,21 @@ describe('detectChanges', () => {
     expect(detectChanges([today], [today])).toEqual([]);
   });
 
+  it('ignores capitalization-only changes in either direction', () => {
+    const uppercase = { ...yesterday, gameName: yesterday.gameName.toUpperCase() };
+    const lowercase = { ...yesterday, gameName: yesterday.gameName.toLowerCase() };
+    expect(detectChanges([yesterday], [uppercase])).toEqual([]);
+    expect(detectChanges([uppercase], [lowercase])).toEqual([]);
+    expect(detectChanges([lowercase], [yesterday])).toEqual([]);
+  });
+
+  it('still detects reward changes when only capitalization changes in the name', () => {
+    const today = { ...yesterday, gameName: yesterday.gameName.toUpperCase(), rewards: ['Nebula'] };
+    expect(detectChanges([yesterday], [today])).toEqual([
+      { type: 'updated', drop: today, addedRewards: ['Nebula'], removedRewards: yesterday.rewards },
+    ]);
+  });
+
   it('reports both a rename and a reward change when they occur together', () => {
     const today: ActiveDrop = { ...yesterday, gameName: "No Man's Sky: Worlds", rewards: ['Nebula'] };
 

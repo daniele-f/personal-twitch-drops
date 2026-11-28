@@ -12,6 +12,10 @@ export interface EndedDropChange { readonly type: 'ended'; readonly drop: Active
 export interface RenamedDropChange { readonly type: 'renamed'; readonly drop: ActiveDrop; readonly previousGameName: string; }
 export type DropChange = NewDropChange | UpdatedDropChange | RenamedDropChange | EndedDropChange;
 
+export function normalizeGameNameForComparison(gameName: string): string {
+  return gameName.toLowerCase();
+}
+
 export function detectChanges(previous: readonly ActiveDrop[], current: readonly ActiveDrop[]): readonly DropChange[] {
   const previousById = new Map(previous.map((drop) => [drop.id, drop]));
   const currentIds = new Set(current.map((drop) => drop.id));
@@ -24,7 +28,7 @@ export function detectChanges(previous: readonly ActiveDrop[], current: readonly
       continue;
     }
 
-    if (earlier.gameName !== drop.gameName) currentChanges.push({ type: 'renamed', drop, previousGameName: earlier.gameName });
+    if (normalizeGameNameForComparison(earlier.gameName) !== normalizeGameNameForComparison(drop.gameName)) currentChanges.push({ type: 'renamed', drop, previousGameName: earlier.gameName });
 
     const currentRewards = drop.rewards ?? [];
     const earlierRewards = earlier.rewards ?? [];
